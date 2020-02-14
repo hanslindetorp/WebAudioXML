@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<audio version="1.0">
+	<chain>
+		
+		<oscillatorNode type="sawtooth">
+			<frequency follow="document, mousemove, clientX"></frequency>
+		</oscillatorNode>
+
+		<gainNode>
+			<gain follow="mousedown"></gain>
+		</gainNode>
+		
+		<biquadFilterNode>
+			<frequency follow="document, mousemove, clientY"></frequency>
+		</biquadFilterNode>
+		
+	</chain>
+</audio>
