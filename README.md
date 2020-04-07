@@ -39,16 +39,16 @@ The structure of the XML-data follows some basic rules. The root element is name
 ### Native WebAudio nodes
 Any valid Web Audio node can potentially be speci- fied using WebAudioXML. The name structure follows the Web Audio API specification. Currently, the fol- lowing nodes are implemented and tested:
 
-* [[AudioBufferSourceNode|https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode]]
-* [[MediaStreamAudioSourceNode|https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamAudioSourceNode]]
-* [[BiquadFilterNode|https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode]]
-* [[ConvolverNode|https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode]]
-* [[DelayNode|https://developer.mozilla.org/en-US/docs/Web/API/DelayNode]]
-* [[DynamicsCompressorNode|https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode]]
-* [[GainNode|https://developer.mozilla.org/en-US/docs/Web/API/GainNode]]
-* [[OscillatorNode|https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode]]
-* [[StereoPannerNode|https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode]]
-* [[WaveShaperNode|https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode]]
+* [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
+* [MediaStreamAudioSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamAudioSourceNode)
+* [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode)
+* [ConvolverNode](https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode)
+* [DelayNode](https://developer.mozilla.org/en-US/docs/Web/API/DelayNode)
+* [DynamicsCompressorNode](https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode)
+* [GainNode](https://developer.mozilla.org/en-US/docs/Web/API/GainNode)
+* [OscillatorNode](https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode)
+* [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode)
+* [WaveShaperNode](https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode)
 
 ### Parameters / Attributes
 Any valid Web Audio parameters can be set using attributes. The following example shows an oscillator node with type set to ‘sawtooth’ and frequency set to 880 Hz.
