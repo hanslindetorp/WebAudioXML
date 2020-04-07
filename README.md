@@ -1,5 +1,5 @@
 # WebAudioXML v1.0
-WebAudioXML is a javascript library that makes it possible to create Web Audio applications using XML syntax. It is a PhD research project by Hans Lindetorp. The XML syntax is a proposal for a standardized way of structuring audio node trees for Web Audio API using XML. The specification for WebAudioXML defines how to structure Audio objects in a hierarchical, modular way using XML. For integration in a web-based applica- tion, it requires WebAudioXML.js, a JavaScript li- brary that parses the XML and creates and con- nects all Web Audio nodes into a tree-like struc- ture, called an Audio Graph. The code is open source and freely available for download from GitHub (https://github.com/hanslindetorp/WebAudioXML).
+WebAudioXML is a javascript library that makes it possible to create Web Audio applications using XML syntax. It is a PhD research project by Hans Lindetorp. The XML syntax is a proposal for a standardized way of structuring audio node trees for Web Audio API using XML. The specification for WebAudioXML defines how to structure Audio objects in a hierarchical, modular way using XML. For integration in a web-based application, it requires WebAudioXML.js, a JavaScript library that parses the XML and creates and connects all Web Audio nodes into a tree-like structure, called an Audio Graph. The code is open source and freely available for download from GitHub (https://github.com/hanslindetorp/WebAudioXML).
 
 The full documentation is available from this page:
 #### [Documentation](https://github.com/hanslindetorp/WebAudioXML/wiki)
@@ -25,7 +25,7 @@ ex. embedded XML:
 ```
 
 ### XMLstructure
-The following shows the simplest configuration using only one OscillatorNode connected to the Web Audio destina- tion:
+The following shows the simplest configuration using only one OscillatorNode connected to the Web Audio destination:
 
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,7 +37,7 @@ The following shows the simplest configuration using only one OscillatorNode con
 The structure of the XML-data follows some basic rules. The root element is named <audio> and the other elements can be either a valid Web Audio node, a Web Audio parameter or one of the following custom elements: mixer, chain, synth, voice, send, envelope or link. See the separate pages for comments on each element type.
 
 ### Native WebAudio nodes
-Any valid Web Audio node can potentially be speci- fied using WebAudioXML. The name structure follows the Web Audio API specification. Currently, the fol- lowing nodes are implemented and tested:
+Any valid Web Audio node can potentially be specified using WebAudioXML. The name structure follows the Web Audio API specification. Currently, the following nodes are implemented and tested:
 
 * [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
 * [MediaStreamAudioSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamAudioSourceNode)
