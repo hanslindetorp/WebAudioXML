@@ -2,17 +2,17 @@
 <audio version="1.0">
 	<chain>
 		
-		<oscillatorNode type="sawtooth">
-			<frequency follow="document, mousemove, clientX"></frequency>
-		</oscillatorNode>
+		<OscillatorNode type="sawtooth">
+			<frequency follow="relX" map="0,100,20,1000"></frequency>
+		</OscillatorNode>
 
-		<gainNode>
-			<gain follow="mousedown"></gain>
-		</gainNode>
+		<GainNode>
+			<gain value="0" follow="pointerdown"></gain>
+		</GainNode>
 		
-		<biquadFilterNode>
-			<frequency follow="document, mousemove, clientY"></frequency>
-		</biquadFilterNode>
+		<BiquadFilterNode>
+			<frequency follow="relY" map="0,100,0,10000"></frequency>
+		</BiquadFilterNode>
 		
 	</chain>
 </audio>
