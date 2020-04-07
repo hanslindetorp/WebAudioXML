@@ -3,7 +3,7 @@
 
 class Watcher {
 
-	constructor(xmlNode, str, callBack){
+	constructor(xmlNode, str, waxml, callBack){
 		
 		
 		let arr = str.split(",");
@@ -25,7 +25,9 @@ class Watcher {
 		} else {
 			// target object is top XML node of this document
 			// variable is a property of the audioObject connected to that XML node
-			target = xmlNode.getRootNode().querySelector("audio");
+			//xmlNode.getRootNode().querySelector("audio");
+			this.addVariableWatcher(waxml, variable, callBack);
+			return;
 		}
 		
 		if(arr.length){
@@ -35,35 +37,21 @@ class Watcher {
 			event = arr.shift().trim();
 		}
 			
-		target = target || xmlNode.closest(targetStr) || document.querySelector(targetStr) || eval(targetStr);		
+		target = xmlNode.closest(targetStr) || document.querySelector(targetStr);		
+		if(!target){
+			try{
+				target = eval(targetStr);
+			} 
+			catch(error){
+				console.error("WebAudioXML error: No valid target specified - " + targetStr);
+			}
+			
+		}
+		
 		
 		if(target){
 
-			
-			if(target.nodeName.toLowerCase() == "audio"){
-				
-				// if target is an WebAudioXML-node
-				
-				if(target.audioObject){
-					Object.defineProperty(target.audioObject, variable, {
-					  get() {
-						let varName = "_" + variable;
-					    return this[varName];
-					  },
-					  set(val) {
-						let varName = "_" + variable;
-						if(this[varName] != val){
-							this[varName] = val;
-							callBack(val);
-						}
-					  }
-					});	
-					
-				}
-			
-				
-
-			} else if(target.addEventListener){
+			if(target.addEventListener){
 				
 				// make sure variable starts with e. 
 				if(variable.substr(0, 2) != "e."){
@@ -91,7 +79,57 @@ class Watcher {
 		
 	}
 	
+	addVariableWatcher(obj, variable, callBack){
+		
+		let oNv = this.varablePathToObject(obj, variable);
+		obj = oNv.object || obj;
+		variable = oNv.variable || variable;
+		
+		obj._props = obj._props || {};
+		
+		if(!obj._props[variable]){
+			
+			obj._props[variable] = {};
+			obj._props[variable].callBackList = [];
+		
+			Object.defineProperty(obj, variable, {
+				get() {
+					return this._props[variable].value;
+				},
+				set(val) {
+					if(this._props[variable].value != val){
+						this._props[variable].value = val;
+						this._props[variable].callBackList.forEach(callBack => callBack(val));
+						//output.log(val);
+					}
+				}
+			});	
+		}
+		
+		obj._props[variable].callBackList.push(callBack);		
+		
+	}
 	
+	
+	varablePathToObject(obj = window, variable = ""){
+		
+		
+		
+		let varArray = variable.split(".");
+		let v = varArray.pop();
+		let varPath = varArray.length ? "." + varArray.join(".") : "";
+		let o = eval("obj" + varPath);
+		
+		/*
+		varArray.forEach(v => {
+			let o = obj[v];
+			if(typeof o == "object"){
+				obj = o;
+			}
+		});
+		*/
+		return {object: o, variable: v};
+	}
 	    
 }
 

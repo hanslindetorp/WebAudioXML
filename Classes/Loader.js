@@ -12,7 +12,7 @@ class Loader {
 		this.complete = false;
 	
 		if(src){
-		  	fetch(src, {mode: 'no-cors'})
+		  	fetch(src)
 		  	.then(response => response.text())
 		  	.then(xml => {
 			  	let parser = new DOMParser();

@@ -5,7 +5,11 @@ var Watcher = require('./Watcher.js');
 class Synth{
   	
   	
-	constructor(xmlNode, _ctx, localPath){
+	constructor(xmlNode, waxml, localPath){
+		
+	  	this.waxml = waxml;
+	  	let _ctx = this.waxml._ctx;
+	  	
 		this._xml = xmlNode;
 		this._ctx = _ctx;
 		this._localPath = localPath;
@@ -40,7 +44,7 @@ class Synth{
 		}
 				
 		
-		this.watcher = new Watcher(xmlNode, this._params.follow, note => {
+		this.watcher = new Watcher(xmlNode, this._params.follow, this.waxml, note => {
 			if(note[0]){
 				this.noteOn(note[1]);
 			} else {
@@ -93,9 +97,54 @@ class Synth{
 		
 	}
 	
+	set gain(val){
+	  	this.setTargetAtTime("gain", val);
+  	}
+  	
+  	get gain(){
+	  	return this._node.gain.value;
+  	}
+  	
+	
 	noteToVoice(note){
 		return Array.from(this.voiceNodes).find(voiceNode => voiceNode.MIDInote == note);
 	}
+	
+  	getParameter(paramName){
+	  	if(typeof this._params[paramName] === "undefined"){
+		  	if(this._xml.parentNode){
+			  	return this._xml.parentNode.audioObject.getParameter(paramName);
+		  	} else {
+			  	return 0;
+		  	}
+		  	
+	  	} else {
+		  	return this._params[paramName];
+	  	}
+  	}
+  	
+  	
+  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){	  	
+	  	
+	  	let startTime = this._ctx.currentTime + (delay || 0);
+	  	//transitionTime = transitionTime || 0.001;
+	  	//console.log(value, delay, transitionTime, cancelPrevious);
+	  	
+	  	if(!this._node){
+		  	console.error("Node error:", this);
+	  	}
+	  	if(typeof param == "string"){param = this._node[param]}
+	  		  	
+	  	if(cancelPrevious){
+		  	param.cancelScheduledValues(this._ctx.currentTime);
+	  	}
+	  	if(transitionTime){
+		  	param.setTargetAtTime(value, startTime, transitionTime);
+	  	} else {
+		  	param.setValueAtTime(value, startTime);
+	  	}
+	  	
+  	}
 	
 	
 }

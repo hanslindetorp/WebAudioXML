@@ -8,9 +8,26 @@ var Mapper = require('./Mapper.js');
   	
 class AudioObject{
 	  	
-  	constructor(xmlNode, _ctx, localPath){
+  	constructor(xmlNode, waxml, localPath){
+	  	
+	  	this.waxml = waxml;
+	  	let _ctx = this.waxml._ctx;
 	  	
 	  	this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+	  	this._xml = xmlNode;
+	  	let timeUnit = this.getParameter("timeunit")
+	  	
+  		switch(timeUnit){
+		  	case "ms":
+		  	this._params.timescale = 1/1000;
+		  	break;
+		  	
+		  	default:
+		  	this._params.timescale = 1;
+		  	break;
+	  	}
+	  	
+	  	
 	  	this._localPath = localPath;
 
 		let nodeType = xmlNode.nodeName.toLowerCase();
@@ -27,20 +44,11 @@ class AudioObject{
 		  	break;
 		  	
 		  	
-		  	case "audiobuffernode":
-		  	this._node = this._ctx.createAudioBuffer();
-		  	src = Loader.getPath(this._params.src, this._localPath);
-		  	
-		  	fetch(src)
-		        .then(response => response.arrayBuffer())
-		        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer, 
-		        	audioBuffer => this._node.buffer = audioBuffer, 
-		        	e => reject(e)
-		        ));    
+		  	case "audiobuffersourcenode":
+		  	// just a temporary node
+		  	this._node = this._ctx.createBufferSource();
 		  	break;
-		  	
-		  	
-		  	
+		  			  	
 		  	
 		  	case "oscillatornode":
 		  	this._node = this._ctx.createOscillator();
@@ -53,24 +61,108 @@ class AudioObject{
 		  	break;
 		  	
 		  	case "convolvernode":
-		  	if(!this._params.src){return}
+		  	src = this._params.src;
 		  	
-		  	src = Loader.getPath(this._params.src, this._localPath);
-		  	this._node = this._ctx.createConvolver();    
-		  	fetch(src)
-		        .then(response => response.arrayBuffer())
-		        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer, 
-		        	audioBuffer => this._node.buffer = audioBuffer, 
-		        	e => reject(e)
-		        ));
+		  	if(src){
+			  	
+
+				  	
+			  	src = Loader.getPath(src, this._localPath);
+			  	var node = this._ctx.createConvolver();   
+			  	this._node = node;
+			  	
+			  	
+			  	
+			  	/*
+			  	let request = new XMLHttpRequest();
+				request.open('GET', src, true);
+				request.responseType = 'arraybuffer';
+				
+				
+				request.onload = function() {
+			        // decode the buffer into an audio source
+			        _ctx.decodeAudioData(request.response, function(audioBuffer) {
+			          if (buffer) {
+			          	// store all buffers in buffers
+			            //buffers[obj.url] = buffer;
+			            //returnObj.duration = buffer.duration;
+			            // store reference in this object
+			            // obj.buffer = buffer;
+			            node.buffer = audioBuffer
+			            //console.log(obj.url + " loaded. offset: " + obj.offset);
+			            //callBack(returnObj);
+			            
+			          }
+			        }, function(){
+			        	console.error('File "' + src + '" could not be decoded');
+			        	//buffers[obj.url] = -1;
+			        	//callBack();
+			        });
+			     };
+			     request.onerror = function() {
+			          console.error('File "' + src + '" could not be loaded');
+			          //buffers[obj.url] = -1;
+			          //callBack();
+			     };
+		
+				request.send();
+				
+					  	
+			  	*/
+			  	
+			  	
+			  	 
+			  	fetch(src) // "https://cors-anywhere.herokuapp.com/" + src
+			        .then(response => response.arrayBuffer())
+			        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer, 
+			        	audioBuffer => this._node.buffer = audioBuffer, 
+			        	e => reject(e)
+			        ));				  	
+			  		
+		  	}
+
 		  	break;
 		  	
 		  	case "delaynode":
-		  	this._node = this._ctx.createDelay();
+		  	if(this._params.maxDelayTime){
+			  	this._node = this._ctx.createDelay(this._params.maxDelayTime * this._params.timescale);
+		  	} else {
+			  	this._node = this._ctx.createDelay();
+		  	}
+		  	
 		  	break;
 		  	
 		  	case "dynamicscompressornode":
 		  	break;	
+		  	
+		  	case "stereopannernode":
+		  	if(this._ctx.createStereoPanner){
+			  	this._node = this._ctx.createStereoPanner();
+		  	} else {
+			  	this.fakePanner = true;
+			    this._node = this._ctx.createPanner();
+			    this._node.panningModel = 'equalpower';
+			}
+			
+
+/*
+			  	this.input = this._ctx.createGain();
+			  	this.channelSplitter = this._ctx.createChannelSplitter(2);
+				this.channelSplitter.channelCountMode = "explicit";
+				this.channelSplitter.channelInterpretation = "discrete";
+			  	this.L = this._ctx.createGain();
+			  	this.R = this._ctx.createGain();
+			  	this._node = this._ctx.createChannelMerger(2);
+				this._node.channelCountMode = "explicit";
+				this._node.channelInterpretation = "discrete";
+			  	
+			  	
+			  	this.input.connect(this.channelSplitter);
+			  	this.channelSplitter.connect(this.L, 0, 0).connect(this._node, 0, 0);
+			  	this.channelSplitter.connect(this.R, 1, 0).connect(this._node, 0, 1);
+*/
+		  	
+		  	break;
 		  	
 		  	case "waveshapernode":
 		  	break;	
@@ -79,11 +171,18 @@ class AudioObject{
 		  	break;		
 		  	
 		  	case "iirfilternode":
-		  	break;	 			  	
+		  	break;	
+		  	
+		  	case "xml":
+		  	break;
+		  	 			
+		  	 			
+		  	 			  	
 		  	
 		  	case "gainnode":
 		  	case "send":
 		  	this._node = this._ctx.createGain();
+		  	this.gain = 0.3;
 		  	break;
 		  	
 		  	case "audio":
@@ -96,7 +195,7 @@ class AudioObject{
 		  	
 		  	case "chain":
 		  	this.input = this._ctx.createGain();
-		  	console.log("chain input", this.input.__resource_id__);
+		  	//console.log("chain input", this.input.__resource_id__);
 		  	this._node = this._ctx.createGain();
 		  	break;
 		  	
@@ -109,47 +208,79 @@ class AudioObject{
 		  	case "envelope":
 		  	this._node = xmlNode.parentNode.audioObject._node;
 		  	this._params.max = this._params.max || 1;
-		  	this._params.valueScale = this._params.max / 100;
-		  			  	
-		  	switch(this._params.timeUnit){
-			  	case "s":
-			  	this._params.timeScale = 1;
-			  	break;
-			  	
-			  	default:
-			  	this._params.timeScale = 1/1000;
-			  	break;
-		  	}
-		  	
+		  	this._params.valuescale = this._params.max / 100;
+		  	this.setTargetAtTime(this._node, 0, 0, 0, true);		  	
 		  	break;
+		  	
 		  	
 		  	
 		  	// parameters
 		  	default:
-		  	this.mapper = new Mapper(this._params.map);
-		  	this._node = xmlNode.parentNode.audioObject.getParameterNode(nodeType);
-		  	if(this._params.value){
-			  	this._params.value = WebAudioUtils.typeFixParam(nodeType, this._params.value);
-			  	this._node.value = this._params.value;
-			}
-			
-			if(this._params.follow){
-				this.watcher = new Watcher(xmlNode, this._params.follow, val => {
-					this.setTargetAtTime(this._node, this.mapper.getValue(val), 0, 0, true);
-				});
-			}
+		  	this.mapper = new Mapper(this._params.map, this._params.steps);
+		  	
+		  	nodeType = WebAudioUtils.caseFixParameter(nodeType);
+		  	let parentAudioObj = xmlNode.parentNode.audioObject;
+		  	
+		  	if(parentAudioObj){
+		
+			  	this._node = parentAudioObj.getParameterNode(nodeType);
+			  	if(this._params.value){
+				  	this._params.value = WebAudioUtils.typeFixParam(nodeType, this._params.value);
+				  	this._node.value = this._params.value;
+				}
+				
+				if(this._params.follow){
+					this.watcher = new Watcher(xmlNode, this._params.follow, this.waxml, val => {
+						
+						val = this.mapper.getValue(val);
+						
+						switch(this._node.name){
+							case "delayTime":
+							val *= this._params.timescale;
+							break;
+							
+							default:
+							break;
+						}
+						
+						this.setTargetAtTime(this._node, val, 0, 0, true);
+					});
+				}
+	  	
+		  	} else {
+			  	console.error("WebAudioXML: Invalid element - '" + nodeType + "'");
+		  	}
 		  	break;
-
 	  	}
 	  	
-	  	console.log(nodeType, this._node.__resource_id__);
+	  	//console.log(nodeType, this._node.__resource_id__);
 	  	
 	  	// set parameters
-	  	if(this._params){Object.keys(this._params).forEach(key => this[key] = this._params[key])};
+	  	if(this._params){
+		  	Object.keys(this._params).forEach(key => {
+		  		this[key] = this._params[key];
+			});
+		};
 	  	
   	}
   	
-
+  	getParameter(paramName){
+	  	if(typeof this._params[paramName] === "undefined"){
+		  	if(this._xml.parentNode){
+			  	if(this._xml.parentNode.audioObject){
+				  	return this._xml.parentNode.audioObject.getParameter(paramName);
+			  	} else {
+				  	return 0;
+			  	}
+			  	
+		  	} else {
+			  	return 0;
+		  	}
+		  	
+	  	} else {
+		  	return this._params[paramName];
+	  	}
+  	}
 
   	
   	get connection(){
@@ -161,7 +292,7 @@ class AudioObject{
 	  	switch(this._nodeType){
 		  	
 		  	case "oscillatornode":
-		  	case "audiobuffernode":
+		  	case "audiobuffersourcenode":
 		  	break;
 		  	
 		  	default:
@@ -177,10 +308,12 @@ class AudioObject{
   	
   	
   	getParameterNode(param){
+	  	if(!this._node){return}
 	  	return this._node[param];
   	}
   	  	
   	disconnect(ch){
+	  	if(!this._node){return}
 	  	ch = ch || 0;
 	  	this._node.disconnect(ch);
   	}
@@ -191,17 +324,19 @@ class AudioObject{
 		  	if(this._node.connect){
 			  	destination = destination || this._ctx.destination;
 			  	this._node.connect(destination);
-			  	this.destination = destination;
+			  	
 		  	}
 	  	}
+	  	this._destination = destination;;
 	  	
   	}
+  	
   	
   	inputFrom(sourceObject){
 	  	switch(this._nodeType){
 		  	
 		  	case "oscillatornode":
-		  	case "audiobuffernode":
+		  	case "audiobuffersourcenode":
 		  	break;
 		  	
 		  	default:
@@ -214,12 +349,35 @@ class AudioObject{
 	  	switch(this._nodeType){
 		  	
 		  	case "oscillatornode":
-		  	if(this.followKeyboard){
+		  	/*
+		  	if(this._params.followkeyboard){
 			  	let x = WebAudioUtils.MIDInoteToFrequency(data.note);
-			  	if(this.followKeyboard.includes("x")){
-				  	x = eval(this.followKeyboard);
+			  	if(this._params.followkeyboard.includes("x")){
+				  	// what is this for?
+				  	x = eval(this._params.followkeyboard);
 			  	}
 			  	this.frequency = x;
+		  	}
+		  	*/
+		  	break;
+		  	
+		  	
+		  	case "audiobuffersourcenode":
+		  	this._node = this._ctx.createBufferSource();
+		  	this._node.buffer = this._buffer;
+		  	this._node.connect(this._destination);
+		  	this._node.start();
+		  	break;
+		  	
+		  	
+		  	case "frequency":
+		  	if(this._params.follow){
+			  	if(this._params.follow.includes("MIDI")){
+				  	let MIDI = data.note;
+				  	let MIDInote = eval(this._params.follow);
+			  		let hz = WebAudioUtils.MIDInoteToFrequency(MIDInote);
+				  	this.value = hz;
+			  	}			  	
 		  	}
 		  	break;
 		  	
@@ -231,9 +389,9 @@ class AudioObject{
 		  	
 		  	
 		  	case "envelope":
-		  	if(this.ADSR){
-			  	this.setTargetAtTime(this._node, this._params.valueScale * 100, 0, this.ADSR.attack * this._params.timeScale, true);
-			  	this.setTargetAtTime(this._node, this._params.valueScale * this.ADSR.sustain, this.ADSR.attack * this._params.timeScale, this.ADSR.decay * this._params.timeScale);
+		  	if(this._params.adsr){
+			  	this.setTargetAtTime(this._node, this._params.valuescale * 100, 0, this._params.adsr.attack * this._params.timescale, true);
+			  	this.setTargetAtTime(this._node, this._params.valuescale * this._params.adsr.sustain, this._params.adsr.attack * this._params.timescale, this._params.adsr.decay * this._params.timescale);
 		  	}
 		  	break;
 	  	}
@@ -248,8 +406,8 @@ class AudioObject{
 		  	break;
 		  	
 		  	case "envelope":
-		  	if(this.ADSR){
-			  	this.setTargetAtTime(this._node, 0, 0, this.ADSR.release * this._params.timeScale, true);
+		  	if(this._params.adsr){
+			  	this.setTargetAtTime(this._node, 0, 0, this._params.adsr.release * this._params.timescale, true);
 		  	}
 		  	break;
 	  	}
@@ -258,12 +416,15 @@ class AudioObject{
   	
 
   	
-  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
-	  		  	
+  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){	  	
+	  	
 	  	let startTime = this._ctx.currentTime + (delay || 0);
-	  	transitionTime = transitionTime || 0.001;
+	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
 	  	
+	  	if(!this._node){
+		  	console.error("Node error:", this);
+	  	}
 	  	if(typeof param == "string"){param = this._node[param]}
 	  		  	
 	  	if(cancelPrevious){
@@ -277,12 +438,61 @@ class AudioObject{
 	  	
   	}
   	
+  	set src(path){
+	  	this._src = path;
+	  	
+	  	switch(this._nodeType){
+		  	
+		  	case "oscillatornode":
+		  	break;
+		  	
+		  	case "audiobuffersourcenode":
+		  	let src = Loader.getPath(path, this._localPath);
+		  	
+		  	fetch(src)
+		        .then(response => response.arrayBuffer())
+		        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer, 
+		        	audioBuffer => {
+			        	this._buffer = audioBuffer;
+			        }, 
+		        	e => reject(e)
+		        ));    
+
+
+		  	break;
+		  	
+		  	default:
+		  	break;
+		  
+	  	}
+  	}
+  	
+  	get src(){
+	  	
+	  	switch(this._nodeType){
+		  	
+		  	case "oscillatornode":
+		  	return this.type;
+		  	break;
+		  	
+		  	case "audiobuffersourcenode":
+		  	case "convolvernode":
+		  	return this._src;
+		  	break;
+		  	
+		  	default:
+		  	return false;
+		  	break;
+		  
+	  	}
+  	}
+  	
   	set gain(val){
 	  	this.setTargetAtTime("gain", val);
   	}
   	
   	get gain(){
-	  	return this.gain.value;
+	  	return this._node.gain.value;
   	}
   	
   	set frequency(val){
@@ -290,7 +500,7 @@ class AudioObject{
   	}
   	
   	get frequency(){
-	  	return this.frequency.value;
+	  	return this._node.frequency.value;
   	}
   	
   	set detune(val){
@@ -298,43 +508,56 @@ class AudioObject{
   	}
   	
   	get detune(){
-	  	return this.detune.value;
+	  	return this._node.detune.value;
   	}
   	
-  	set Q(val){
+  	set q(val){
 	  	this.setTargetAtTime("Q", val);
   	}
   	
-  	get Q(){
-	  	return this.Q.value;
+  	get q(){
+	  	return this._node.Q.value;
   	}
   	
   	set type(val){
-	  	
+
 	  	switch(val){
 		  	
-		  	
-		  	case "periodicWave":
-		  	let n = 4096;
-			let real = new Float32Array(n);
-			let imag = new Float32Array(n);
-			    
-			
-			
-			for(let x=1; x<n; x++){
-				//let y = 0.1; // Sine
-				let y = 2 / (Math.pow(-1, x) * Math.PI * x); // sawtooth
-				//let y = 1.0 / (Math.PI * x); // Square
-				imag[x] = y;
-				console.log(y);
-			}
-			let wave = this._ctx.createPeriodicWave(real, imag);
-			
-			this._node.setPeriodicWave(wave); 
+		  	case "sine":
+		  	case "sawtooth":
+		  	case "square":
+		  	case "triangle":
+		  	this._node.type = val;
 		  	break;
 		  	
+		  	
 		  	default:
-		  	this._node.type = val;
+
+		  	if(val.includes(".js") || val.includes(".json")){
+				// load PeriodicWave data
+			  	let src = Loader.getPath(val, this._localPath);
+			  	
+			  	
+			  	fetch(src)
+					.then((response) => {
+						return response.json();
+					})
+					.then((jsonData) => {
+						if(jsonData.real && jsonData.imag){
+					  		let wave = this._ctx.createPeriodicWave(real, imag);
+					  		this._node.setPeriodicWave(wave); 
+						}
+					});
+					
+		  	} else {
+			  	let el = document.querySelector(val);
+			  	if(el){
+				  	let jsonData = JSON.parse(el.innerHTML);
+				  	let wave = this._ctx.createPeriodicWave(real, imag);
+				  	this._node.setPeriodicWave(wave); 
+				}
+		  	}
+		  	
 		  	break;
 	  	}	  	
 
@@ -344,6 +567,40 @@ class AudioObject{
   	
   	get type(){
 	  	return this._node.type;
+  	}
+  	
+  	
+  	get delayTime(){
+	  	return this._node.delayTime.value / this._params.timescale;
+  	}
+  	
+  	set delayTime(val){
+	  	this.setTargetAtTime("delayTime", val * this._params.timescale);
+  	}
+  	
+  	set value(val){
+	  	this.setTargetAtTime(this._node, val);
+  	}
+  	
+  	get value(){
+	  	return this._node.value;
+  	}
+  	
+  	set pan(val){
+	  	if(this.fakePanner){
+			this._node.setPosition(val, 0, 1 - Math.abs(val));
+/*
+		  	this.setTargetAtTime(this.L.gain, 0.5-(val/2));
+		  	this.setTargetAtTime(this.R.gain, 0.5+(val/2));
+*/
+	  	} else {
+		  	this.setTargetAtTime("pan", val);
+	  	}
+	  	
+  	}
+  	
+  	get pan(){
+	  	return this._params.pan;
   	}
   	
   	set(key, value){

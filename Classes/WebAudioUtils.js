@@ -14,6 +14,7 @@ class WebAudioUtils {
 
 WebAudioUtils.typeFixParam = (param, value) => {
 
+	//param = param.toLowerCase();
 		
 	switch(param){
 		
@@ -69,8 +70,11 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		break;
 		
 		
+		case "maxDelayTime":
+		value = Number(value) || 1;
+		break;
 		
-		case "ADSR":
+		case "adsr":
 		let arr = value.split(",");
 		value = {
 			attack: Number(arr[0]),
@@ -110,13 +114,43 @@ WebAudioUtils.attributesToObject = attributes => {
 	
 	for (let i in attributes){
 		if(attributes.hasOwnProperty(i)){
-			let param = attributes[i].name;
+			
+			// XML parser is inconsistent with the document
+			// When the XML DOM is embeded inside HTML some
+			// browsers interpret all attributes as written 
+			// with capital letters
+			let param = attributes[i].name.toLowerCase();
+			
+		  	param = WebAudioUtils.caseFixParameter(param);
+			
 			let value = WebAudioUtils.typeFixParam(param, attributes[i].value);
 			obj[param] = value;
 		}
 		
 	}
 	return obj;
+}
+
+WebAudioUtils.caseFixParameter = param => {
+				
+
+	switch(param){
+	  	 case "q":
+	  	 param = "Q";
+	  	 break;
+	  	 
+	  	 case "delaytime":
+	  	 param = "delayTime";
+	  	 break;
+	  	 
+	  	 case "maxdelaytime":
+	  	 param = "maxDelayTime";
+	  	 break;
+	  	 
+  	}
+
+  	
+  	return param;
 }
 	
 WebAudioUtils.addAudioPath = (path, fileName) => {

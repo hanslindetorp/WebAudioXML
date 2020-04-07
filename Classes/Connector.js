@@ -55,6 +55,8 @@ class Connector {
 			break;
 			
 			case "parsererror":
+			case "style":
+			case "link":
 			return;
 			break;
 		}
