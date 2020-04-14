@@ -26,6 +26,10 @@ SOFTWARE.
 var Parser = require('./Parser.js');
 var Connector = require('./Connector.js');
 var GUI = require('./GUI.js');
+var Sequencer = require('./Sequencer.js');
+var VariableRouter = require('./VariableRouter.js');
+
+
 
 var source = document.currentScript.dataset.source;
 
@@ -47,13 +51,15 @@ class WebAudio {
 			}
 
 		}
-		
-		
+
+		this.variableRouter = new VariableRouter(this);
+		this.sequencer = new Sequencer(this.variableRouter);
+
 		this.plugins = [];
-		
-		
-		
-		// INTERACTION - might be better to separate from 
+
+
+
+		// INTERACTION - might be better to separate from
 		// WebAudioXML itself
 
 		// variables
@@ -67,26 +73,26 @@ class WebAudio {
 		this.deviceOrientation = {};
 
 		this.client = [];
-		
+
 		while(this.client.length < 10){
 			let c = {};
 			c.touchIDs = [];
-			
+
 			c.touch = [];
 			while(c.touch.length < 5){
 				c.touch.push({});
 			}
-			
+
 			c.acceleration = {};
 			c.accelerationIncludingGravity = {};
 			c.rotationRate = {};
-			
+
 			c.deviceOrientation = {};
-			
+
 			this.client.push(c);
 		}
-		
-		
+
+
 
 		this._ctx = _ctx;
 
@@ -112,6 +118,11 @@ class WebAudio {
 
 	}
 
+	addVariableWatcher(variable, callBack){
+		this.variableRouter.addVariableWatcher(variable, callBack);
+	}
+
+
 
 	start(){
 		this._xml.querySelectorAll("*").forEach(XMLnode => XMLnode.audioObject.start());
@@ -122,9 +133,9 @@ class WebAudio {
 	}
 
 	registerPlugin(plugin){
-		
+
 		this.plugins.push(plugin);
-		// consider returning an interface to 
+		// consider returning an interface to
 		// variables here
 	}
 
@@ -359,7 +370,7 @@ function pointerMove(e){
 		copyTouchProperties(e, touchObj);
 		setRelativePos(touchObj, e.clientX, e.clientY);
 		setMovePos(touchObj, e.clientX, e.clientY);
-		
+
 		touchObj = webAudioXML.client[0].touch[0];
 		copyTouchProperties(e, touchObj);
 		setRelativePos(touchObj, e.clientX, e.clientY);
