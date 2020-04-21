@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<audio version="1.0">
+<audio version="1.0" interaction="#touchArea">
 	<chain>
-		
+
 		<OscillatorNode type="sawtooth">
-			<frequency follow="relX" map="0,100,20,1000"></frequency>
+			<frequency follow="relX" map="0,100,36,72, MIDI" steps="0 2.04 3.86 4.98 7.02 8.84 10.88 12"></frequency>
 		</OscillatorNode>
 
 		<GainNode>
 			<gain value="0" follow="pointerdown"></gain>
 		</GainNode>
-		
+
 		<BiquadFilterNode>
 			<frequency follow="relY" map="0,100,0,10000"></frequency>
 		</BiquadFilterNode>
-		
+
 	</chain>
 </audio>
