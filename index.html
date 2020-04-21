@@ -11,24 +11,44 @@
 				user-select: none;
 				-webkit-user-select: none;
 			}
+
+			#touchArea {
+				width: 90%;
+				height: 60%;
+				position: absolute;;
+				top: 35%;
+				left: 5%;
+				background-color: grey;
+				border: 1px solid black;
+			}
 		</style>
 	</head>
 
 
 	<body>
-		<h1>WebAudioXML</h1>
-		<h2>Click and slide to play</h2>
-		<ul>
-			<li>Pointer relative X position controls pitch</li>
-			<li>Pointer relative Y position controls cutoff frequency of biquad filter</li>
-		</ul>
-		<p>WebAudioXML is a javascript library that makes it possible to create
-			Web Audio applications using XML syntax. It is a PhD research project by
-			Hans Lindetorp. Please follow me on
-			<a href="https://hans.arapoviclindetorp.se">https://hans.arapoviclindetorp.se</a> and
-			<a href="https://www.facebook.com/hanslindetorpresearch/">https://www.facebook.com/hanslindetorpresearch/</a>
-		</p>
-		<script src="WebAudioXML.js" data-source="audio.xml"></script>
+		<div id="container">
+			<div id="instructions">
+				<h1>WebAudioXML</h1>
+				<h2>Click and slide to play</h2>
+				<ul>
+					<li>Pointer relative X position controls pitch</li>
+					<li>Pointer relative Y position controls cutoff frequency of biquad filter</li>
+				</ul>
+				<p>WebAudioXML is a javascript library that makes it possible to create
+					Web Audio applications using XML syntax. It is a PhD research project by
+					Hans Lindetorp. Please follow me on
+					<a href="https://hans.arapoviclindetorp.se">https://hans.arapoviclindetorp.se</a> and
+					<a href="https://www.facebook.com/hanslindetorpresearch/">https://www.facebook.com/hanslindetorpresearch/</a>
+				</p>
+				<button onclick="webAudioXML.copyLastGestureToClipboard()">COPY LAST GESTURE TO CLIPBOARD</button>
+				<button onclick="webAudioXML.playLastGesture()">REPEAT LAST GESTURE</button>
+				<button onclick="webAudioXML.playSequence()">PLAY STORED GESTURE</button>
+			</div>
+			<div id="touchArea"></div>
+		</div>
+
+		<script src="WebAudioXML2.js" data-source="audio.xml"></script>
+		<script src="eventData.js"></script>
 
 	</body>
 </html>
