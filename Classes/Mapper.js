@@ -6,8 +6,13 @@ class Mapper{
 	constructor(str = "", steps = ""){
 		// str is a comma separated string with at least four values
 		// minIn, maxIn, minOut, mixOut
-		// potentially also a fifth value indicating
-		let arr = str ? str.split(",") : null;
+		// potentially also a fifth value indicating Math.power
+		let arr;
+		if(str){
+			let separator = str.includes(",") ? "," : " ";
+			arr = str ? str.split(separator) : null;
+		}
+
 		let obj = {};
 
 		if(arr){
@@ -90,7 +95,7 @@ Mapper.getValue = function(x, obj) {
 
       let notesInCycle = obj.steps.length;
       let nrOfCycles = rangeOut / obj.stepsCycle;
-      rangeOut = obj.steps.length * nrOfCycles + 1;
+      rangeOut = obj.steps.length * nrOfCycles;
       noteOffs = Math.floor(x * rangeOut);
 
       let cycle = Math.floor(noteOffs / obj.steps.length);

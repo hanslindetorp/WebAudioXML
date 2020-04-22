@@ -3,18 +3,22 @@
 
 class Watcher {
 
-	constructor(xmlNode, str, waxml, callBack){
+	constructor(xmlNode, str, delay, waxml, callBack){
 
+		let separator = str.includes(",") ? "," : " ";
+		let arr = str.split(separator);
+		delay = parseFloat(delay);
 
-		let arr = str.split(",");
-
-
-		// allow for different ways of specifying target, event and variable
+		// allow for different ways of specifying target, event, variable and delay
+		// possible structures:
+		// variable
+		// targetStr, variable
+		// targetStr, event, variable
 		let target, variable, targetStr, event;
 		if(arr.length){
 			variable = arr.pop().trim();
 		} else {
-			console.log("Web Audio XML error. 'follow' attribute requires at least one parameter.")
+			console.log("WebAudioXML error: 'follow' attribute requires at least one parameter.")
 			return false;
 		}
 
@@ -26,9 +30,9 @@ class Watcher {
 			// target object is top XML node of this document
 			// variable is a property of the audioObject connected to that XML node
 			//xmlNode.getRootNode().querySelector("audio");
-			//this.addVariableWatcher(waxml, variable, callBack);
+			this.addVariableWatcher(waxml.variables, variable, delay, callBack);
 
-			waxml.addVariableWatcher(variable, callBack);
+			//waxml.addVariableWatcher(variable, callBack);
 			return;
 		}
 
@@ -81,7 +85,7 @@ class Watcher {
 
 	}
 
-	addVariableWatcher(obj, variable, callBack){
+	addVariableWatcher(obj, variable, delay, callBack){
 
 		let oNv = this.varablePathToObject(obj, variable);
 		obj = oNv.object || obj;
@@ -104,12 +108,21 @@ class Watcher {
 					if(this._props[variable].value != val){
 						this._props[variable].value = val;
 						this._props[variable].callBackList.forEach(callBack => callBack(val));
-						//output.log(val);
+						//if(variable == "relY"){console.log(val)}
 					}
 				}
 			});
 		}
 
+		if(delay){
+			// wrap callBack in a timeout if delay is specified
+			var origCallBack = callBack;
+			callBack = val => {
+				return setTimeout(e => {
+					origCallBack(val);
+				}, delay);
+			};
+		}
 		obj._props[variable].callBackList.push(callBack);
 
 	}
@@ -123,7 +136,6 @@ class Watcher {
 		let v = varArray.pop();
 		let varPath = varArray.length ? "." + varArray.join(".") : "";
 		let o = eval("obj" + varPath);
-
 		/*
 		varArray.forEach(v => {
 			let o = obj[v];

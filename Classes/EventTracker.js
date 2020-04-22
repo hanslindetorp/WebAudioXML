@@ -48,11 +48,17 @@ class EventTracker {
 
 
 
-	registerEventListener(name, target = document.body, eventName, execute, process){
+	registerEventListener(name, target = document, eventName, execute, process){
 
-
+		let targetEl;
 		if(typeof target == "string"){
-			target = document.querySelector(target);
+			targetEl = document.querySelector(target);
+		}
+		if(targetEl == null){
+			console.warn("WebAudioXML error: There is no interactionArea with selector " + target + ". Document will be used instead.");
+			target = document;
+		} else {
+			target = targetEl;
 		}
 
 		let ev = this.getEventObject(name, execute, process, target);

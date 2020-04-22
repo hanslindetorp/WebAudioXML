@@ -95,10 +95,10 @@ class InteractionManager {
 		return this._data;
 	}
 
-	registerEvents(target=document.body){
+	registerEvents(target = document){
 
 		// default value  does not seam to work if target is null
-		if(!target){target = document.body}
+		if(!target){target = document}
 
 		this.eventTracker.registerEventListener("touchstart", target, "touchstart",
 			data => {
@@ -173,8 +173,10 @@ class InteractionManager {
 	}
 
 	setRelativePos(obj, event){
-		obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
-		obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+		if(event.target){
+			obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
+			obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+		}
 	}
 
 	setMovePos(obj, x, y){

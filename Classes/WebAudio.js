@@ -108,6 +108,9 @@ class WebAudio {
 		return this.ui.variables;
 	}
 
+	setVariable(key, val){
+		this.ui.variables[key] = val;
+	}
 
 	// InteractionManager
 	get lastGesture(){
@@ -134,6 +137,22 @@ class WebAudio {
 		this.ui.play(name);
 	}
 
+	querySelectorAll(selector){
+		let arr = [];
+		this._xml.querySelectorAll(selector).forEach(xml => {
+			let audioObject = xml.audioObject;
+			arr.push(xml.audioObject);
+		});
+		return arr;
+	}
+	querySelector(selector){
+		let xml = this._xml.querySelector(selector);
+		if(xml){
+			let audioObject = xml.audioObject;
+			if(audioObject){return audioObject}
+		}
+		return -1;
+	}
 
 }
 
@@ -153,21 +172,31 @@ module.exports = WebAudio;
 	PeriodicWave data. Problem: Uncaught (in promise) SyntaxError: Unexpected token ' in JSON at position 2
 
 	Important:
-	Triggering of envelopes from external calls
-	check ADSR case insensitivity
-	Check envelope separation by comma and space
+	* Triggering of envelopes from external calls
+	* check ADSR case insensitivity
+	* Check envelope separation by comma and space
 	Make a working MIDI example with or without webaudio-controls.
-	Make "follow"-attributes work with commas and spaces
-	Implement CSS-selector for Audio elements - remember case insensitivity!
+	* Make "follow"-attributes work with commas and spaces
+	!* Implement CSS-selector for Audio elements - !remember case insensitivity!
 	Add "Channel" as an element that is a blueprint for a Chain element inside a Mixer element. The Mixer then, needs a "channels"-attribute
 	and a routing syntax to allow for multiple channels. (possibly nth-child)
 	Make sure external documents does not inherit variables like timeUnit
-	Add map="MIDI" for frequency for static values.
+	Synth does not react on gain-attribute
+
+	Add map="MIDI" for frequency for initial values.
 	Implement webAudioXML.setVariable(variableName, value);
+
+	se till att delay ärvs till childNodes
+
+	Lägg till ränder för clienten
+	
+
+	Arpeggio
 
 	DeviceMotion (to documentation and implementation)
 
 	Advanced circular mapping (alpha, beta, gamma) inkl offset
+	Map Regions
 
 
 
@@ -185,10 +214,10 @@ module.exports = WebAudio;
 
 	Not working:
 	https://codepen.io/hanslindetorp/pen/yLywNaW
-	init sensors
+	* init sensors
 
 
-	Add easy javascript access to nodes
+	* Add easy javascript access to nodes
 
 	Send can't be first in a chain
 	Check delay!

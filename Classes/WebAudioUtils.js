@@ -46,6 +46,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "voices":
 		case "portamento":
 		case "max":
+		case "delay":
 
 
 
@@ -75,7 +76,8 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		break;
 
 		case "adsr":
-		let arr = value.split(",");
+		let separator = value.includes(",") ? ",": " ";
+		let arr = value.split(separator);
 		value = {
 			attack: Number(arr[0]),
 			decay: Number(arr[1]),

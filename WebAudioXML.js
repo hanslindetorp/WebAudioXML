@@ -1,85 +1,85 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 
-var WebAudioUtils = require('./WebAudioUtils.js'); 
+var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
 var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 
 
-  	
+
 class AudioObject{
-	  	
+
   	constructor(xmlNode, waxml, localPath){
-	  	
+
 	  	this.waxml = waxml;
 	  	let _ctx = this.waxml._ctx;
-	  	
+
 	  	this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
 	  	this._xml = xmlNode;
 	  	let timeUnit = this.getParameter("timeunit")
-	  	
+
   		switch(timeUnit){
 		  	case "ms":
 		  	this._params.timescale = 1/1000;
 		  	break;
-		  	
+
 		  	default:
 		  	this._params.timescale = 1;
 		  	break;
 	  	}
-	  	
-	  	
+
+
 	  	this._localPath = localPath;
 
-		let nodeType = xmlNode.nodeName.toLowerCase();
-		
+		  let nodeType = xmlNode.nodeName.toLowerCase();
+
 	  	this._ctx = _ctx;
 	  	let fn, src;
 	  	this._nodeType = nodeType;
-	  	
+
 	  	switch(nodeType){
-		  	
-		  	
+
+
 		  	case "analysernode":
 		  	this._node = this._ctx.createAnalyser();
 		  	break;
-		  	
-		  	
+
+
 		  	case "audiobuffersourcenode":
 		  	// just a temporary node
 		  	this._node = this._ctx.createBufferSource();
 		  	break;
-		  			  	
-		  	
+
+
 		  	case "oscillatornode":
 		  	this._node = this._ctx.createOscillator();
 		  	this._node.start();
 		  	break;
-		  	
-		  	
+
+
 		  	case "biquadfilternode":
 		  	this._node = this._ctx.createBiquadFilter();
 		  	break;
-		  	
+
 		  	case "convolvernode":
 		  	src = this._params.src;
-		  	
-		  	if(src){
-			  	
 
-				  	
+		  	if(src){
+
+
+
 			  	src = Loader.getPath(src, this._localPath);
-			  	var node = this._ctx.createConvolver();   
+			  	var node = this._ctx.createConvolver();
 			  	this._node = node;
-			  	
-			  	
-			  	
+
+
+
 			  	/*
 			  	let request = new XMLHttpRequest();
 				request.open('GET', src, true);
 				request.responseType = 'arraybuffer';
-				
-				
+
+
 				request.onload = function() {
 			        // decode the buffer into an audio source
 			        _ctx.decodeAudioData(request.response, function(audioBuffer) {
@@ -92,7 +92,7 @@ class AudioObject{
 			            node.buffer = audioBuffer
 			            //console.log(obj.url + " loaded. offset: " + obj.offset);
 			            //callBack(returnObj);
-			            
+
 			          }
 			        }, function(){
 			        	console.error('File "' + src + '" could not be decoded');
@@ -105,37 +105,37 @@ class AudioObject{
 			          //buffers[obj.url] = -1;
 			          //callBack();
 			     };
-		
+
 				request.send();
-				
-					  	
+
+
 			  	*/
-			  	
-			  	
-			  	 
+
+
+
 			  	fetch(src) // "https://cors-anywhere.herokuapp.com/" + src
 			        .then(response => response.arrayBuffer())
-			        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer, 
-			        	audioBuffer => this._node.buffer = audioBuffer, 
+			        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer,
+			        	audioBuffer => this._node.buffer = audioBuffer,
 			        	e => reject(e)
-			        ));				  	
-			  		
+			        ));
+
 		  	}
 
 		  	break;
-		  	
+
 		  	case "delaynode":
 		  	if(this._params.maxDelayTime){
 			  	this._node = this._ctx.createDelay(this._params.maxDelayTime * this._params.timescale);
 		  	} else {
 			  	this._node = this._ctx.createDelay();
 		  	}
-		  	
+
 		  	break;
-		  	
+
 		  	case "dynamicscompressornode":
-		  	break;	
-		  	
+		  	break;
+
 		  	case "stereopannernode":
 		  	if(this._ctx.createStereoPanner){
 			  	this._node = this._ctx.createStereoPanner();
@@ -143,8 +143,8 @@ class AudioObject{
 			  	this.fakePanner = true;
 			    this._node = this._ctx.createPanner();
 			    this._node.panningModel = 'equalpower';
-			}
-			
+			  }
+
 
 /*
 			  	this.input = this._ctx.createGain();
@@ -156,115 +156,131 @@ class AudioObject{
 			  	this._node = this._ctx.createChannelMerger(2);
 				this._node.channelCountMode = "explicit";
 				this._node.channelInterpretation = "discrete";
-			  	
-			  	
+
+
 			  	this.input.connect(this.channelSplitter);
 			  	this.channelSplitter.connect(this.L, 0, 0).connect(this._node, 0, 0);
 			  	this.channelSplitter.connect(this.R, 1, 0).connect(this._node, 0, 1);
 */
-		  	
+
 		  	break;
-		  	
+
 		  	case "waveshapernode":
-		  	break;	
-		  	
+		  	break;
+
 		  	case "periodicwavenode":
-		  	break;		
-		  	
+		  	break;
+
 		  	case "iirfilternode":
-		  	break;	
-		  	
+		  	break;
+
 		  	case "xml":
 		  	break;
-		  	 			
-		  	 			
-		  	 			  	
-		  	
+
+
+
+
 		  	case "gainnode":
 		  	case "send":
 		  	this._node = this._ctx.createGain();
 		  	this.gain = 0.3;
 		  	break;
-		  	
+
 		  	case "audio":
 		  	this._node = this._ctx.createGain();
 		  	break;
-		  	
+
 		  	case "mixer":
 		  	this._node = this._ctx.createGain();
 		  	break;
-		  	
+
 		  	case "chain":
 		  	this.input = this._ctx.createGain();
 		  	//console.log("chain input", this.input.__resource_id__);
 		  	this._node = this._ctx.createGain();
 		  	break;
-		  	
+
 		  	case "voice":
 		  	this._node = this._ctx.createGain();
 		  	this.gain = 0;
 		  	break;
-		  	
-		  	
+
+
 		  	case "envelope":
 		  	this._node = xmlNode.parentNode.audioObject._node;
 		  	this._params.max = this._params.max || 1;
 		  	this._params.valuescale = this._params.max / 100;
-		  	this.setTargetAtTime(this._node, 0, 0, 0, true);		  	
+		  	this.setTargetAtTime(this._node, 0, 0, 0, true);
 		  	break;
-		  	
-		  	
-		  	
+
+
+
 		  	// parameters
 		  	default:
 		  	this.mapper = new Mapper(this._params.map, this._params.steps);
-		  	
+
 		  	nodeType = WebAudioUtils.caseFixParameter(nodeType);
 		  	let parentAudioObj = xmlNode.parentNode.audioObject;
-		  	
+
 		  	if(parentAudioObj){
-		
+
 			  	this._node = parentAudioObj.getParameterNode(nodeType);
 			  	if(this._params.value){
 				  	this._params.value = WebAudioUtils.typeFixParam(nodeType, this._params.value);
 				  	this._node.value = this._params.value;
-				}
-				
-				if(this._params.follow){
-					this.watcher = new Watcher(xmlNode, this._params.follow, this.waxml, val => {
-						
-						val = this.mapper.getValue(val);
-						
-						switch(this._node.name){
-							case "delayTime":
-							val *= this._params.timescale;
-							break;
-							
-							default:
-							break;
-						}
-						
-						this.setTargetAtTime(this._node, val, 0, 0, true);
-					});
-				}
-	  	
-		  	} else {
-			  	console.error("WebAudioXML: Invalid element - '" + nodeType + "'");
-		  	}
-		  	break;
+				  }
+
+  				if(this._params.follow){
+  					this.watcher = new Watcher(xmlNode, this._params.follow, this.waxml, val => {
+
+  						val = this.mapper.getValue(val);
+
+  						switch(this._node.name){
+  							case "delayTime":
+  							val *= this._params.timescale;
+  							break;
+
+  							default:
+  							break;
+  						}
+
+  						this.setTargetAtTime(this._node, val, 0, 0, true);
+  					 });
+  				 }
+
+  		  	} else {
+  			  	console.error("WebAudioXML: Invalid element - '" + nodeType + "'");
+  		    }
+		  	  break;
 	  	}
-	  	
+
 	  	//console.log(nodeType, this._node.__resource_id__);
-	  	
+
 	  	// set parameters
 	  	if(this._params){
 		  	Object.keys(this._params).forEach(key => {
 		  		this[key] = this._params[key];
-			});
-		};
-	  	
+  			});
+  		};
+
   	}
-  	
+
+    follow(val){
+
+      val = this.mapper.getValue(val);
+
+      switch(this._node.name){
+        case "delayTime":
+        val *= this._params.timescale;
+        break;
+
+        default:
+        break;
+      }
+
+      this.setTargetAtTime(this._node, val, 0, 0, true);
+    }
+
   	getParameter(paramName){
 	  	if(typeof this._params[paramName] === "undefined"){
 		  	if(this._xml.parentNode){
@@ -273,82 +289,82 @@ class AudioObject{
 			  	} else {
 				  	return 0;
 			  	}
-			  	
+
 		  	} else {
 			  	return 0;
 		  	}
-		  	
+
 	  	} else {
 		  	return this._params[paramName];
 	  	}
   	}
 
-  	
+
   	get connection(){
 	  	return this._node;
   	}
-  	
+
   	get input(){
-	  	
+
 	  	switch(this._nodeType){
-		  	
+
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
 		  	break;
-		  	
+
 		  	default:
 		  	return this._input || this._node;
 		  	break;
 		}
-	  	
+
   	}
-  	
+
   	set input(node){
 	  	this._input = node;
   	}
-  	
-  	
+
+
   	getParameterNode(param){
 	  	if(!this._node){return}
 	  	return this._node[param];
   	}
-  	  	
+
   	disconnect(ch){
 	  	if(!this._node){return}
 	  	ch = ch || 0;
 	  	this._node.disconnect(ch);
   	}
-  	
+
   	connect(destination){
-	  	
+
 	  	if(this._node){
 		  	if(this._node.connect){
 			  	destination = destination || this._ctx.destination;
 			  	this._node.connect(destination);
-			  	
+
 		  	}
 	  	}
 	  	this._destination = destination;;
-	  	
+
   	}
-  	
-  	
+
+
   	inputFrom(sourceObject){
 	  	switch(this._nodeType){
-		  	
+
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
 		  	break;
-		  	
+
 		  	default:
 		  	sourceObject.connect(this.input);
 		  	break;
-		}	  	
+		}
   	}
-  	
+
   	start(data){
 	  	switch(this._nodeType){
-		  	
+
 		  	case "oscillatornode":
 		  	/*
 		  	if(this._params.followkeyboard){
@@ -361,16 +377,16 @@ class AudioObject{
 		  	}
 		  	*/
 		  	break;
-		  	
-		  	
+
+
 		  	case "audiobuffersourcenode":
 		  	this._node = this._ctx.createBufferSource();
 		  	this._node.buffer = this._buffer;
 		  	this._node.connect(this._destination);
 		  	this._node.start();
 		  	break;
-		  	
-		  	
+
+
 		  	case "frequency":
 		  	if(this._params.follow){
 			  	if(this._params.follow.includes("MIDI")){
@@ -378,17 +394,17 @@ class AudioObject{
 				  	let MIDInote = eval(this._params.follow);
 			  		let hz = WebAudioUtils.MIDInoteToFrequency(MIDInote);
 				  	this.value = hz;
-			  	}			  	
+			  	}
 		  	}
 		  	break;
-		  	
-		  	
-		  	
+
+
+
 		  	case "voice":
 		  	this.gain = 1;
 		  	break;
-		  	
-		  	
+
+
 		  	case "envelope":
 		  	if(this._params.adsr){
 			  	this.setTargetAtTime(this._node, this._params.valuescale * 100, 0, this._params.adsr.attack * this._params.timescale, true);
@@ -397,15 +413,15 @@ class AudioObject{
 		  	break;
 	  	}
   	}
-  	
+
   	stop(data){
-	  	
+
 	  	switch(this._nodeType){
-		  	
+
 		  	case "voice":
 		  	this.gain = 0;
 		  	break;
-		  	
+
 		  	case "envelope":
 		  	if(this._params.adsr){
 			  	this.setTargetAtTime(this._node, 0, 0, this._params.adsr.release * this._params.timescale, true);
@@ -413,21 +429,21 @@ class AudioObject{
 		  	break;
 	  	}
   	}
-  	
-  	
 
-  	
-  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){	  	
-	  	
+
+
+
+  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
+
 	  	let startTime = this._ctx.currentTime + (delay || 0);
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
-	  	
+
 	  	if(!this._node){
 		  	console.error("Node error:", this);
 	  	}
 	  	if(typeof param == "string"){param = this._node[param]}
-	  		  	
+
 	  	if(cancelPrevious){
 		  	param.cancelScheduledValues(this._ctx.currentTime);
 	  	}
@@ -436,109 +452,109 @@ class AudioObject{
 	  	} else {
 		  	param.setValueAtTime(value, startTime);
 	  	}
-	  	
+
   	}
-  	
+
   	set src(path){
 	  	this._src = path;
-	  	
+
 	  	switch(this._nodeType){
-		  	
+
 		  	case "oscillatornode":
 		  	break;
-		  	
+
 		  	case "audiobuffersourcenode":
 		  	let src = Loader.getPath(path, this._localPath);
-		  	
+
 		  	fetch(src)
 		        .then(response => response.arrayBuffer())
-		        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer, 
+		        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer,
 		        	audioBuffer => {
 			        	this._buffer = audioBuffer;
-			        }, 
+			        },
 		        	e => reject(e)
-		        ));    
+		        ));
 
 
 		  	break;
-		  	
+
 		  	default:
 		  	break;
-		  
+
 	  	}
   	}
-  	
+
   	get src(){
-	  	
+
 	  	switch(this._nodeType){
-		  	
+
 		  	case "oscillatornode":
 		  	return this.type;
 		  	break;
-		  	
+
 		  	case "audiobuffersourcenode":
 		  	case "convolvernode":
 		  	return this._src;
 		  	break;
-		  	
+
 		  	default:
 		  	return false;
 		  	break;
-		  
+
 	  	}
   	}
-  	
+
   	set gain(val){
 	  	this.setTargetAtTime("gain", val);
   	}
-  	
+
   	get gain(){
 	  	return this._node.gain.value;
   	}
-  	
+
   	set frequency(val){
   		this.setTargetAtTime("frequency", val);
   	}
-  	
+
   	get frequency(){
 	  	return this._node.frequency.value;
   	}
-  	
+
   	set detune(val){
 	  	this.setTargetAtTime("detune", val);
   	}
-  	
+
   	get detune(){
 	  	return this._node.detune.value;
   	}
-  	
+
   	set q(val){
 	  	this.setTargetAtTime("Q", val);
   	}
-  	
+
   	get q(){
 	  	return this._node.Q.value;
   	}
-  	
+
   	set type(val){
 
 	  	switch(val){
-		  	
+
 		  	case "sine":
 		  	case "sawtooth":
 		  	case "square":
 		  	case "triangle":
 		  	this._node.type = val;
 		  	break;
-		  	
-		  	
+
+
 		  	default:
 
 		  	if(val.includes(".js") || val.includes(".json")){
 				// load PeriodicWave data
 			  	let src = Loader.getPath(val, this._localPath);
-			  	
-			  	
+
+
 			  	fetch(src)
 					.then((response) => {
 						return response.json();
@@ -546,47 +562,47 @@ class AudioObject{
 					.then((jsonData) => {
 						if(jsonData.real && jsonData.imag){
 					  		let wave = this._ctx.createPeriodicWave(real, imag);
-					  		this._node.setPeriodicWave(wave); 
+					  		this._node.setPeriodicWave(wave);
 						}
 					});
-					
+
 		  	} else {
 			  	let el = document.querySelector(val);
 			  	if(el){
 				  	let jsonData = JSON.parse(el.innerHTML);
 				  	let wave = this._ctx.createPeriodicWave(real, imag);
-				  	this._node.setPeriodicWave(wave); 
+				  	this._node.setPeriodicWave(wave);
 				}
 		  	}
-		  	
+
 		  	break;
-	  	}	  	
+	  	}
 
 
-	  	
+
   	}
-  	
+
   	get type(){
 	  	return this._node.type;
   	}
-  	
-  	
+
+
   	get delayTime(){
 	  	return this._node.delayTime.value / this._params.timescale;
   	}
-  	
+
   	set delayTime(val){
 	  	this.setTargetAtTime("delayTime", val * this._params.timescale);
   	}
-  	
+
   	set value(val){
 	  	this.setTargetAtTime(this._node, val);
   	}
-  	
+
   	get value(){
 	  	return this._node.value;
   	}
-  	
+
   	set pan(val){
 	  	if(this.fakePanner){
 			this._node.setPosition(val, 0, 1 - Math.abs(val));
@@ -597,18 +613,18 @@ class AudioObject{
 	  	} else {
 		  	this.setTargetAtTime("pan", val);
 	  	}
-	  	
+
   	}
-  	
+
   	get pan(){
 	  	return this._params.pan;
   	}
-  	
+
   	set(key, value){
 	  	if(typeof this._node[key] !== "undefined"){
 		  	this[key] = value;
 	  	}
-  	}  	
+  	}
 
 
 }
@@ -616,7 +632,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./Loader.js":4,"./Mapper.js":5,"./Watcher.js":8,"./WebAudioUtils.js":10}],2:[function(require,module,exports){
+},{"./Loader.js":6,"./Mapper.js":7,"./Watcher.js":11,"./WebAudioUtils.js":13}],2:[function(require,module,exports){
 
 	
 class Connector {
@@ -775,6 +791,148 @@ module.exports = Connector;
 
 },{}],3:[function(require,module,exports){
 
+var Sequence = require('./Sequence.js');
+
+
+class EventTracker {
+
+	constructor(_varRouter){
+		this._variableRouter = _varRouter;
+
+		this._sequences = [];
+		this._registeredEvents = [];
+
+		this._curSeqName = "default";
+		this.addSequence();
+	}
+
+	getSequence(name = this._curSeqName){
+		return this._sequences.find(seq => seq.name == name);
+	}
+
+	addSequence(name = this._curSeqName, events = []){
+		let seq = this.getSequence(name);
+		if(seq){
+			seq.update(events);
+		} else {
+			seq = new Sequence(this, name, events);
+			this._sequences.push(seq);
+		}
+		return seq;
+	}
+
+	addSequenceFromLastGesture(name){
+		let events = this.lastGesture;
+		let seq = new Sequence(this, name, events);
+		return seq;
+	}
+
+	deleteSequence(name){
+		let i = this._sequences.findIndex(seq => seq.name == name);
+		if(i){
+			this._sequences.splice(i, 1);
+		}
+	}
+
+	registerEvent(name, execute){
+		return this.getEventObject(name, execute);
+	}
+
+
+
+	registerEventListener(name, target = document.body, eventName, execute, process){
+
+
+		if(typeof target == "string"){
+			target = document.querySelector(target);
+		}
+
+		let ev = this.getEventObject(name, execute, process, target);
+		if(target.addEventListener){
+			target.addEventListener(eventName, (e => ev.send(e)));
+		} else {
+			console.error("EventTracker error: " +  target + " does not support addEventListener()");
+		}
+		return ev;
+	}
+
+	getEventObject(name, execute, process, target){
+		let ev = this._registeredEvents.find(ev => ev.name == name);
+		if(!ev){ev = this.createEvent(name, execute, process, target)}
+		return ev;
+	}
+
+	createEvent(name, execute, process, target){
+
+		let ev = {
+			name: name,
+			target: target,
+			process: process,
+			execute: execute,
+			send: (event => {
+
+				if(true){ //!this.playing){
+					// if process is set, then run it
+					let data = ev.process ? ev.process(event, target) : event;
+
+					// store data in sequencer
+					this.currentSequence.store(name, data);
+
+					// execute function
+					if(ev.execute){ev.execute(data)}
+				}
+			})
+		}
+		this._registeredEvents.push(ev);
+
+		return ev;
+	}
+
+	trigEvent(name, value){
+		let ev = this._registeredEvents.find(ev => ev.name == name);
+		if(ev.execute){ev.execute(value)}
+	}
+
+	clear(name = this._curSeqName){
+
+		this.getSequence(name).clear();
+	}
+
+	allEvents(name = this._curSeqName, filter = []){
+		return this.getSequence().allEvents(filter);
+	}
+
+	get currentSequence(){
+		return this.getSequence(this._curSeqName);
+	}
+
+	get lastTouchGesture(){
+		let seq = this.getSequence("default");
+		let name = seq.name;
+		let events = seq.events("touchstart", "touchend", ["touchstart", "touchmove", "touchend"], ["relX", "relY"]);
+		return new Sequence(this, name, events);
+	}
+
+	get lastGesture(){
+		let seq = this.getSequence("default");
+		let name = seq.name;
+		let events = seq.events("pointerdown", "pointerup", ["pointerdown", "pointermove", "pointerup"], ["relX", "relY"]);
+		return new Sequence(this, name, events);
+	}
+
+	set playing(state){
+		this._playing = state;
+	}
+	get playing(){
+		return this._playing;
+	}
+}
+
+
+module.exports = EventTracker;
+
+},{"./Sequence.js":9}],4:[function(require,module,exports){
+
 var Mapper = require('./Mapper.js');
 
 
@@ -929,7 +1087,495 @@ class GUI {
 
 module.exports = GUI;
 
-},{"./Mapper.js":5}],4:[function(require,module,exports){
+},{"./Mapper.js":7}],5:[function(require,module,exports){
+
+var EventTracker = require('./EventTracker.js');
+
+
+class InteractionManager {
+
+	constructor(waxml){
+		this.eventTracker = new EventTracker();
+		this.waxml = waxml;
+		this.inited = false;
+		this._data = {};
+
+		// variables
+		// create a way of keeping track of each touch
+		// during a multi touch
+		let touches = [];
+		while(touches.length < (navigator.maxTouchPoints || 1)){
+			touches.push({});
+		}
+		this.touch = touches;
+		this.touchIDs = [];
+
+		this._data.client = [];
+
+		while(this._data.client.length < 10){
+			let c = {};
+			c.touchIDs = [];
+
+			c.touch = [];
+			while(c.touch.length < 5){
+				c.touch.push({});
+			}
+
+			c.acceleration = {};
+			c.accelerationIncludingGravity = {};
+			c.rotationRate = {};
+
+			c.deviceOrientation = {};
+
+			this._data.client.push(c);
+		}
+
+	}
+
+
+
+	init(){
+		this.inited = true;
+		this.waxml.init();
+
+		if (window.DeviceMotionEvent) {
+
+
+			if(typeof DeviceMotionEvent.requestPermission === 'function'){
+				// iOS 13+
+				DeviceMotionEvent.requestPermission()
+				.then(response => {
+					if (response == 'granted') {
+						window.addEventListener('devicemotion', e => {this.setDeviceMotion(e)});
+					}
+				})
+				.catch(console.error);
+			} else {
+				// non iOS 13+
+				window.addEventListener('devicemotion', e => {this.setDeviceMotion(e)});
+			}
+
+
+		} else {
+
+			console.log("this device does not support DeviceMotionEvent");
+		}
+
+
+		if (window.DeviceOrientationEvent) {
+
+			if(typeof DeviceOrientationEvent.requestPermission === 'function'){
+				DeviceOrientationEvent.requestPermission()
+				.then(response => {
+					if (response == 'granted') {
+						window.addEventListener('deviceorientation', e => {this.setDeviceOrientation(e)});
+					}
+				})
+				.catch(console.error);
+			} else {
+				// non iOS 13+
+				window.addEventListener('deviceorientation', e => {this.setDeviceOrientation(e)});
+			}
+		} else {
+			console.log("this device does not support DeviceOrientationEvent");
+		}
+	}
+
+	get variables(){
+		return this._data;
+	}
+
+	registerEvents(target=document.body){
+
+		// default value  does not seam to work if target is null
+		if(!target){target = document.body}
+		
+		this.eventTracker.registerEventListener("touchstart", target, "touchstart",
+			data => {
+
+			}, event => {
+				return event;
+
+			}
+		);
+
+		this.eventTracker.registerEventListener("touchmove", target, "touchmove",
+			data => {
+
+			}, event => {
+				return event;
+			}
+		);
+		this.eventTracker.registerEventListener("touchend", target, "touchend",
+			data => {
+
+			}, event => {
+				return event;
+			}
+		);
+		this.eventTracker.registerEventListener("touchcancel", target, "touchcancel",
+			data => {
+
+			}, event => {
+				return event;
+			}
+		);
+
+
+		let pointerDownEvent = window.PointerEvent ? "pointerdown" : "mousedown";
+		let pointerMoveEvent = window.PointerEvent ? "pointermove" : "mousemove";
+		let pointerUpEvent = window.PointerEvent ? "pointerup" : "mouseup";
+
+		this.eventTracker.registerEventListener("pointerdown", target, pointerDownEvent,
+			(e => {return this.pointerDownExecute(e)}), (e => {return this.pointerDownProcess(e)})
+		);
+		this.eventTracker.registerEventListener("pointermove", target, pointerMoveEvent,
+			(e => {return this.pointerMoveExecute(e)}), (e => {return this.pointerMoveProcess(e)})
+		);
+		this.eventTracker.registerEventListener("pointerup", target, pointerUpEvent,
+			(e => {return this.pointerUpExecute(e)}), (e => {return this.pointerUpProcess(e)})
+		);
+
+
+	}
+
+	setDeviceMotion(e){}
+
+	setDeviceOrientation(e){
+		this._data.alpha = e.alpha;
+		this._data.beta = e.beta;
+		this._data.gamma = e.gamma;
+	}
+
+	copyTouchProperties(source, target){
+		target.identifier  = source.identifier;
+		target.screenX = source.screenX;
+		target.screenY = source.screenY;
+		target.clientX = source.clientX;
+		target.clientY = source.clientY;
+		target.pageX = source.pageX;
+		target.pageY = source.pageY;
+		target.radiusX = source.radiusX;
+		target.radiusY = source.radiusY;
+		target.rotationAngle = source.rotationAngle;
+		target.force = source.force;
+	}
+
+	setRelativePos(obj, event){
+		obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
+		obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+	}
+
+	setMovePos(obj, x, y){
+		if(typeof x === "undefined"){
+			// reset
+			obj.initX = obj.clientX;
+			obj.initY = obj.clientY;
+			obj.moveX = 0;
+			obj.moveY = 0;
+			obj.relMoveX = 0;
+			obj.relMoveY = 0;
+		} else {
+			// update
+			obj.initX = typeof obj.initX === "undefined" ? obj.clientX : obj.initX;
+			obj.initY = typeof obj.initY === "undefined" ? obj.clientY : obj.initY;
+			obj.moveX = x - obj.initX;
+			obj.moveY = y - obj.initY;
+			obj.relMoveX = obj.moveX / window.innerWidth * 100;
+			obj.relMoveY = obj.moveY / window.innerHeight * 100;
+		}
+	}
+
+
+	touchStart(){
+
+		//e.preventDefault();
+		Array.prototype.forEach.call(e.changedTouches, touch => {
+			let identifier = this.touchIDs.find((el, id) => this.touch[id].down != 1);
+			let i;
+
+			if(identifier){
+				i = this.touchIDs.indexOf(identifier);
+				this.touchIDs[i] = touch.identifier;
+			} else {
+				i = this.touchIDs.length;
+				this.touchIDs.push(touch.identifier);
+			}
+
+			let touchObj = this.touch[i];
+			this.copyTouchProperties(touch, touchObj);
+			this.setRelativePos(touchObj, touch);
+			this.setMovePos(touchObj);
+			touchObj.down = 1;
+
+			this.waxml.start("*[trig='touch[" + i + "]']");
+		});
+
+	}
+
+	touchMove(){
+
+		//e.preventDefault();
+		Array.prototype.forEach.call(e.changedTouches, touch => {
+			let touchObj = this._data.touch[touchIDs.indexOf(touch.identifier)];
+
+			if(touchObj){
+				this.copyTouchProperties(touch, touchObj);
+				this.setRelativePos(touchObj, touch);
+				this.setMovePos(touchObj, touch.clientX, touch.clientY);
+			}
+		});
+	}
+
+	tounchEnd(e){
+
+		//e.preventDefault();
+		Array.prototype.forEach.call(e.changedTouches, touch => {
+			let i = touchIDs.indexOf(touch.identifier);
+
+
+			let touchObj = this._data.touch[i];
+			if(touchObj){
+				touchObj.down = 0;
+				touchObj.force = 0;
+				setMovePos(touchObj);
+				this.waxml.stop("*[trig='touch[" + i + "]']");
+
+			}
+
+			// reset touch list if last touch
+			let stillDown = 0;
+			this._data.touch.forEach(touch => {
+				stillDown = stillDown || touch.down;
+			});
+			if(!stillDown){
+				while(touchIDs.length){
+					touchIDs.pop();
+				}
+			}
+
+		});
+	}
+
+	pointerDownProcess(e) {
+
+		if(!this.inited){
+			this.init();
+		}
+
+		// simulate touch behaviour if needed
+		/*
+		if(!navigator.maxTouchPoints){
+
+			let touchObj = this._data.touch[0];
+			this.copyTouchProperties(e, touchObj);
+			this.setRelativePos(touchObj, e);
+			this.setMovePos(touchObj);
+			this.touchObj.down = 1;
+
+			this.waxml.start("*[trig='touch[0]']");
+			this.waxml.start("*[trig='client[0].touch[0]']");
+		}
+		*/
+
+		let data = {};
+		data.clientX = e.clientX;
+		data.clientY = e.clientY;
+		this.setRelativePos(data, e);
+		this.setMovePos(data);
+		return data;
+	}
+
+	pointerDownExecute(e) {
+
+		// simulate touch behaviour if needed
+		/*
+		if(!navigator.maxTouchPoints){
+
+			let touchObj = this._data.touch[0];
+			this.copyTouchProperties(e, touchObj);
+			this.setRelativePos(touchObj, e);
+			this.setMovePos(touchObj);
+			this.touchObj.down = 1;
+
+			this.waxml.start("*[trig='touch[0]']");
+			this.waxml.start("*[trig='client[0].touch[0]']");
+		}
+		*/
+
+		this._data.mouseX = e.clientX;
+		this._data.mouseY = e.clientY;
+
+		this._data.pointerX = e.clientX;
+		this._data.pointerY = e.clientY;
+
+		this._data.relX = e.relX;
+		this._data.relY = e.relY;
+
+		this._data.moveX = e.moveX;
+		this._data.moveY = e.moveY;
+		this._data.relMoveX = e.relMoveX;
+		this._data.relMoveY = e.relMoveY;
+
+		this._data.mousedown = 1;
+		this._data.pointerdown = 1;
+		this._data.touchdown = 1;
+		this.waxml.start("*[trig='mousedown']");
+		this.waxml.start("*[trig='pointerdown']");
+		this.waxml.start("*[trig='mouse']");
+	}
+
+	pointerMoveProcess(e){
+		let data = {};
+
+		if(!e){
+			console.error(e);
+		} else {
+			data.clientX = e.clientX;
+			data.clientY = e.clientY;
+			this.setRelativePos(data, e);
+			this.setMovePos(data);
+		}
+
+		return data;
+	}
+
+	pointerMoveExecute(e){
+		this._data.mouseX = e.clientX;
+		this._data.mouseY = e.clientY;
+
+		this._data.pointerX = e.clientX;
+		this._data.pointerY = e.clientY;
+
+		this._data.relX = e.relX;
+		this._data.relY = e.relY;
+
+		this._data.moveX = e.moveX;
+		this._data.moveY = e.moveY;
+		this._data.relMoveX = e.relMoveX;
+		this._data.relMoveY = e.relMoveY;
+
+		// simulate touch behaviour if needed
+		/*
+		if(!navigator.maxTouchPoints){
+
+			let touchObj = this._data.touch[0];
+			this.copyTouchProperties(e, touchObj);
+			this.setRelativePos(touchObj);
+			this.setMovePos(touchObj, e.clientX, e.clientY);
+
+			touchObj = this._data.client[0].touch[0];
+			copyTouchProperties(e, touchObj);
+			setRelativePos(touchObj, e);
+			setMovePos(touchObj, e.clientX, e.clientY);
+		}
+		*/
+	}
+
+
+	pointerUpProcess(e){
+			let data = {};
+			data.clientX = e.clientX;
+			data.clientY = e.clientY;
+			this.setRelativePos(data, e);
+			this.setMovePos(data);
+			return data;
+	}
+	pointerUpExecute(e){
+		this._data.mousedown = 0;
+		this._data.pointerdown = 0;
+		this._data.touchdown = 0;
+
+		this.waxml.stop("*[trig='mouseup']");
+		this.waxml.stop("*[trig='pointerup']");
+
+		this.waxml.stop("*[trig='mouse']");
+
+		// simulate touch behaviour if needed
+		/*
+		if(!navigator.maxTouchPoints){
+
+			let touchObj = this._data.touch[0];
+			this.copyTouchProperties(e, touchObj);
+			this.setRelativePos(touchObj, e);
+			this.setMovePos(touchObj, e.clientX, e.clientY);
+			touchObj.down = 0;
+
+			this.waxml.stop("*[trig='touch[0]']");
+			this.waxml.stop("*[trig='client[0].touch[0]']");
+		}
+		*/
+	}
+
+
+	copy(spec = "pointer"){
+		let seq;
+
+		switch (spec) {
+			case "pointer":
+				seq = this.eventTracker.lastGesture;
+				break;
+			case "touch":
+				seq = this.eventTracker.lastTouchGesture;
+				break;
+			default:
+				seq = this.eventTracker.events;
+				break;
+		}
+
+		let JSONdata = JSON.stringify(seq._events);
+		let str = "webAudioXML.addSequence(" + JSONdata + ");";
+
+	  const el = document.createElement('textarea');
+	  el.value = str;
+	  el.setAttribute('readonly', '');
+	  el.style.position = 'absolute';
+	  el.style.left = '-9999px';
+	  document.body.appendChild(el);
+	  el.select();
+	  document.execCommand('copy');
+	  document.body.removeChild(el);
+	}
+
+	playLastGesture(){
+		let seq = this.eventTracker.addSequence("_lastGesture", this.eventTracker.lastGesture._events);
+		seq.play();
+	}
+
+	get lastGesture(){
+		return this.eventTracker.lastGesture;
+	}
+
+	addSequence(events, name="_storedGesture"){
+		this.eventTracker.addSequence(name, events);
+	}
+
+	getSequence(name="_storedGesture"){
+		return this.eventTracker.getSequence(name);
+	}
+
+	play(name="_storedGesture"){
+		if(!this.inited){
+			this.init();
+		}
+		let seq = this.getSequence(name);
+		if(seq){
+			seq.play();
+		} else {
+			console.error("WebAudioXML error: No such sequence - " + name);
+		}
+	}
+
+}
+
+
+
+
+
+
+module.exports = InteractionManager;
+
+},{"./EventTracker.js":3}],6:[function(require,module,exports){
 
 
 
@@ -992,111 +1638,123 @@ Loader.getFolder = path => {
 
 module.exports = Loader;
 
-},{}],5:[function(require,module,exports){
-var WebAudioUtils = require('./WebAudioUtils.js'); 
+},{}],7:[function(require,module,exports){
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 class Mapper{
-  	
-  	
+
+
 	constructor(str = "", steps = ""){
 		// str is a comma separated string with at least four values
 		// minIn, maxIn, minOut, mixOut
-		// potentially also a fifth value indicating 
+		// potentially also a fifth value indicating
 		let arr = str ? str.split(",") : null;
 		let obj = {};
-		
-		if(arr){			
+
+		if(arr){
 		  	obj.minIn = Number(arr.shift());
 		  	obj.maxIn = Number(arr.shift());
 		  	obj.minOut = Number(arr.shift());
 		  	obj.maxOut = Number(arr.shift());
 		  	obj.conv = arr.shift();
-		  	
+
 		  	if(obj.conv){
 			  	obj.conv = obj.conv.trim();
 		  	}
-		  	
-		  	if(Number(obj.conv) == obj.conv){obj.conv = "Math.pow(x, " + obj.conv + ")"};	
-		  	
+
+		  	if(Number(obj.conv) == obj.conv){obj.conv = "Math.pow(x, " + obj.conv + ")"};
+
 		  	// backwords compatible
 		  	obj.steps = arr.shift() || steps;
 		  	if(obj.steps){
-			  	obj.steps = obj.steps.trim().split(" ").map(item => parseInt(item, 10));
+          let separator = obj.steps.includes(",") ? "," : " ";
+			  	obj.steps = obj.steps.trim().split(separator).map(item => parseFloat(item));
 			  	obj.stepsCycle = obj.steps.pop();
 			  	if(!obj.steps.length){
 				  	obj.steps.push(0);
 			  	}
 		  	}
-		  	
-	  	} 
-				
+
+	  	}
+
 		this.minIn = typeof obj.minIn == "number" ? obj.minIn : 0;
 		this.maxIn = typeof obj.maxIn == "number" ? obj.maxIn : 1;
 
-		
+
 		this.minOut = typeof obj.minOut == "number" ? obj.minOut : 0;
 		this.maxOut = typeof obj.maxOut == "number" ? obj.maxOut : 1;
-		
+
 		this.conv = obj.conv;
 		this.steps = obj.steps;
 		this.stepsCycle = obj.stepsCycle;
-				
+
 	}
-	
-	
+
+
 	getValue(x, obj){
-		
+
 		return Mapper.getValue(x, this);
-		
+
 	}
-	
+
 }
 
 
 Mapper.getValue = function(x, obj) {
 	//x = Math.max(x, this.minIn);
 	//x = Math.min(x, this.maxIn);
-	
+
 	let minIn, maxIn, minOut, maxOut, relVal, rangeIn, rangeOut, valOut;
 	x = parseFloat(x);
-	
+
 	maxIn = parseFloat(obj.maxIn || obj.max || 1);
 	minIn = parseFloat(obj.minIn || obj.min || 0);
-	
+
 	maxOut = parseFloat(obj.maxOut || obj.max || 1);
 	minOut = parseFloat(obj.minOut || obj.min || 0);
-	
+
 	rangeIn = maxIn - minIn;
 	rangeOut = maxOut - minOut;
 	x = (x - minIn)/rangeIn;
 	x = Math.max(0, Math.min(x, 1));
-	
+
 	// probably not needed
 	obj.conv = obj.conv || 1;
-	
-	
-	
+
+
+
 	if(obj.conv == "MIDI"){
-		let noteOffs = Math.floor(x * rangeOut);
+		let noteOffs;
 		if(obj.steps){
-			let cycle = Math.floor(noteOffs / obj.stepsCycle);
-			let noteInCycle = noteOffs % obj.stepsCycle;
-			noteOffs = cycle * obj.stepsCycle + obj.steps[Math.floor(noteInCycle/obj.stepsCycle*obj.steps.length)];
-		} 
+			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
+			//let noteInCycle = noteOffs % obj.stepsCycle;
+
+      let notesInCycle = obj.steps.length;
+      let nrOfCycles = rangeOut / obj.stepsCycle;
+      rangeOut = obj.steps.length * nrOfCycles + 1;
+      noteOffs = Math.floor(x * rangeOut);
+
+      let cycle = Math.floor(noteOffs / obj.steps.length);
+      let noteInCycle = Math.floor(noteOffs % obj.steps.length);
+			noteOffs = cycle * obj.stepsCycle + obj.steps[noteInCycle];
+		} else {
+      noteOffs = Math.floor(x * rangeOut);
+    }
 		valOut = WebAudioUtils.MIDInoteToFrequency(minOut + noteOffs);
-		
+
 	} else {
 		if(Number(obj.conv) == obj.conv){obj.conv = "Math.pow(x, " + obj.conv + ")"};
 		valOut = eval(obj.conv);
 		valOut = valOut * rangeOut + minOut;
 	}
-	
-		
-	return valOut;	
+
+
+	return valOut;
 };
-	
+
 module.exports = Mapper;
-},{"./WebAudioUtils.js":10}],6:[function(require,module,exports){
+
+},{"./WebAudioUtils.js":13}],8:[function(require,module,exports){
 
 var Loader = require('./Loader.js');
 var AudioObject = require('./AudioObject.js');
@@ -1230,7 +1888,132 @@ class Parser {
   	
 module.exports = Parser;
 
-},{"./AudioObject.js":1,"./Loader.js":4,"./Synth.js":7}],7:[function(require,module,exports){
+},{"./AudioObject.js":1,"./Loader.js":6,"./Synth.js":10}],9:[function(require,module,exports){
+
+
+
+class Sequence {
+
+	constructor(eventTracker, name, events = []){
+		this._eventTracker = eventTracker;
+		this._name = name;
+		this._eventTypes = [];
+		this._events = events;
+		this._timeouts = [];
+	}
+
+	allEvents(filter = []){
+		return this.events(0, this._events.length, filter);
+	}
+
+	events(start = 0, end, filter = [], variableFilter = []){
+
+		let startIndex, endIndex, i, ev;
+		if(typeof start == "string"){
+			// last
+			for(i=this._events.length-1; i>=0; i--){
+				ev = this._events[i];
+				if(ev.name == start){
+					startIndex = i;
+				}
+			}
+
+		} else if(typeof start == "number"){
+			startIndex = start;
+		}
+		if(typeof startIndex == "undefined"){
+			startIndex = 0;
+		}
+
+		if(typeof end == "string"){
+			// last
+			for(i=this._events.length-1; i>startIndex; i--){
+				ev = this._events[i];
+				if(ev.name == end){
+					endIndex = i;
+				}
+			}
+		} else if(typeof end == "number"){
+			endIndex = end;
+		}
+
+		let newEventList = [];
+		let offset = this._events[startIndex].time;
+		for(i = startIndex; i <= endIndex; i++){
+			ev = this._events[i];
+			if(!filter.length || filter.includes(ev.name)){
+				let newEv = {}
+				newEv.time = ev.time - offset;
+				newEv.name = ev.name;
+				newEv.value = {}
+				Object.keys(ev.value).forEach(key => {
+					if(!variableFilter.length || variableFilter.includes(key)){
+						newEv.value[key] = ev.value[key];
+					}
+				});
+				newEventList.push(newEv);
+			}
+		}
+		return newEventList;
+	}
+
+
+	store(name, value){
+		if(typeof name == "undefined"){return}
+		if(typeof value == "undefined"){return}
+
+		let ev = {
+			time: new Date().getTime(),
+			name: name,
+			value: value
+		};
+
+		this._events.push(ev);
+	}
+
+	clear(){
+		this._events = [];
+	}
+
+	update(events){
+		this._events = events;
+	}
+
+	play(){
+		if(!this._events.length){
+			console.log("EventTracker error: Sequence is empty");
+			return;
+		}
+
+		let now = new Date().getTime();
+		let offset = this._events[0].time;
+		let length = this._events[this._events.length-1].time - offset;
+
+		this._events.forEach(ev => {
+			let t = setTimeout(e => this._eventTracker.trigEvent(ev.name, ev.value), ev.time - offset + 1);
+			this._timeouts.push(t);
+		});
+		this._eventTracker.playing = true;
+		this._timeouts.push(setTimeout(e => this._eventTracker.playing = false, length));
+
+	}
+
+	stop(){
+		while(this._timeouts.length){
+			clearTimeout(this._timeouts.pop());
+		}
+	}
+
+	get name(){
+		return this._name;
+	}
+
+}
+
+
+module.exports = Sequence;
+
+},{}],10:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js'); 
 var Watcher = require('./Watcher.js'); 
@@ -1383,18 +2166,18 @@ class Synth{
 }
 	
 module.exports = Synth;
-},{"./Watcher.js":8,"./WebAudioUtils.js":10}],8:[function(require,module,exports){
+},{"./Watcher.js":11,"./WebAudioUtils.js":13}],11:[function(require,module,exports){
 
 
 
 class Watcher {
 
 	constructor(xmlNode, str, waxml, callBack){
-		
-		
+
+
 		let arr = str.split(",");
-		
-		
+
+
 		// allow for different ways of specifying target, event and variable
 		let target, variable, targetStr, event;
 		if(arr.length){
@@ -1403,7 +2186,7 @@ class Watcher {
 			console.log("Web Audio XML error. 'follow' attribute requires at least one parameter.")
 			return false;
 		}
-		
+
 		if(arr.length){
 			// target object is an XML node closest to the calling object
 			// variable is a property of WebAudioXML.
@@ -1412,41 +2195,43 @@ class Watcher {
 			// target object is top XML node of this document
 			// variable is a property of the audioObject connected to that XML node
 			//xmlNode.getRootNode().querySelector("audio");
-			this.addVariableWatcher(waxml, variable, callBack);
+			this.addVariableWatcher(waxml.variables, variable, callBack);
+
+			//waxml.addVariableWatcher(variable, callBack);
 			return;
 		}
-		
+
 		if(arr.length){
 			// target object is a DOM element
 			// event to use with addEventListener
 			// variable expected to be a property of the event object in the callback of addEventListener
 			event = arr.shift().trim();
 		}
-			
-		target = xmlNode.closest(targetStr) || document.querySelector(targetStr);		
+
+		target = xmlNode.closest(targetStr) || document.querySelector(targetStr);
 		if(!target){
 			try{
 				target = eval(targetStr);
-			} 
+			}
 			catch(error){
 				console.error("WebAudioXML error: No valid target specified - " + targetStr);
 			}
-			
+
 		}
-		
-		
+
+
 		if(target){
 
 			if(target.addEventListener){
-				
-				// make sure variable starts with e. 
+
+				// make sure variable starts with e.
 				if(variable.substr(0, 2) != "e."){
 					if(variable.substr(0, 6) == "event."){
 						variable = variable.substr(6);
 					}
 					variable = "e." + variable;
-				}			
-				
+				}
+
 				target.addEventListener(event, e => {
 					let val = eval(variable);
 					if(typeof val !== "undefined"){
@@ -1455,29 +2240,31 @@ class Watcher {
 						console.error("Web Audio XML Parameter follow error. Target object event does not contain variable.", variable);
 					}
 				});
-							
+
 			} else {
 				console.error("Web Audio XML Parameter follow error. Target object does not support addEventListener.", targetStr);
 			}
 		} else {
 			console.error("Web Audio XML Parameter follow error. Target object not found: ", targetStr);
 		}
-		
+
 	}
-	
+
 	addVariableWatcher(obj, variable, callBack){
-		
+
 		let oNv = this.varablePathToObject(obj, variable);
 		obj = oNv.object || obj;
+
+		// allow for simple variable names or variables inside an Object
 		variable = oNv.variable || variable;
-		
+
 		obj._props = obj._props || {};
-		
+
 		if(!obj._props[variable]){
-			
+
 			obj._props[variable] = {};
 			obj._props[variable].callBackList = [];
-		
+
 			Object.defineProperty(obj, variable, {
 				get() {
 					return this._props[variable].value;
@@ -1489,23 +2276,23 @@ class Watcher {
 						//output.log(val);
 					}
 				}
-			});	
+			});
 		}
-		
-		obj._props[variable].callBackList.push(callBack);		
-		
+
+		obj._props[variable].callBackList.push(callBack);
+
 	}
-	
-	
+
+
 	varablePathToObject(obj = window, variable = ""){
-		
-		
-		
+
+
+
 		let varArray = variable.split(".");
 		let v = varArray.pop();
 		let varPath = varArray.length ? "." + varArray.join(".") : "";
 		let o = eval("obj" + varPath);
-		
+
 		/*
 		varArray.forEach(v => {
 			let o = obj[v];
@@ -1516,12 +2303,12 @@ class Watcher {
 		*/
 		return {object: o, variable: v};
 	}
-	    
+
 }
 
 module.exports = Watcher;
 
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*
 MIT License
 
@@ -1550,6 +2337,9 @@ SOFTWARE.
 var Parser = require('./Parser.js');
 var Connector = require('./Connector.js');
 var GUI = require('./GUI.js');
+var InteractionManager = require('./InteractionManager.js');
+
+
 
 var source = document.currentScript.dataset.source;
 
@@ -1571,47 +2361,8 @@ class WebAudio {
 			}
 
 		}
-		
-		
+
 		this.plugins = [];
-		
-		
-		
-		// INTERACTION - might be better to separate from 
-		// WebAudioXML itself
-
-		// variables
-		// create a way of keeping track of each touch
-		// during a multi touch
-		let touches = [];
-		while(touches.length < (navigator.maxTouchPoints || 1)){
-			touches.push({});
-		}
-		this.touch = touches;
-		this.deviceOrientation = {};
-
-		this.client = [];
-		
-		while(this.client.length < 10){
-			let c = {};
-			c.touchIDs = [];
-			
-			c.touch = [];
-			while(c.touch.length < 5){
-				c.touch.push({});
-			}
-			
-			c.acceleration = {};
-			c.accelerationIncludingGravity = {};
-			c.rotationRate = {};
-			
-			c.deviceOrientation = {};
-			
-			this.client.push(c);
-		}
-		
-		
-
 		this._ctx = _ctx;
 
 		if(source){
@@ -1619,6 +2370,7 @@ class WebAudio {
 
 				new Parser(source, this, xmlDoc => {
 					this._xml = xmlDoc;
+					this.ui.registerEvents(this._xml.getAttribute("interactionArea"));
 					//webAudioXML = xmlDoc.audioObject;
 					//webAudioXML.touch = touches;
 					new Connector(xmlDoc, _ctx);
@@ -1634,22 +2386,63 @@ class WebAudio {
 			console.error("No WebAudioXML source specified")
 		}
 
+		this.ui = new InteractionManager(this);
+
 	}
 
-
-	start(){
-		this._xml.querySelectorAll("*").forEach(XMLnode => XMLnode.audioObject.start());
+	/*
+	// Maybe to be implemented when moved from AudioObject
+	addVariableWatcher(variable, callBack){
+		this.variableRouter.addVariableWatcher(variable, callBack);
+	}
+	*/
+	init(){
+		this._ctx.resume();
 	}
 
-	stop(){
-		this._xml.querySelectorAll("*").forEach(XMLnode => XMLnode.audioObject.stop());
+	start(selector = "*"){
+		this._xml.querySelectorAll(selector).forEach(XMLnode => XMLnode.audioObject.start());
+	}
+
+	stop(selector = "*"){
+		this._xml.querySelectorAll(selector).forEach(XMLnode => XMLnode.audioObject.stop());
 	}
 
 	registerPlugin(plugin){
-		
+
 		this.plugins.push(plugin);
-		// consider returning an interface to 
+		// consider returning an interface to
 		// variables here
+	}
+
+	get variables(){
+		return this.ui.variables;
+	}
+
+
+	// InteractionManager
+	get lastGesture(){
+		return this.ui.lastGesture;
+	}
+
+	addSequence(events, name){
+		this.ui.addSequence(events, name);
+	}
+
+	getSequence(name){
+		return this.ui.getSequence(name);
+	}
+
+	copyLastGestureToClipboard(){
+		this.ui.copy();
+	}
+
+	playLastGesture(){
+		this.ui.playLastGesture();
+	}
+
+	playSequence(name){
+		this.ui.play(name);
 	}
 
 
@@ -1658,347 +2451,6 @@ class WebAudio {
 
 
 let webAudioXML = new WebAudio();
-
-window.webAudioXML = webAudioXML;
-var firstMouseDown = true;
-
-
-var acceleration = {}
-acceleration.x = {}
-acceleration.x.min = 0;
-acceleration.x.max = 0;
-
-acceleration.y = {}
-acceleration.y.min = 0;
-acceleration.y.max = 0;
-
-acceleration.z = {}
-acceleration.z.min = 0;
-acceleration.z.max = 0;
-
-var decayFactor = 0.0;
-
-function setDeviceMotion(e){
-	webAudioXML.acceleration = e.acceleration;
-	webAudioXML.accelerationIncludingGravity = e.accelerationIncludingGravity;
-	webAudioXML.rotationRate = e.rotationRate;
-
-
-	acceleration.x.max *= decayFactor;
-	acceleration.y.max *= decayFactor;
-	acceleration.z.max *= decayFactor;
-
-
-	acceleration.x.min = Math.min(acceleration.x.min, e.acceleration.x);
-	acceleration.x.max = Math.max(acceleration.x.max, e.acceleration.x);
-
-	acceleration.y.min = Math.min(acceleration.y.min, e.acceleration.y);
-	acceleration.y.max = Math.max(acceleration.y.max, e.acceleration.y);
-
-	acceleration.z.min = Math.min(acceleration.z.min, e.acceleration.z);
-	acceleration.z.max = Math.max(acceleration.z.max, e.acceleration.z);
-
-	/*
-
-	document.querySelector(".acceleration.x").style.width = (acceleration.x.max * 100) + "%";
-	document.querySelector(".acceleration.y").style.width = (acceleration.y.max * 100) + "%";
-	document.querySelector(".acceleration.z").style.width = (acceleration.z.max * 100) + "%";
-
-
-	document.querySelector(".acceleration.x").innerHTML = acceleration.x.min + " - " + acceleration.x.max;
-	document.querySelector(".acceleration.y").innerHTML = acceleration.y.min + " - " + acceleration.y.max;
-	document.querySelector(".acceleration.z").innerHTML = acceleration.z.min + " - " + acceleration.z.max;
-
-	document.querySelector(".accelerationIncludingGravity.x").innerHTML = acceleration.x.min + " - " + acceleration.x.max;
-	document.querySelector(".accelerationIncludingGravity.y").innerHTML = acceleration.y.min + " - " + acceleration.y.max;
-	document.querySelector(".accelerationIncludingGravity.z").innerHTML = acceleration.z.min + " - " + acceleration.z.max;
-
-	document.querySelector(".rotationRate.alpha").innerHTML = e.rotationRate.alpha;
-	document.querySelector(".rotationRate.beta").innerHTML = e.rotationRate.beta;
-	document.querySelector(".rotationRate.gamma").innerHTML = e.rotationRate.gamma;
-	*/
-}
-
-
-
-
-function setDeviceOrientation(e){
-	// do something with e
-	webAudioXML.alpha = e.alpha;
-	webAudioXML.beta = e.beta;
-	webAudioXML.gamma = e.gamma;
-
-	/*
-	document.querySelector(".orientation.alpha").innerHTML = e.alpha;
-	document.querySelector(".orientation.beta").innerHTML = e.beta;
-	document.querySelector(".orientation.gamma").innerHTML = e.gamma;
-	*/
-}
-
-
-
-var touchIDs = [];
-
-function copyTouchProperties(source, target){
-	target.identifier  = source.identifier;
-	target.screenX = source.screenX;
-	target.screenY = source.screenY;
-	target.clientX = source.clientX;
-	target.clientY = source.clientY;
-	target.pageX = source.pageX;
-	target.pageY = source.pageY;
-	target.radiusX = source.radiusX;
-	target.radiusY = source.radiusY;
-	target.rotationAngle = source.rotationAngle;
-	target.force = source.force;
-}
-
-function setRelativePos(obj, x, y){
-	obj.relX = x / window.innerWidth * 100;
-	obj.relY = y / window.innerHeight * 100;
-}
-
-function setMovePos(obj, x, y){
-	if(typeof x === "undefined"){
-		// reset
-		obj.initX = obj.clientX;
-		obj.initY = obj.clientY;
-		obj.moveX = 0;
-		obj.moveY = 0;
-		obj.relMoveX = 0;
-		obj.relMoveY = 0;
-	} else {
-		// update
-		obj.initX = typeof obj.initX === "undefined" ? obj.clientX : obj.initX;
-		obj.initY = typeof obj.initY === "undefined" ? obj.clientY : obj.initY;
-		obj.moveX = x - obj.initX;
-		obj.moveY = y - obj.initY;
-		obj.relMoveX = obj.moveX / window.innerWidth * 100;
-		obj.relMoveY = obj.moveY / window.innerHeight * 100;
-	}
-}
-
-
-document.addEventListener("touchstart", e => {
-
-	//e.preventDefault();
-	Array.prototype.forEach.call(e.changedTouches, touch => {
-		let identifier = touchIDs.find((el, id) => webAudioXML.touch[id].down != 1);
-		let i;
-
-		if(identifier){
-			i = touchIDs.indexOf(identifier);
-			touchIDs[i] = touch.identifier;
-		} else {
-			i = touchIDs.length;
-			touchIDs.push(touch.identifier);
-		}
-
-		let touchObj = webAudioXML.touch[i];
-		copyTouchProperties(touch, touchObj);
-		setRelativePos(touchObj, touch.clientX, touch.clientY);
-		setMovePos(touchObj);
-		touchObj.down = 1;
-		webAudioXML._xml.querySelectorAll("*[trig='touch[" + i + "]']").forEach(el => {
-			el.audioObject.start();
-		});
-	});
-
-}, true);
-
-
-
-document.addEventListener("touchmove", e => {
-
-	//e.preventDefault();
-	Array.prototype.forEach.call(e.changedTouches, touch => {
-		let touchObj = webAudioXML.touch[touchIDs.indexOf(touch.identifier)];
-
-		if(touchObj){
-			copyTouchProperties(touch, touchObj);
-			setRelativePos(touchObj, touch.clientX, touch.clientY);
-			setMovePos(touchObj, touch.clientX, touch.clientY);
-		}
-	});
-}, true);
-
-
-document.addEventListener("touchend", tounchEnd, true);
-document.addEventListener("touchcancel", tounchEnd, true);
-
-
-function tounchEnd(e){
-
-	//e.preventDefault();
-	Array.prototype.forEach.call(e.changedTouches, touch => {
-		let i = touchIDs.indexOf(touch.identifier);
-
-
-		let touchObj = webAudioXML.touch[i];
-		if(touchObj){
-			touchObj.down = 0;
-			touchObj.force = 0;
-			setMovePos(touchObj);
-			webAudioXML._xml.querySelectorAll("*[trig='touch[" + i + "]']").forEach(el => el.audioObject.stop());
-
-		}
-
-		// reset touch list if last touch
-		let stillDown = 0;
-		webAudioXML.touch.forEach(touch => {
-			stillDown = stillDown || touch.down;
-		});
-		if(!stillDown){
-			while(touchIDs.length){
-				touchIDs.pop();
-			}
-		}
-
-	});
-}
-
-
-let pointerDownEvent = window.PointerEvent ? "pointerdown" : "mousedown";
-let pointerMoveEvent = window.PointerEvent ? "pointermove" : "mousemove";
-let pointerUpEvent = window.PointerEvent ? "pointerup" : "mouseup";
-
-document.addEventListener(pointerDownEvent, pointerDown);
-document.addEventListener(pointerUpEvent, pointerUp);
-document.addEventListener(pointerMoveEvent, pointerMove);
-
-
-function pointerMove(e){
-	webAudioXML.mouseX = e.clientX;
-	webAudioXML.mouseY = e.clientY;
-
-	webAudioXML.pointerX = e.clientX;
-	webAudioXML.pointerY = e.clientY;
-
-	setRelativePos(webAudioXML, e.clientX, e.clientY);
-
-	// simulate touch behaviour if needed
-	if(!navigator.maxTouchPoints){
-
-		let touchObj = webAudioXML.touch[0];
-		copyTouchProperties(e, touchObj);
-		setRelativePos(touchObj, e.clientX, e.clientY);
-		setMovePos(touchObj, e.clientX, e.clientY);
-		
-		touchObj = webAudioXML.client[0].touch[0];
-		copyTouchProperties(e, touchObj);
-		setRelativePos(touchObj, e.clientX, e.clientY);
-		setMovePos(touchObj, e.clientX, e.clientY);
-	}
-}
-
-
-function pointerUp(e){
-	webAudioXML.mousedown = 0;
-	webAudioXML.pointerdown = 0;
-	webAudioXML.touchdown = 0;
-
-	webAudioXML._xml.querySelectorAll("*[trig='mouseup']").forEach(el => el.audioObject.start());
-	webAudioXML._xml.querySelectorAll("*[trig='pointerup']").forEach(el => el.audioObject.start());
-
-	webAudioXML._xml.querySelectorAll("*[trig='mouse']").forEach(el => el.audioObject.stop());
-
-	// simulate touch behaviour if needed
-	if(!navigator.maxTouchPoints){
-
-		let touchObj = webAudioXML.touch[0];
-		copyTouchProperties(e, touchObj);
-		setRelativePos(touchObj, e.clientX, e.clientY);
-		setMovePos(touchObj, e.clientX, e.clientY);
-		touchObj.down = 0;
-
-		webAudioXML._xml.querySelectorAll("*[trig='touch[0]']").forEach(el => el.audioObject.stop());
-		webAudioXML._xml.querySelectorAll("*[trig='client[0].touch[0]']").forEach(el => el.audioObject.stop());
-	}
-
-}
-
-
-
-function pointerDown(e) {
-	if(firstMouseDown){
-		firstMouseDown = false;
-		webAudioXML._ctx.resume();
-
-		//alert("init audio");
-
-
-		if (window.DeviceMotionEvent) {
-
-
-			if(typeof DeviceMotionEvent.requestPermission === 'function'){
-				// iOS 13+
-				DeviceMotionEvent.requestPermission()
-				.then(response => {
-				  if (response == 'granted') {
-				    window.addEventListener('devicemotion', setDeviceMotion);
-				  }
-				})
-				.catch(console.error);
-			} else {
-				// non iOS 13+
-				window.addEventListener('devicemotion', setDeviceMotion);
-			}
-
-
-		} else {
-
-		  console.log("this device does not support DeviceMotionEvent");
-		}
-
-
-		if (window.DeviceOrientationEvent) {
-
-			if(typeof DeviceOrientationEvent.requestPermission === 'function'){
-				DeviceOrientationEvent.requestPermission()
-				.then(response => {
-				  if (response == 'granted') {
-				  	window.addEventListener('deviceorientation', setDeviceOrientation);
-				  }
-				})
-				.catch(console.error);
-			} else {
-				// non iOS 13+
-				window.addEventListener('deviceorientation', setDeviceOrientation);
-			}
-
-		} else {
-
-		  console.log("this device does not support DeviceOrientationEvent");
-		}
-
-
-
-	}
-
-	// simulate touch behaviour if needed
-	if(!navigator.maxTouchPoints){
-
-		let touchObj = webAudioXML.touch[0];
-		copyTouchProperties(e, touchObj);
-		setRelativePos(touchObj, e.clientX, e.clientY);
-		setMovePos(touchObj);
-		touchObj.down = 1;
-
-		webAudioXML._xml.querySelectorAll("*[trig='touch[0]']").forEach(el => el.audioObject.start());
-		webAudioXML._xml.querySelectorAll("*[trig='client[0].touch[0]']").forEach(el => el.audioObject.start());
-	}
-	webAudioXML.touchIDs = touchIDs;
-	webAudioXML.mousedown = 1;
-	webAudioXML.pointerdown = 1;
-	webAudioXML.touchdown = 1;
-	webAudioXML._xml.querySelectorAll("*[trig='mousedown']").forEach(el => {el.audioObject.start()});
-	webAudioXML._xml.querySelectorAll("*[trig='pointerdown']").forEach(el => {el.audioObject.start()});
-	webAudioXML._xml.querySelectorAll("*[trig='mouse']").forEach(el => el.audioObject.stop());
-
-
-}
-
-
 
 window.webAudioXML = webAudioXML;
 module.exports = WebAudio;
@@ -2011,19 +2463,64 @@ module.exports = WebAudio;
 	Files on remote servers. Cross-domain issues
 	PeriodicWave data. Problem: Uncaught (in promise) SyntaxError: Unexpected token ' in JSON at position 2
 
+	Important:
+	Triggering of envelopes from external calls
+	check ADSR case insensitivity
+	Check envelope separation by comma and space
+	Make a working MIDI example with or without webaudio-controls.
+	Make "follow"-attributes work with commas and spaces
+	Implement CSS-selector for Audio elements - remember case insensitivity!
+	Add "Channel" as an element that is a blueprint for a Chain element inside a Mixer element. The Mixer then, needs a "channels"-attribute
+	and a routing syntax to allow for multiple channels. (possibly nth-child)
+	Make sure external documents does not inherit variables like timeUnit
+	Add map="MIDI" for frequency for static values.
+	Implement webAudioXML.setVariable(variableName, value);
+
+	DeviceMotion (to documentation and implementation)
+
+
 	Implement:
-	Motion capture
-	iOS 13: https://medium.com/flawless-app-stories/how-to-request-device-motion-and-orientation-permission-in-ios-13-74fc9d6cd140
 	Simple GUI
 	OK. AudioBufferSourceNode
 
+	Wish:
+	Advanced envelope with multiple times, levels and curves plus gate and release - imitate supercollider
+
+	Bypass nodes
+	Debug
+	Controls = debug
+
+
+	Not working:
+	https://codepen.io/hanslindetorp/pen/yLywNaW
+
+
+	Add easy javascript access to nodes
+
+	Send can't be first in a chain
+	Check delay!
+
+	* Do I need to floor steps in midi-conversion?
+
+	* Flytta inläsningen av stored events
+	Lägg till ";"
+
+	* Kolla så att play gesture resumer ctx
+
+
+	Rensa timeouts i sequence
+
+
+	let noteInCycle = noteOffs % obj.stepsCycle;
+
+
 */
 
-},{"./Connector.js":2,"./GUI.js":3,"./Parser.js":6}],10:[function(require,module,exports){
-	
+},{"./Connector.js":2,"./GUI.js":4,"./InteractionManager.js":5,"./Parser.js":8}],13:[function(require,module,exports){
 
-	
-	
+
+
+
 
 
 class WebAudioUtils {
@@ -2037,9 +2534,9 @@ class WebAudioUtils {
 WebAudioUtils.typeFixParam = (param, value) => {
 
 	//param = param.toLowerCase();
-		
+
 	switch(param){
-		
+
 		case "volume":
 		case "gain":
 		if(value.includes("dB")){
@@ -2048,11 +2545,11 @@ WebAudioUtils.typeFixParam = (param, value) => {
 			value = Number(value);
 		}
 		break;
-		
+
 		case "normalize":
 		value = value == "true";
 		break;
-		
+
 		// iMusic objects
 		case "pan":
 		case "tempo":
@@ -2062,25 +2559,25 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "repeat":
 		case "release":
 		case "active":
-		
-		
+
+
 		// Web Audio Synth
 		case "voices":
 		case "portamento":
 		case "max":
-		
-		
-		
+
+
+
 		// AudioNodes
-		
+
 		//filter
 		case "frequency":
 		case "detune":
 		case "Q":
-		
+
 		// delay
 		case "delayTime":
-		
+
 		// compressor
 		case "threshold":
 		case "knee":
@@ -2090,12 +2587,12 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "release":
 		value = Number(value);
 		break;
-		
-		
+
+
 		case "maxDelayTime":
 		value = Number(value) || 1;
 		break;
-		
+
 		case "adsr":
 		let arr = value.split(",");
 		value = {
@@ -2105,16 +2602,16 @@ WebAudioUtils.typeFixParam = (param, value) => {
 			release: Number(arr[3])
 		};
 		break;
-		
-		
-		
+
+
+
 		default:
-		
+
 		break;
-		
+
 	}
 	return value;
-	
+
 }
 
 WebAudioUtils.evalConvString = (x=1, str) => {
@@ -2126,55 +2623,55 @@ WebAudioUtils.evalConvString = (x=1, str) => {
 }
 
 WebAudioUtils.attributesToObject = attributes => {
-		
+
 	var obj = {};
-	
+
 	if(!attributes){return obj}
 	if(!attributes.length){return obj}
-	
-	
-	
+
+
+
 	for (let i in attributes){
 		if(attributes.hasOwnProperty(i)){
-			
+
 			// XML parser is inconsistent with the document
 			// When the XML DOM is embeded inside HTML some
-			// browsers interpret all attributes as written 
+			// browsers interpret all attributes as written
 			// with capital letters
 			let param = attributes[i].name.toLowerCase();
-			
+
 		  	param = WebAudioUtils.caseFixParameter(param);
-			
+
 			let value = WebAudioUtils.typeFixParam(param, attributes[i].value);
 			obj[param] = value;
 		}
-		
+
 	}
 	return obj;
 }
 
 WebAudioUtils.caseFixParameter = param => {
-				
+
 
 	switch(param){
 	  	 case "q":
 	  	 param = "Q";
 	  	 break;
-	  	 
+
 	  	 case "delaytime":
 	  	 param = "delayTime";
 	  	 break;
-	  	 
+
 	  	 case "maxdelaytime":
 	  	 param = "maxDelayTime";
 	  	 break;
-	  	 
+
   	}
 
-  	
+
   	return param;
 }
-	
+
 WebAudioUtils.addAudioPath = (path, fileName) => {
 	if(fileName.includes("//")){
 		return fileName;
@@ -2194,4 +2691,4 @@ WebAudioUtils.MIDInoteToFrequency = note => {
 
 module.exports = WebAudioUtils;
 
-},{}]},{},[9]);
+},{}]},{},[12]);
