@@ -177,34 +177,24 @@ class AudioObject{
 		  	case "xml":
 		  	break;
 
-
-
-
-		  	case "gainnode":
-		  	case "send":
-		  	this._node = this._ctx.createGain();
-		  	this.gain = 0.3;
-		  	break;
-
 		  	case "audio":
+        case "gainnode":
+        case "mixer":
+        case "voice":
 		  	this._node = this._ctx.createGain();
 		  	break;
 
-		  	case "mixer":
+        case "send":
+		  	//this.input = this._ctx.createGain();
 		  	this._node = this._ctx.createGain();
-		  	break;
+        //this.input.connect(this._node);
+        break;
 
 		  	case "chain":
 		  	this.input = this._ctx.createGain();
 		  	//console.log("chain input", this.input.__resource_id__);
 		  	this._node = this._ctx.createGain();
 		  	break;
-
-		  	case "voice":
-		  	this._node = this._ctx.createGain();
-		  	this.gain = 0;
-		  	break;
-
 
 		  	case "envelope":
 		  	this._node = xmlNode.parentNode.audioObject._node;
@@ -231,7 +221,7 @@ class AudioObject{
 				  }
 
   				if(this._params.follow){
-  					this.watcher = new Watcher(xmlNode, this._params.follow, this.waxml, val => {
+  					this.watcher = new Watcher(xmlNode, this._params.follow, this.getParameter("delay"), this.waxml, val => {
 
   						val = this.mapper.getValue(val);
 
@@ -315,7 +305,7 @@ class AudioObject{
 		  	default:
 		  	return this._input || this._node;
 		  	break;
-		}
+		  }
 
   	}
 
@@ -359,7 +349,7 @@ class AudioObject{
 		  	default:
 		  	sourceObject.connect(this.input);
 		  	break;
-		}
+		  }
   	}
 
   	start(data){
@@ -407,8 +397,16 @@ class AudioObject{
 
 		  	case "envelope":
 		  	if(this._params.adsr){
-			  	this.setTargetAtTime(this._node, this._params.valuescale * 100, 0, this._params.adsr.attack * this._params.timescale, true);
-			  	this.setTargetAtTime(this._node, this._params.valuescale * this._params.adsr.sustain, this._params.adsr.attack * this._params.timescale, this._params.adsr.decay * this._params.timescale);
+          let fn = e => {
+            this.setTargetAtTime(this._node, this._params.valuescale * 100, 0, this._params.adsr.attack * this._params.timescale, true);
+  			  	this.setTargetAtTime(this._node, this._params.valuescale * this._params.adsr.sustain, this._params.adsr.attack * this._params.timescale, this._params.adsr.decay * this._params.timescale);
+          }
+          let delay = this.getParameter("delay");
+          if(delay){
+            setTimeout(fn, delay * this._params.timescale * 1000);
+          } else {
+            fn();
+          }
 		  	}
 		  	break;
 	  	}
@@ -424,7 +422,16 @@ class AudioObject{
 
 		  	case "envelope":
 		  	if(this._params.adsr){
-			  	this.setTargetAtTime(this._node, 0, 0, this._params.adsr.release * this._params.timescale, true);
+          let fn = e => {
+			  	  this.setTargetAtTime(this._node, 0, 0, this._params.adsr.release * this._params.timescale, true);
+          }
+          let delay = this.getParameter("delay");
+          if(delay){
+            setTimeout(fn, delay * this._params.timescale * 1000);
+          } else {
+            fn();
+          }
+
 		  	}
 		  	break;
 	  	}
@@ -634,21 +641,21 @@ module.exports = AudioObject;
 
 },{"./Loader.js":6,"./Mapper.js":7,"./Watcher.js":11,"./WebAudioUtils.js":13}],2:[function(require,module,exports){
 
-	
+
 class Connector {
-		  	
+
 	constructor(xml, _ctx){
-		
+
 		this._xml = xml;
 		this._ctx = _ctx;
-		this.connect(xml);			
+		this.connect(xml);
 	}
-	
-	
-	
+
+
+
 	connect(xmlNode){
-		
-		
+
+
 		let nodeName = xmlNode.nodeName.toLowerCase();
 		switch(nodeName){
 			case "chain":
@@ -661,8 +668,8 @@ class Connector {
 				} else {
 					targetNode = targetNode.nextElementSibling;
 				}
-				
-				
+
+
 				if(!targetNode){
 					// no children - connect to chain's output
 					done = true;
@@ -670,70 +677,74 @@ class Connector {
 				} else {
 					if(targetNode.nodeName == "#text"){continue}
 					if(targetNode.nodeName == "parsererror"){continue}
-					
+
 					switch(targetNode.nodeName.toLowerCase()){
-						case "send":
+						//case "send":
 						case "oscillatornode":
 						case "audiobuffernode":
 						break;
-						
+
+						case "send":
+						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
+						break;
+
 						default:
 						done = true;
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
 					}
-					
+
 				}
-				
+
 
 			}
 			break;
-			
+
 			case "parsererror":
 			case "style":
 			case "link":
 			return;
 			break;
 		}
-			
-		
+
+
 		let output = xmlNode.getAttribute("output");
 		if(output){
-			
+
 			// connect to specified node within the scope of this (external) document
 			let topElement = xmlNode.closest("[href$='.xml]") || this._xml;
 			topElement.querySelectorAll(output).forEach(target => {
 				xmlNode.audioObject.connect(target.audioObject.input);
 			});
-			
+
 		} else {
-			
+
 			// connect in chain or mix
-			
+
 			let target;
 			let parentNodeType = xmlNode.parentNode.nodeName.toLowerCase();
 			switch(parentNodeType){
-				
-				
+
+
 				case "mixer":
 				case "audio":
 				case "voice":
 				case "synth":
 				xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 				break;
-				
+
 				case "chain":
-				
+
 				// run through following nodes to connect all
-				// sends 
+				// sends
 				let targetNode = xmlNode;
 				let done = false;
-				
+
 				while(!done){
 					targetNode = targetNode.nextElementSibling;
-					
+
 					if(!targetNode){
-						
+
 						// connect last object to chain output
 						done = true;
 						targetNode = xmlNode.parentNode;
@@ -743,32 +754,32 @@ class Connector {
 						done = targetNode.nodeName.toLowerCase() != "send";
 						xmlNode.audioObject.connect(targetNode.audioObject.input);
 					}
-					
-					
+
+
 				}
-				
+
 				target = this.getNextInput(xmlNode);
 				break;
-				
-				
+
+
 				// connect to parameter input
 				case "gain":
 				xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 				break;
-				
+
 				default:
 				xmlNode.audioObject.connect(this._ctx.destination);
 				break;
-			}		
-			
-			
-			
-		
+			}
+
+
+
+
 		}
 		Array.from(xmlNode.children).forEach(childNode => this.connect(childNode));
-		
+
 	}
-	
+
 	getNextInput(xmlNode){
 		let nextSibling = xmlNode.nextElementSibling;
 		if(nextSibling){
@@ -783,10 +794,10 @@ class Connector {
 
 	}
 }
-  	
 
 
-  	
+
+
 module.exports = Connector;
 
 },{}],3:[function(require,module,exports){
@@ -840,11 +851,17 @@ class EventTracker {
 
 
 
-	registerEventListener(name, target = document.body, eventName, execute, process){
+	registerEventListener(name, target = document, eventName, execute, process){
 
-
+		let targetEl;
 		if(typeof target == "string"){
-			target = document.querySelector(target);
+			targetEl = document.querySelector(target);
+		}
+		if(targetEl == null){
+			console.warn("WebAudioXML error: There is no interactionArea with selector " + target + ". Document will be used instead.");
+			target = document;
+		} else {
+			target = targetEl;
 		}
 
 		let ev = this.getEventObject(name, execute, process, target);
@@ -937,18 +954,18 @@ var Mapper = require('./Mapper.js');
 
 
 class GUI {
-		  	
-	constructor(xmlNode, targetElement){		
+
+	constructor(xmlNode, targetElement){
 		let el = this.parseXML(xmlNode, targetElement);
 		el.classList.add("WebAudioXML");
 	}
-	
-	
+
+
 	parseXML(xmlNode, targetElement){
-		
+
 		let nodeName = xmlNode.nodeName.toLowerCase();
-		
-		
+
+
 		switch(nodeName){
 			case "link":
 			case "style":
@@ -956,18 +973,18 @@ class GUI {
 			return;
 			break;
 		}
-		
-		
+
+
 		let node = xmlNode.audioObject._node;
-		
+
 		let params = this.getParameters(node);
-		
-		let el; 
-		
+
+		let el;
+
 		if(params.length){
-			
+
 			el = document.createElement("div");
-			
+
 			el.className = nodeName;
 			if(nodeName.substr(-4) == "node"){
 				el.classList.add("node");
@@ -982,26 +999,26 @@ class GUI {
 			// attach child elements to the parent if this was not a node
 			el = targetElement;
 		}
-				
+
 		Array.from(xmlNode.children).forEach(childNode => this.parseXML(childNode, el));
 		return el;
 	}
-	
+
 	addElement(param, targetElement){
-		
+
 		let labelEl = document.createElement("label");
 		let header = document.createElement("header");
 		header.innerHTML = param.label;
-		
+
 		let el = document.createElement(param.nodeName);
 		let output = document.createElement("span");
 		output.className = "output";
-		
+
 		Object.keys(param.attributes).forEach(key => el.setAttribute(key, param.attributes[key]));
-			
-		
+
+
 		el._attributes = param.attributes;
-		
+
 		labelEl.appendChild(header);
 		labelEl.appendChild(el);
 		labelEl.appendChild(output);
@@ -1010,76 +1027,77 @@ class GUI {
 		el.addEventListener("input", e => {
 			let val = Mapper.getValue(e.target.value, el._attributes);
 			output.innerHTML = val;
-			
-			
+
+
 			param.audioParam.setTargetAtTime(val, 0, 0.001);
-		});		
+		});
 	}
-	
+
 	getParameters(node){
-		
+
 		let params = [];
-		
+
 
 		Object.keys(node.__proto__).forEach(key => {
-			
-			let param = node[key];		
+
+			let param = node[key];
 			if(param instanceof AudioParam){
-				
+
 				let obj = {};
 				obj.audioParam = param;
 				obj.label = key;
 				let attr = {};
 				obj.attributes = attr;
 				params.push(obj);
-				
+
 				obj.nodeName = "input";
 				attr.type = "range";
 				attr.value = param.value;
-					
+
 				switch(key){
-					
-					
+
+
 					case "frequency":
 					attr.min = 0;
 					attr.max = 22050;
 					attr.conv = "Math.pow(10, x*3)/1000";
 					break;
-					
+
 					case "detune":
 				  	attr.min = -4800;
 				  	attr.max = 4800;
 				  	attr.conv = 1;
 				  	break;
-					
+
+					case "Q":
 					case "q":
 				  	attr.min = 0;
-				  	attr.max = 100;
+				  	attr.max = 30;
 				  	attr.conv = 1;
 				  	break;
-					
+
 					default:
 				  	attr.min = 0;
 				  	attr.max = 1;
 				  	attr.conv = "x";
 				  	break;
-					
+
 				}
 				attr.step = (attr.max - attr.min) / 100;
-				
+
 			} else if(param instanceof String){
 				console.log(key, node[key]);
 			}
-			
-		});	
-		
+
+		});
+
 		return params;
-		
-		
+
+
 	}
-	
-	
-	    
+
+
+
 }
 
 
@@ -1107,7 +1125,7 @@ class InteractionManager {
 		while(touches.length < (navigator.maxTouchPoints || 1)){
 			touches.push({});
 		}
-		this.touch = touches;
+		this._data.touch = touches;
 		this.touchIDs = [];
 
 		this._data.client = [];
@@ -1185,11 +1203,11 @@ class InteractionManager {
 		return this._data;
 	}
 
-	registerEvents(target=document.body){
+	registerEvents(target = document){
 
 		// default value  does not seam to work if target is null
-		if(!target){target = document.body}
-		
+		if(!target){target = document}
+
 		this.eventTracker.registerEventListener("touchstart", target, "touchstart",
 			data => {
 
@@ -1259,11 +1277,14 @@ class InteractionManager {
 		target.radiusY = source.radiusY;
 		target.rotationAngle = source.rotationAngle;
 		target.force = source.force;
+		target.target = source.target;
 	}
 
 	setRelativePos(obj, event){
-		obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
-		obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+		if(event.target){
+			obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
+			obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+		}
 	}
 
 	setMovePos(obj, x, y){
@@ -1291,7 +1312,7 @@ class InteractionManager {
 
 		//e.preventDefault();
 		Array.prototype.forEach.call(e.changedTouches, touch => {
-			let identifier = this.touchIDs.find((el, id) => this.touch[id].down != 1);
+			let identifier = this.touchIDs.find((el, id) => this._data.touch[id].down != 1);
 			let i;
 
 			if(identifier){
@@ -1302,7 +1323,7 @@ class InteractionManager {
 				this.touchIDs.push(touch.identifier);
 			}
 
-			let touchObj = this.touch[i];
+			let touchObj = this._data.touch[i];
 			this.copyTouchProperties(touch, touchObj);
 			this.setRelativePos(touchObj, touch);
 			this.setMovePos(touchObj);
@@ -1364,23 +1385,23 @@ class InteractionManager {
 		}
 
 		// simulate touch behaviour if needed
-		/*
+
 		if(!navigator.maxTouchPoints){
 
 			let touchObj = this._data.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj);
-			this.touchObj.down = 1;
 
 			this.waxml.start("*[trig='touch[0]']");
 			this.waxml.start("*[trig='client[0].touch[0]']");
 		}
-		*/
+
 
 		let data = {};
 		data.clientX = e.clientX;
 		data.clientY = e.clientY;
+		data.target = e.target;
 		this.setRelativePos(data, e);
 		this.setMovePos(data);
 		return data;
@@ -1389,19 +1410,16 @@ class InteractionManager {
 	pointerDownExecute(e) {
 
 		// simulate touch behaviour if needed
-		/*
 		if(!navigator.maxTouchPoints){
 
 			let touchObj = this._data.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj);
-			this.touchObj.down = 1;
 
 			this.waxml.start("*[trig='touch[0]']");
 			this.waxml.start("*[trig='client[0].touch[0]']");
 		}
-		*/
 
 		this._data.mouseX = e.clientX;
 		this._data.mouseY = e.clientY;
@@ -1433,6 +1451,7 @@ class InteractionManager {
 		} else {
 			data.clientX = e.clientX;
 			data.clientY = e.clientY;
+			data.target = e.target;
 			this.setRelativePos(data, e);
 			this.setMovePos(data);
 		}
@@ -1456,20 +1475,21 @@ class InteractionManager {
 		this._data.relMoveY = e.relMoveY;
 
 		// simulate touch behaviour if needed
-		/*
 		if(!navigator.maxTouchPoints){
 
 			let touchObj = this._data.touch[0];
 			this.copyTouchProperties(e, touchObj);
-			this.setRelativePos(touchObj);
-			this.setMovePos(touchObj, e.clientX, e.clientY);
+			this.setRelativePos(touchObj, e);
+			this.setMovePos(touchObj);
+
+			//this.setRelativePos(touchObj);
+			//this.setMovePos(touchObj, e.clientX, e.clientY);
 
 			touchObj = this._data.client[0].touch[0];
-			copyTouchProperties(e, touchObj);
-			setRelativePos(touchObj, e);
-			setMovePos(touchObj, e.clientX, e.clientY);
+			this.copyTouchProperties(e, touchObj);
+			this.setRelativePos(touchObj, e);
+			this.setMovePos(touchObj);
 		}
-		*/
 	}
 
 
@@ -1477,6 +1497,7 @@ class InteractionManager {
 			let data = {};
 			data.clientX = e.clientX;
 			data.clientY = e.clientY;
+			data.target = e.target;
 			this.setRelativePos(data, e);
 			this.setMovePos(data);
 			return data;
@@ -1492,19 +1513,16 @@ class InteractionManager {
 		this.waxml.stop("*[trig='mouse']");
 
 		// simulate touch behaviour if needed
-		/*
 		if(!navigator.maxTouchPoints){
 
 			let touchObj = this._data.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj, e.clientX, e.clientY);
-			touchObj.down = 0;
 
 			this.waxml.stop("*[trig='touch[0]']");
 			this.waxml.stop("*[trig='client[0].touch[0]']");
 		}
-		*/
 	}
 
 
@@ -1647,8 +1665,13 @@ class Mapper{
 	constructor(str = "", steps = ""){
 		// str is a comma separated string with at least four values
 		// minIn, maxIn, minOut, mixOut
-		// potentially also a fifth value indicating
-		let arr = str ? str.split(",") : null;
+		// potentially also a fifth value indicating Math.power
+		let arr;
+		if(str){
+			let separator = str.includes(",") ? "," : " ";
+			arr = str ? str.split(separator) : null;
+		}
+
 		let obj = {};
 
 		if(arr){
@@ -1664,7 +1687,7 @@ class Mapper{
 
 		  	if(Number(obj.conv) == obj.conv){obj.conv = "Math.pow(x, " + obj.conv + ")"};
 
-		  	// backwords compatible
+		  	// backwards compatible
 		  	obj.steps = arr.shift() || steps;
 		  	if(obj.steps){
           let separator = obj.steps.includes(",") ? "," : " ";
@@ -1731,7 +1754,7 @@ Mapper.getValue = function(x, obj) {
 
       let notesInCycle = obj.steps.length;
       let nrOfCycles = rangeOut / obj.stepsCycle;
-      rangeOut = obj.steps.length * nrOfCycles + 1;
+      rangeOut = obj.steps.length * nrOfCycles;
       noteOffs = Math.floor(x * rangeOut);
 
       let cycle = Math.floor(noteOffs / obj.steps.length);
@@ -2015,41 +2038,41 @@ module.exports = Sequence;
 
 },{}],10:[function(require,module,exports){
 
-var WebAudioUtils = require('./WebAudioUtils.js'); 
-var Watcher = require('./Watcher.js'); 
+var WebAudioUtils = require('./WebAudioUtils.js');
+var Watcher = require('./Watcher.js');
 
 class Synth{
-  	
-  	
+
+
 	constructor(xmlNode, waxml, localPath){
-		
+
 	  	this.waxml = waxml;
 	  	let _ctx = this.waxml._ctx;
-	  	
+
 		this._xml = xmlNode;
 		this._ctx = _ctx;
 		this._localPath = localPath;
-		
+
 		this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
 		this._voices = this._params.voices || 1;
 		this._voiceID = 0;
-		
+
 		this._node = this._ctx.createGain();
 		this._node.gain.value = 1/this._voices;
 	  	console.log(xmlNode.nodeName, this._node.__resource_id__);
-		
+
 		// duplicate XML nodes until there are correct number of voices
 		this.voiceNodes = this._xml.children;
 		let voiceNodeCount = xmlNode.querySelectorAll("voice").length;
-		
+
 		this.hasEnvelope = xmlNode.querySelectorAll("envelope").length > 0;
-		
+
 		if(voiceNodeCount){
 			let curID = 0;
 			while(this._xml.children.length < this._voices){
 				let targetNode = this._xml.children[curID];
 				if(targetNode.nodeName.toLowerCase() != "voice"){continue}
-				
+
 				let newNode = targetNode.cloneNode(true);
 				this._xml.appendChild(newNode);
 				curID++;
@@ -2058,9 +2081,9 @@ class Synth{
 		} else {
 			console.error("Web Audio XML error. Voice node(s) are missing in Synth node.");
 		}
-				
-		
-		this.watcher = new Watcher(xmlNode, this._params.follow, this.waxml, note => {
+
+
+		this.watcher = new Watcher(xmlNode, this._params.follow, this._params.delay, this.waxml, note => {
 			if(note[0]){
 				this.noteOn(note[1]);
 			} else {
@@ -2068,12 +2091,12 @@ class Synth{
 			}
 		});
 
-		
+
 	}
-	
-	
+
+
 	connect(destination){
-	  	
+
 	  	if(this._node){
 		  	if(this._node.connect){
 			  	destination = destination || this._ctx.destination;
@@ -2081,51 +2104,51 @@ class Synth{
 			  	this.destination = destination;
 		  	}
 	  	}
-	  	
+
   	}
-	
-	
+
+
 	noteOn(note, vel=1){
-		
+
 		let voiceNode = this.nextVoice;
 		voiceNode.MIDInote = note;
-		
+
 		let data = {note:note, vel:vel, portamento: this.portamento};
 		voiceNode.audioObject.start(data);
 		voiceNode.querySelectorAll("*").forEach(XMLnode => XMLnode.audioObject.start(data));
-		
+
 	}
-	
-	
+
+
 	noteOff(note, vel=1){
 		let voiceNode = this.noteToVoice(note);
-		
+
 		let data = {note:note, vel:vel};
 		if(!this.hasEnvelope){voiceNode.audioObject.stop(data)};
 		voiceNode.querySelectorAll("*").forEach(XMLnode => XMLnode.audioObject.stop(data));
 		voiceNode.MIDInote = 0;
 	}
-	
-	
+
+
 	get nextVoice(){
-		
-		return this.voiceNodes[this._voiceID++ % this._voices];		
-		
+
+		return this.voiceNodes[this._voiceID++ % this._voices];
+
 	}
-	
+
 	set gain(val){
-	  	this.setTargetAtTime("gain", val);
-  	}
-  	
-  	get gain(){
-	  	return this._node.gain.value;
-  	}
-  	
-	
+  	this.setTargetAtTime("gain", val);
+	}
+
+	get gain(){
+  	return this._node.gain.value;
+	}
+
+
 	noteToVoice(note){
 		return Array.from(this.voiceNodes).find(voiceNode => voiceNode.MIDInote == note);
 	}
-	
+
   	getParameter(paramName){
 	  	if(typeof this._params[paramName] === "undefined"){
 		  	if(this._xml.parentNode){
@@ -2133,24 +2156,24 @@ class Synth{
 		  	} else {
 			  	return 0;
 		  	}
-		  	
+
 	  	} else {
 		  	return this._params[paramName];
 	  	}
   	}
-  	
-  	
-  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){	  	
-	  	
+
+
+  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
+
 	  	let startTime = this._ctx.currentTime + (delay || 0);
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
-	  	
+
 	  	if(!this._node){
 		  	console.error("Node error:", this);
 	  	}
 	  	if(typeof param == "string"){param = this._node[param]}
-	  		  	
+
 	  	if(cancelPrevious){
 		  	param.cancelScheduledValues(this._ctx.currentTime);
 	  	}
@@ -2159,31 +2182,36 @@ class Synth{
 	  	} else {
 		  	param.setValueAtTime(value, startTime);
 	  	}
-	  	
+
   	}
-	
-	
+
+
 }
-	
+
 module.exports = Synth;
+
 },{"./Watcher.js":11,"./WebAudioUtils.js":13}],11:[function(require,module,exports){
 
 
 
 class Watcher {
 
-	constructor(xmlNode, str, waxml, callBack){
+	constructor(xmlNode, str, delay, waxml, callBack){
 
+		let separator = str.includes(",") ? "," : " ";
+		let arr = str.split(separator);
+		delay = parseFloat(delay);
 
-		let arr = str.split(",");
-
-
-		// allow for different ways of specifying target, event and variable
+		// allow for different ways of specifying target, event, variable and delay
+		// possible structures:
+		// variable
+		// targetStr, variable
+		// targetStr, event, variable
 		let target, variable, targetStr, event;
 		if(arr.length){
 			variable = arr.pop().trim();
 		} else {
-			console.log("Web Audio XML error. 'follow' attribute requires at least one parameter.")
+			console.log("WebAudioXML error: 'follow' attribute requires at least one parameter.")
 			return false;
 		}
 
@@ -2195,7 +2223,7 @@ class Watcher {
 			// target object is top XML node of this document
 			// variable is a property of the audioObject connected to that XML node
 			//xmlNode.getRootNode().querySelector("audio");
-			this.addVariableWatcher(waxml.variables, variable, callBack);
+			this.addVariableWatcher(waxml.variables, variable, delay, callBack);
 
 			//waxml.addVariableWatcher(variable, callBack);
 			return;
@@ -2250,7 +2278,7 @@ class Watcher {
 
 	}
 
-	addVariableWatcher(obj, variable, callBack){
+	addVariableWatcher(obj, variable, delay, callBack){
 
 		let oNv = this.varablePathToObject(obj, variable);
 		obj = oNv.object || obj;
@@ -2273,12 +2301,21 @@ class Watcher {
 					if(this._props[variable].value != val){
 						this._props[variable].value = val;
 						this._props[variable].callBackList.forEach(callBack => callBack(val));
-						//output.log(val);
+						//if(variable == "relY"){console.log(val)}
 					}
 				}
 			});
 		}
 
+		if(delay){
+			// wrap callBack in a timeout if delay is specified
+			var origCallBack = callBack;
+			callBack = val => {
+				return setTimeout(e => {
+					origCallBack(val);
+				}, delay);
+			};
+		}
 		obj._props[variable].callBackList.push(callBack);
 
 	}
@@ -2292,7 +2329,6 @@ class Watcher {
 		let v = varArray.pop();
 		let varPath = varArray.length ? "." + varArray.join(".") : "";
 		let o = eval("obj" + varPath);
-
 		/*
 		varArray.forEach(v => {
 			let o = obj[v];
@@ -2419,6 +2455,9 @@ class WebAudio {
 		return this.ui.variables;
 	}
 
+	setVariable(key, val){
+		this.ui.variables[key] = val;
+	}
 
 	// InteractionManager
 	get lastGesture(){
@@ -2445,6 +2484,22 @@ class WebAudio {
 		this.ui.play(name);
 	}
 
+	querySelectorAll(selector){
+		let arr = [];
+		this._xml.querySelectorAll(selector).forEach(xml => {
+			let audioObject = xml.audioObject;
+			arr.push(xml.audioObject);
+		});
+		return arr;
+	}
+	querySelector(selector){
+		let xml = this._xml.querySelector(selector);
+		if(xml){
+			let audioObject = xml.audioObject;
+			if(audioObject){return audioObject}
+		}
+		return -1;
+	}
 
 }
 
@@ -2464,19 +2519,34 @@ module.exports = WebAudio;
 	PeriodicWave data. Problem: Uncaught (in promise) SyntaxError: Unexpected token ' in JSON at position 2
 
 	Important:
-	Triggering of envelopes from external calls
-	check ADSR case insensitivity
-	Check envelope separation by comma and space
+	* Triggering of envelopes from external calls
+	* check ADSR case insensitivity
+	* Check envelope separation by comma and space
 	Make a working MIDI example with or without webaudio-controls.
-	Make "follow"-attributes work with commas and spaces
-	Implement CSS-selector for Audio elements - remember case insensitivity!
+	* Make "follow"-attributes work with commas and spaces
+	!* Implement CSS-selector for Audio elements - !remember case insensitivity!
 	Add "Channel" as an element that is a blueprint for a Chain element inside a Mixer element. The Mixer then, needs a "channels"-attribute
 	and a routing syntax to allow for multiple channels. (possibly nth-child)
 	Make sure external documents does not inherit variables like timeUnit
-	Add map="MIDI" for frequency for static values.
+
+
+	Synth does not react on gain-attribute
+
+	Add map="MIDI" for frequency for initial values.
 	Implement webAudioXML.setVariable(variableName, value);
 
+	* se till att delay ärvs till childNodes
+
+	Lägg till ränder för clienten
+
+
+	Arpeggio
+
 	DeviceMotion (to documentation and implementation)
+
+	Advanced circular mapping (alpha, beta, gamma) inkl offset
+	Map Regions
+
 
 
 	Implement:
@@ -2492,10 +2562,11 @@ module.exports = WebAudio;
 
 
 	Not working:
-	https://codepen.io/hanslindetorp/pen/yLywNaW
+	* https://codepen.io/hanslindetorp/pen/yLywNaW
+	* init sensors
 
 
-	Add easy javascript access to nodes
+	* Add easy javascript access to nodes
 
 	Send can't be first in a chain
 	Check delay!
@@ -2503,16 +2574,10 @@ module.exports = WebAudio;
 	* Do I need to floor steps in midi-conversion?
 
 	* Flytta inläsningen av stored events
-	Lägg till ";"
-
 	* Kolla så att play gesture resumer ctx
 
 
 	Rensa timeouts i sequence
-
-
-	let noteInCycle = noteOffs % obj.stepsCycle;
-
 
 */
 
@@ -2539,10 +2604,10 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		case "volume":
 		case "gain":
-		if(value.includes("dB")){
+		if(value.includes("dB") || value.includes("db")){
 			value = Math.pow(2, Number(value.split("dB")[0]) / 3);
 		} else {
-			value = Number(value);
+			value = parseFloat(value);
 		}
 		break;
 
@@ -2565,6 +2630,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "voices":
 		case "portamento":
 		case "max":
+		case "delay":
 
 
 
@@ -2594,7 +2660,8 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		break;
 
 		case "adsr":
-		let arr = value.split(",");
+		let separator = value.includes(",") ? ",": " ";
+		let arr = value.split(separator);
 		value = {
 			attack: Number(arr[0]),
 			decay: Number(arr[1]),

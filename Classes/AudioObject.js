@@ -176,34 +176,24 @@ class AudioObject{
 		  	case "xml":
 		  	break;
 
-
-
-
-		  	case "gainnode":
-		  	case "send":
-		  	this._node = this._ctx.createGain();
-		  	this.gain = 0.3;
-		  	break;
-
 		  	case "audio":
+        case "gainnode":
+        case "mixer":
+        case "voice":
 		  	this._node = this._ctx.createGain();
 		  	break;
 
-		  	case "mixer":
+        case "send":
+		  	//this.input = this._ctx.createGain();
 		  	this._node = this._ctx.createGain();
-		  	break;
+        //this.input.connect(this._node);
+        break;
 
 		  	case "chain":
 		  	this.input = this._ctx.createGain();
 		  	//console.log("chain input", this.input.__resource_id__);
 		  	this._node = this._ctx.createGain();
 		  	break;
-
-		  	case "voice":
-		  	this._node = this._ctx.createGain();
-		  	this.gain = 0;
-		  	break;
-
 
 		  	case "envelope":
 		  	this._node = xmlNode.parentNode.audioObject._node;
@@ -230,7 +220,7 @@ class AudioObject{
 				  }
 
   				if(this._params.follow){
-  					this.watcher = new Watcher(xmlNode, this._params.follow, this._params.delay, this.waxml, val => {
+  					this.watcher = new Watcher(xmlNode, this._params.follow, this.getParameter("delay"), this.waxml, val => {
 
   						val = this.mapper.getValue(val);
 
@@ -314,7 +304,7 @@ class AudioObject{
 		  	default:
 		  	return this._input || this._node;
 		  	break;
-		}
+		  }
 
   	}
 
@@ -358,7 +348,7 @@ class AudioObject{
 		  	default:
 		  	sourceObject.connect(this.input);
 		  	break;
-		}
+		  }
   	}
 
   	start(data){
@@ -410,8 +400,9 @@ class AudioObject{
             this.setTargetAtTime(this._node, this._params.valuescale * 100, 0, this._params.adsr.attack * this._params.timescale, true);
   			  	this.setTargetAtTime(this._node, this._params.valuescale * this._params.adsr.sustain, this._params.adsr.attack * this._params.timescale, this._params.adsr.decay * this._params.timescale);
           }
-          if(this._params.delay){
-            setTimeout(fn, this._params.delay * this._params.timescale * 1000);
+          let delay = this.getParameter("delay");
+          if(delay){
+            setTimeout(fn, delay * this._params.timescale * 1000);
           } else {
             fn();
           }
@@ -433,8 +424,9 @@ class AudioObject{
           let fn = e => {
 			  	  this.setTargetAtTime(this._node, 0, 0, this._params.adsr.release * this._params.timescale, true);
           }
-          if(this._params.delay){
-            setTimeout(fn, this._params.delay * this._params.timescale * 1000);
+          let delay = this.getParameter("delay");
+          if(delay){
+            setTimeout(fn, delay * this._params.timescale * 1000);
           } else {
             fn();
           }

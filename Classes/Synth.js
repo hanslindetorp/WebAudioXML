@@ -98,12 +98,12 @@ class Synth{
 	}
 
 	set gain(val){
-	  	this.setTargetAtTime("gain", val);
-  	}
+  	this.setTargetAtTime("gain", val);
+	}
 
-  	get gain(){
-	  	return this._node.gain.value;
-  	}
+	get gain(){
+  	return this._node.gain.value;
+	}
 
 
 	noteToVoice(note){

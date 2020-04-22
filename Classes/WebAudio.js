@@ -181,15 +181,17 @@ module.exports = WebAudio;
 	Add "Channel" as an element that is a blueprint for a Chain element inside a Mixer element. The Mixer then, needs a "channels"-attribute
 	and a routing syntax to allow for multiple channels. (possibly nth-child)
 	Make sure external documents does not inherit variables like timeUnit
+
+
 	Synth does not react on gain-attribute
 
 	Add map="MIDI" for frequency for initial values.
 	Implement webAudioXML.setVariable(variableName, value);
 
-	se till att delay ärvs till childNodes
+	* se till att delay ärvs till childNodes
 
 	Lägg till ränder för clienten
-	
+
 
 	Arpeggio
 
@@ -213,7 +215,7 @@ module.exports = WebAudio;
 
 
 	Not working:
-	https://codepen.io/hanslindetorp/pen/yLywNaW
+	* https://codepen.io/hanslindetorp/pen/yLywNaW
 	* init sensors
 
 
@@ -225,15 +227,9 @@ module.exports = WebAudio;
 	* Do I need to floor steps in midi-conversion?
 
 	* Flytta inläsningen av stored events
-	Lägg till ";"
-
 	* Kolla så att play gesture resumer ctx
 
 
 	Rensa timeouts i sequence
-
-
-	let noteInCycle = noteOffs % obj.stepsCycle;
-
 
 */
