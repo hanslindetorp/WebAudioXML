@@ -43,7 +43,7 @@ class GUI {
 			title.innerHTML = nodeName;
 			el.appendChild(title);
 
-			params.forEach(param => this.addElement(param, el));
+			params.forEach(param => this.addElement(node, el));
 		} else {
 			// attach child elements to the parent if this was not a node
 			el = targetElement;
@@ -53,7 +53,7 @@ class GUI {
 		return el;
 	}
 
-	addElement(param, targetElement){
+	addElement(node, targetElement){
 
 		let labelEl = document.createElement("label");
 		let header = document.createElement("header");
@@ -63,10 +63,10 @@ class GUI {
 		let output = document.createElement("span");
 		output.className = "output";
 
-		Object.keys(param.attributes).forEach(key => el.setAttribute(key, param.attributes[key]));
+		//Object.keys(param.attributes).forEach(key => el.setAttribute(key, param.attributes[key]));
 
 
-		el._attributes = param.attributes;
+		//el._attributes = param.attributes;
 
 		labelEl.appendChild(header);
 		labelEl.appendChild(el);
@@ -74,7 +74,7 @@ class GUI {
 		targetElement.appendChild(labelEl);
 
 		el.addEventListener("input", e => {
-			let val = Mapper.getValue(e.target.value, el._attributes);
+			let val = node.mapper.getValue(e.target.value);
 			output.innerHTML = val;
 
 

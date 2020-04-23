@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" interactionArea="#touchArea" gain="-10dB">
-	<Chain>
+<Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
+	<Chain portamento="50">
 
 		<OscillatorNode type="sawtooth">
-			<frequency follow="relX" map="0,100,36,72, MIDI" steps="0 2.04 3.86 4.98 7.02 8.84 10.88 12"></frequency>
+			<frequency follow="relX" map="0,100,36,72, MIDI" steps="0 2 4 5 7 9 11 12"></frequency>
 		</OscillatorNode>
 
-		<BiquadFilterNode>
-			<frequency follow="relY" map="0,100,0,10000"></frequency>
+		<BiquadFilterNode type="bandpass">
+			<frequency follow="relY" map="0,100,0,5000"></frequency>
 		</BiquadFilterNode>
 
 
 		<GainNode>
-			<gain value="0" follow="pointerdown"></gain>
+			<gain>
+				<Envelope adsr="100,100,50,50" trig="pointer" max="1"></Envelope>
+			</gain>
 		</GainNode>
 
 	</Chain>

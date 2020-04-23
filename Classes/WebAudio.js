@@ -177,11 +177,12 @@ module.exports = WebAudio;
 	* Check envelope separation by comma and space
 	Make a working MIDI example with or without webaudio-controls.
 	* Make "follow"-attributes work with commas and spaces
-	!* Implement CSS-selector for Audio elements - !remember case insensitivity!
+	* Implement CSS-selector for Audio elements - !remember case insensitivity!
 	Add "Channel" as an element that is a blueprint for a Chain element inside a Mixer element. The Mixer then, needs a "channels"-attribute
 	and a routing syntax to allow for multiple channels. (possibly nth-child)
 	Make sure external documents does not inherit variables like timeUnit
 
+	Change "max" to "level" (supporting multiple values)?? Maybe not. Does this only apply to envelopes?
 
 	Synth does not react on gain-attribute
 
@@ -204,7 +205,7 @@ module.exports = WebAudio;
 
 	Implement:
 	Simple GUI
-	OK. AudioBufferSourceNode
+  * AudioBufferSourceNode
 
 	Wish:
 	Advanced envelope with multiple times, levels and curves plus gate and release - imitate supercollider
@@ -221,8 +222,8 @@ module.exports = WebAudio;
 
 	* Add easy javascript access to nodes
 
-	Send can't be first in a chain
-	Check delay!
+	* Send can't be first in a chain
+	* Check delay!
 
 	* Do I need to floor steps in midi-conversion?
 
@@ -231,5 +232,8 @@ module.exports = WebAudio;
 
 
 	Rensa timeouts i sequence
+	* Lägg till PADs på touchArea
+	* portamento på synth
 
+	uppdatera lastGesture!  
 */

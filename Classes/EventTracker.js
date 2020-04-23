@@ -85,7 +85,7 @@ class EventTracker {
 			execute: execute,
 			send: (event => {
 
-				if(true){ //!this.playing){
+				if(!this.playing){
 					// if process is set, then run it
 					let data = ev.process ? ev.process(event, target) : event;
 

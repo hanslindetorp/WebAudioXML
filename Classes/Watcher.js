@@ -1,13 +1,9 @@
-
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class Watcher {
 
-	constructor(xmlNode, str, delay, waxml, callBack){
-
-		let separator = str.includes(",") ? "," : " ";
-		let arr = str.split(separator);
-		delay = parseFloat(delay);
+	constructor(xmlNode, arr, params){
 
 		// allow for different ways of specifying target, event, variable and delay
 		// possible structures:
@@ -30,9 +26,9 @@ class Watcher {
 			// target object is top XML node of this document
 			// variable is a property of the audioObject connected to that XML node
 			//xmlNode.getRootNode().querySelector("audio");
-			this.addVariableWatcher(waxml.variables, variable, delay, callBack);
+			this.addVariableWatcher(params.waxml.variables, variable, params);
 
-			//waxml.addVariableWatcher(variable, callBack);
+			//params.waxml.addVariableWatcher(variable, callBack);
 			return;
 		}
 
@@ -70,7 +66,7 @@ class Watcher {
 				target.addEventListener(event, e => {
 					let val = eval(variable);
 					if(typeof val !== "undefined"){
-						callBack(val);
+						params.callBack(val);
 					} else {
 						console.error("Web Audio XML Parameter follow error. Target object event does not contain variable.", variable);
 					}
@@ -85,7 +81,7 @@ class Watcher {
 
 	}
 
-	addVariableWatcher(obj, variable, delay, callBack){
+	addVariableWatcher(obj, variable, params){
 
 		let oNv = this.varablePathToObject(obj, variable);
 		obj = oNv.object || obj;
@@ -114,13 +110,14 @@ class Watcher {
 			});
 		}
 
-		if(delay){
+		let callBack = params.callBack;
+		if(params.delay){
 			// wrap callBack in a timeout if delay is specified
 			var origCallBack = callBack;
 			callBack = val => {
 				return setTimeout(e => {
 					origCallBack(val);
-				}, delay);
+				}, params.delay);
 			};
 		}
 		obj._props[variable].callBackList.push(callBack);

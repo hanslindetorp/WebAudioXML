@@ -333,6 +333,7 @@ class InteractionManager {
 		this.waxml.start("*[trig='mousedown']");
 		this.waxml.start("*[trig='pointerdown']");
 		this.waxml.start("*[trig='mouse']");
+		this.waxml.start("*[trig='pointer']");
 	}
 
 	pointerMoveProcess(e){
@@ -403,6 +404,7 @@ class InteractionManager {
 		this.waxml.stop("*[trig='pointerup']");
 
 		this.waxml.stop("*[trig='mouse']");
+		this.waxml.stop("*[trig='pointer']");
 
 		// simulate touch behaviour if needed
 		if(!navigator.maxTouchPoints){

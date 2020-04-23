@@ -15,7 +15,7 @@ class AudioObject{
 
 	  	this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
 	  	this._xml = xmlNode;
-	  	let timeUnit = this.getParameter("timeunit")
+	  	let timeUnit = this.getParameter("timeunit");
 
   		switch(timeUnit){
 		  	case "ms":
@@ -206,7 +206,7 @@ class AudioObject{
 
 		  	// parameters
 		  	default:
-		  	this.mapper = new Mapper(this._params.map, this._params.steps);
+		  	this.mapper = new Mapper(this._params);
 
 		  	nodeType = WebAudioUtils.caseFixParameter(nodeType);
 		  	let parentAudioObj = xmlNode.parentNode.audioObject;
@@ -220,21 +220,38 @@ class AudioObject{
 				  }
 
   				if(this._params.follow){
-  					this.watcher = new Watcher(xmlNode, this._params.follow, this.getParameter("delay"), this.waxml, val => {
+  					this.watcher = new Watcher(xmlNode, this._params.follow, {
+              delay: this.getParameter("delay"),
+              waxml: this.waxml,
+              range: this._params.range,
+              value: this._params.value,
+              curve: this._params.curve,
+              callBack: val => {
 
-  						val = this.mapper.getValue(val);
+    						val = this.mapper.getValue(val);
+                let time = 0;
 
-  						switch(this._node.name){
-  							case "delayTime":
-  							val *= this._params.timescale;
-  							break;
+    						switch(this._node.name){
+    							case "delayTime":
+    							val *= this._params.timescale;
+    							break;
 
-  							default:
-  							break;
-  						}
+                  case "frequency":
+                  if(parentAudioObj){
+                    if(parentAudioObj._nodeType.toLowerCase() == "oscillatornode"){
+                      time = this.getParameter("portamento") || 0;
+                      time *= this._params.timescale;
+                    }
+                  }
+                  break;
 
-  						this.setTargetAtTime(this._node, val, 0, 0, true);
-  					 });
+    							default:
+    							break;
+    						}
+
+    						this.setTargetAtTime(this._node, val, 0, time, true);
+    					 }
+             });
   				 }
 
   		  	} else {
@@ -450,6 +467,8 @@ class AudioObject{
 	  	}
 	  	if(typeof param == "string"){param = this._node[param]}
 
+      if(param.value == value){return}
+
 	  	if(cancelPrevious){
 		  	param.cancelScheduledValues(this._ctx.currentTime);
 	  	}
@@ -550,6 +569,15 @@ class AudioObject{
 		  	case "sawtooth":
 		  	case "square":
 		  	case "triangle":
+
+        case "lowpass":
+        case "highpass":
+        case "bandpass":
+        case "lowshelf":
+        case "highshelf":
+        case "peaking":
+        case "notch":
+        case "allpass":
 		  	this._node.type = val;
 		  	break;
 

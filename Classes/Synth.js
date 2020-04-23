@@ -44,11 +44,15 @@ class Synth{
 		}
 
 
-		this.watcher = new Watcher(xmlNode, this._params.follow, this._params.delay, this.waxml, note => {
-			if(note[0]){
-				this.noteOn(note[1]);
-			} else {
-				this.noteOff(note[1]);
+		this.watcher = new Watcher(xmlNode, this._params.follow, {
+			delay: this.getParameter(delay),
+			waxml: this.waxml,
+			callBack: note => {
+				if(note[0]){
+					this.noteOn(note[1]);
+				} else {
+					this.noteOff(note[1]);
+				}
 			}
 		});
 
@@ -110,41 +114,41 @@ class Synth{
 		return Array.from(this.voiceNodes).find(voiceNode => voiceNode.MIDInote == note);
 	}
 
-  	getParameter(paramName){
-	  	if(typeof this._params[paramName] === "undefined"){
-		  	if(this._xml.parentNode){
-			  	return this._xml.parentNode.audioObject.getParameter(paramName);
-		  	} else {
-			  	return 0;
-		  	}
-
+	getParameter(paramName){
+  	if(typeof this._params[paramName] === "undefined"){
+	  	if(this._xml.parentNode){
+		  	return this._xml.parentNode.audioObject.getParameter(paramName);
 	  	} else {
-		  	return this._params[paramName];
+		  	return 0;
 	  	}
+
+  	} else {
+	  	return this._params[paramName];
+  	}
+	}
+
+
+	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
+
+  	let startTime = this._ctx.currentTime + (delay || 0);
+  	//transitionTime = transitionTime || 0.001;
+  	//console.log(value, delay, transitionTime, cancelPrevious);
+
+  	if(!this._node){
+	  	console.error("Node error:", this);
+  	}
+  	if(typeof param == "string"){param = this._node[param]}
+
+  	if(cancelPrevious){
+	  	param.cancelScheduledValues(this._ctx.currentTime);
+  	}
+  	if(transitionTime){
+	  	param.setTargetAtTime(value, startTime, transitionTime);
+  	} else {
+	  	param.setValueAtTime(value, startTime);
   	}
 
-
-  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
-
-	  	let startTime = this._ctx.currentTime + (delay || 0);
-	  	//transitionTime = transitionTime || 0.001;
-	  	//console.log(value, delay, transitionTime, cancelPrevious);
-
-	  	if(!this._node){
-		  	console.error("Node error:", this);
-	  	}
-	  	if(typeof param == "string"){param = this._node[param]}
-
-	  	if(cancelPrevious){
-		  	param.cancelScheduledValues(this._ctx.currentTime);
-	  	}
-	  	if(transitionTime){
-		  	param.setTargetAtTime(value, startTime, transitionTime);
-	  	} else {
-		  	param.setValueAtTime(value, startTime);
-	  	}
-
-  	}
+	}
 
 
 }

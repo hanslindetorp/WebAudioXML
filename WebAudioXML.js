@@ -16,7 +16,7 @@ class AudioObject{
 
 	  	this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
 	  	this._xml = xmlNode;
-	  	let timeUnit = this.getParameter("timeunit")
+	  	let timeUnit = this.getParameter("timeunit");
 
   		switch(timeUnit){
 		  	case "ms":
@@ -207,7 +207,7 @@ class AudioObject{
 
 		  	// parameters
 		  	default:
-		  	this.mapper = new Mapper(this._params.map, this._params.steps);
+		  	this.mapper = new Mapper(this._params);
 
 		  	nodeType = WebAudioUtils.caseFixParameter(nodeType);
 		  	let parentAudioObj = xmlNode.parentNode.audioObject;
@@ -221,21 +221,38 @@ class AudioObject{
 				  }
 
   				if(this._params.follow){
-  					this.watcher = new Watcher(xmlNode, this._params.follow, this.getParameter("delay"), this.waxml, val => {
+  					this.watcher = new Watcher(xmlNode, this._params.follow, {
+              delay: this.getParameter("delay"),
+              waxml: this.waxml,
+              range: this._params.range,
+              value: this._params.value,
+              curve: this._params.curve,
+              callBack: val => {
 
-  						val = this.mapper.getValue(val);
+    						val = this.mapper.getValue(val);
+                let time = 0;
 
-  						switch(this._node.name){
-  							case "delayTime":
-  							val *= this._params.timescale;
-  							break;
+    						switch(this._node.name){
+    							case "delayTime":
+    							val *= this._params.timescale;
+    							break;
 
-  							default:
-  							break;
-  						}
+                  case "frequency":
+                  if(parentAudioObj){
+                    if(parentAudioObj._nodeType.toLowerCase() == "oscillatornode"){
+                      time = this.getParameter("portamento") || 0;
+                      time *= this._params.timescale;
+                    }
+                  }
+                  break;
 
-  						this.setTargetAtTime(this._node, val, 0, 0, true);
-  					 });
+    							default:
+    							break;
+    						}
+
+    						this.setTargetAtTime(this._node, val, 0, time, true);
+    					 }
+             });
   				 }
 
   		  	} else {
@@ -451,6 +468,8 @@ class AudioObject{
 	  	}
 	  	if(typeof param == "string"){param = this._node[param]}
 
+      if(param.value == value){return}
+
 	  	if(cancelPrevious){
 		  	param.cancelScheduledValues(this._ctx.currentTime);
 	  	}
@@ -551,6 +570,15 @@ class AudioObject{
 		  	case "sawtooth":
 		  	case "square":
 		  	case "triangle":
+
+        case "lowpass":
+        case "highpass":
+        case "bandpass":
+        case "lowshelf":
+        case "highshelf":
+        case "peaking":
+        case "notch":
+        case "allpass":
 		  	this._node.type = val;
 		  	break;
 
@@ -639,7 +667,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./Loader.js":6,"./Mapper.js":7,"./Watcher.js":11,"./WebAudioUtils.js":13}],2:[function(require,module,exports){
+},{"./Loader.js":6,"./Mapper.js":7,"./Watcher.js":12,"./WebAudioUtils.js":14}],2:[function(require,module,exports){
 
 
 class Connector {
@@ -888,7 +916,7 @@ class EventTracker {
 			execute: execute,
 			send: (event => {
 
-				if(true){ //!this.playing){
+				if(!this.playing){
 					// if process is set, then run it
 					let data = ev.process ? ev.process(event, target) : event;
 
@@ -948,7 +976,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":9}],4:[function(require,module,exports){
+},{"./Sequence.js":10}],4:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 
@@ -994,7 +1022,7 @@ class GUI {
 			title.innerHTML = nodeName;
 			el.appendChild(title);
 
-			params.forEach(param => this.addElement(param, el));
+			params.forEach(param => this.addElement(node, el));
 		} else {
 			// attach child elements to the parent if this was not a node
 			el = targetElement;
@@ -1004,7 +1032,7 @@ class GUI {
 		return el;
 	}
 
-	addElement(param, targetElement){
+	addElement(node, targetElement){
 
 		let labelEl = document.createElement("label");
 		let header = document.createElement("header");
@@ -1014,10 +1042,10 @@ class GUI {
 		let output = document.createElement("span");
 		output.className = "output";
 
-		Object.keys(param.attributes).forEach(key => el.setAttribute(key, param.attributes[key]));
+		//Object.keys(param.attributes).forEach(key => el.setAttribute(key, param.attributes[key]));
 
 
-		el._attributes = param.attributes;
+		//el._attributes = param.attributes;
 
 		labelEl.appendChild(header);
 		labelEl.appendChild(el);
@@ -1025,7 +1053,7 @@ class GUI {
 		targetElement.appendChild(labelEl);
 
 		el.addEventListener("input", e => {
-			let val = Mapper.getValue(e.target.value, el._attributes);
+			let val = node.mapper.getValue(e.target.value);
 			output.innerHTML = val;
 
 
@@ -1441,6 +1469,7 @@ class InteractionManager {
 		this.waxml.start("*[trig='mousedown']");
 		this.waxml.start("*[trig='pointerdown']");
 		this.waxml.start("*[trig='mouse']");
+		this.waxml.start("*[trig='pointer']");
 	}
 
 	pointerMoveProcess(e){
@@ -1511,6 +1540,7 @@ class InteractionManager {
 		this.waxml.stop("*[trig='pointerup']");
 
 		this.waxml.stop("*[trig='mouse']");
+		this.waxml.stop("*[trig='pointer']");
 
 		// simulate touch behaviour if needed
 		if(!navigator.maxTouchPoints){
@@ -1658,126 +1688,156 @@ module.exports = Loader;
 
 },{}],7:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
+var Range = require('./Range.js');
 
 class Mapper{
 
 
-	constructor(str = "", steps = ""){
-		// str is a comma separated string with at least four values
-		// minIn, maxIn, minOut, mixOut
-		// potentially also a fifth value indicating Math.power
-		let arr;
-		if(str){
-			let separator = str.includes(",") ? "," : " ";
-			arr = str ? str.split(separator) : null;
+	constructor(params){
+
+		this.params = params;
+
+		if(params.map){
+			this.minIn = params.map.minIn;
+			this.maxIn = params.map.maxIn;
+			this.minOut = params.map.minOut;
+			this.maxOut = params.map.maxOut;
+			this.conv = params.map.conv;
 		}
 
-		let obj = {};
-
-		if(arr){
-		  	obj.minIn = Number(arr.shift());
-		  	obj.maxIn = Number(arr.shift());
-		  	obj.minOut = Number(arr.shift());
-		  	obj.maxOut = Number(arr.shift());
-		  	obj.conv = arr.shift();
-
-		  	if(obj.conv){
-			  	obj.conv = obj.conv.trim();
-		  	}
-
-		  	if(Number(obj.conv) == obj.conv){obj.conv = "Math.pow(x, " + obj.conv + ")"};
-
-		  	// backwards compatible
-		  	obj.steps = arr.shift() || steps;
-		  	if(obj.steps){
-          let separator = obj.steps.includes(",") ? "," : " ";
-			  	obj.steps = obj.steps.trim().split(separator).map(item => parseFloat(item));
-			  	obj.stepsCycle = obj.steps.pop();
-			  	if(!obj.steps.length){
-				  	obj.steps.push(0);
-			  	}
-		  	}
-
-	  	}
-
-		this.minIn = typeof obj.minIn == "number" ? obj.minIn : 0;
-		this.maxIn = typeof obj.maxIn == "number" ? obj.maxIn : 1;
-
-
-		this.minOut = typeof obj.minOut == "number" ? obj.minOut : 0;
-		this.maxOut = typeof obj.maxOut == "number" ? obj.maxOut : 1;
-
-		this.conv = obj.conv;
-		this.steps = obj.steps;
-		this.stepsCycle = obj.stepsCycle;
-
+		this.steps = params.steps;
+		this.curve = params.curve;
+		this.value = params.value;
+		if(params.range){
+			this.range = new Range(params.range);
+		}
 	}
 
 
-	getValue(x, obj){
+	getValue(x){
 
-		return Mapper.getValue(x, this);
+		if(typeof this.minIn == "undefined"){return x}
 
+		let rangeObj, targetRange, relVal, rangeIn, rangeOut, valOut;
+
+		rangeObj = {
+			values: {min: this.minIn, max: this.maxIn},
+			index: 0
+		}
+
+		if(this.range){
+			let ro = this.range.getRange(x);
+			if(ro.index == -1){
+				rangeObj.values.min = 0;
+				rangeObj.values.max = 0;
+			} else {
+				rangeObj = ro;
+			}
+		}
+
+		targetRange = rangeObj.values;
+		rangeIn = targetRange.max - targetRange.min;
+		rangeOut = this.maxOut - this.minOut;
+		x = (x - targetRange.min)/rangeIn;
+
+
+		// kanske kolla alla ranges vilken som ger högst output
+		// multiplicera med "gain" för att göra kurvorna brantare
+
+		// crop
+		x = Math.max(0, Math.min(x, 1));
+
+
+		if(this.curve){
+			let curve = this.curve[rangeObj.index % this.curve.length];
+
+			switch (curve) {
+				case "bell":
+					x = this.mapToBell(x);
+					console.log(x);
+					break;
+
+				case "sine":
+					x = Math.sin(2 * x * Math.PI) / 2 + 0.5;
+					break;
+
+				case "half-sine":
+					x = Math.sin(x * Math.PI);
+					break;
+
+				default:
+					break;
+
+			}
+
+		}
+		// scale
+		// use curve and levels (what about max?)
+		// to calculate output
+		if(this.level){
+			let level = this.level[rangeObj.index % this.level.length];
+
+			x = x * level / 100;
+		}
+
+		if(x > 1){
+			//console.log(x);
+		}
+
+
+		if(this.conv == "MIDI"){
+			let noteOffs;
+			if(this.steps){
+				//let cycle = Math.floor(noteOffs / obj.stepsCycle);
+				//let noteInCycle = noteOffs % obj.stepsCycle;
+
+	      let notesInCycle = this.steps.length-1;
+				let stepsCycle = this.steps[notesInCycle];
+	      let nrOfCycles = rangeOut / stepsCycle;
+	      rangeOut = notesInCycle * nrOfCycles + 1;
+	      noteOffs = Math.floor(x * rangeOut);
+
+	      let cycle = Math.floor(noteOffs / notesInCycle);
+	      let noteInCycle = Math.floor(noteOffs % notesInCycle);
+				noteOffs = cycle * stepsCycle + this.steps[noteInCycle];
+			} else {
+	      noteOffs = Math.floor(x * rangeOut);
+	    }
+			valOut = WebAudioUtils.MIDInoteToFrequency(this.minOut + noteOffs);
+
+		} else {
+			valOut = eval(this.conv);
+			valOut = valOut * rangeOut + this.minOut;
+		}
+
+
+		return valOut;
+	}
+
+	mapToBell(x, stdD = 1/4, mean = 0.5, skew = 0){
+		//let v = 1;
+		//x = Math.sqrt( -2.0 * Math.log( x ) ) * Math.cos( 2.0 * Math.PI * v );
+
+	  //This is the real workhorse of this algorithm. It returns values along a bell curve from 0 - 1 - 0 with an input of 0 - 1.
+		// I found the example here: https://codepen.io/zapplebee/pen/ByvmMo
+
+		//https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
+
+		let max = this.bellFn(0, stdD, mean, skew);
+		let min = this.bellFn(mean, stdD, mean, skew);
+		x = this.bellFn(x, stdD, mean, skew);
+		return (max - x) / (max-min);
+	}
+
+	bellFn(x, stdD, mean, skew){
+		return  1 / (( 1/( stdD * Math.sqrt(2 * Math.PI) ) ) * Math.pow(Math.E , -1 * Math.pow(x - mean, 2) / (2 * Math.pow(stdD,2))));
 	}
 
 }
 
-
-Mapper.getValue = function(x, obj) {
-	//x = Math.max(x, this.minIn);
-	//x = Math.min(x, this.maxIn);
-
-	let minIn, maxIn, minOut, maxOut, relVal, rangeIn, rangeOut, valOut;
-	x = parseFloat(x);
-
-	maxIn = parseFloat(obj.maxIn || obj.max || 1);
-	minIn = parseFloat(obj.minIn || obj.min || 0);
-
-	maxOut = parseFloat(obj.maxOut || obj.max || 1);
-	minOut = parseFloat(obj.minOut || obj.min || 0);
-
-	rangeIn = maxIn - minIn;
-	rangeOut = maxOut - minOut;
-	x = (x - minIn)/rangeIn;
-	x = Math.max(0, Math.min(x, 1));
-
-	// probably not needed
-	obj.conv = obj.conv || 1;
-
-
-
-	if(obj.conv == "MIDI"){
-		let noteOffs;
-		if(obj.steps){
-			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
-			//let noteInCycle = noteOffs % obj.stepsCycle;
-
-      let notesInCycle = obj.steps.length;
-      let nrOfCycles = rangeOut / obj.stepsCycle;
-      rangeOut = obj.steps.length * nrOfCycles;
-      noteOffs = Math.floor(x * rangeOut);
-
-      let cycle = Math.floor(noteOffs / obj.steps.length);
-      let noteInCycle = Math.floor(noteOffs % obj.steps.length);
-			noteOffs = cycle * obj.stepsCycle + obj.steps[noteInCycle];
-		} else {
-      noteOffs = Math.floor(x * rangeOut);
-    }
-		valOut = WebAudioUtils.MIDInoteToFrequency(minOut + noteOffs);
-
-	} else {
-		if(Number(obj.conv) == obj.conv){obj.conv = "Math.pow(x, " + obj.conv + ")"};
-		valOut = eval(obj.conv);
-		valOut = valOut * rangeOut + minOut;
-	}
-
-
-	return valOut;
-};
-
 module.exports = Mapper;
 
-},{"./WebAudioUtils.js":13}],8:[function(require,module,exports){
+},{"./Range.js":9,"./WebAudioUtils.js":14}],8:[function(require,module,exports){
 
 var Loader = require('./Loader.js');
 var AudioObject = require('./AudioObject.js');
@@ -1911,7 +1971,112 @@ class Parser {
   	
 module.exports = Parser;
 
-},{"./AudioObject.js":1,"./Loader.js":6,"./Synth.js":10}],9:[function(require,module,exports){
+},{"./AudioObject.js":1,"./Loader.js":6,"./Synth.js":11}],9:[function(require,module,exports){
+var WebAudioUtils = require('./WebAudioUtils.js');
+
+
+class Range {
+
+	constructor(arr){
+
+		this.values = [];
+
+			arr.forEach(val => {
+
+				if(val.includes("...")){
+					var minMaxStrings = val.split("...");
+					var numValMin = parseFloat(minMaxStrings[0]);
+					var numValMax = parseFloat(minMaxStrings[1]);
+
+					this.values.push(new MinMax(numValMin, numValMax));
+				}
+			});
+
+	}
+
+	getRange(x){
+		let i = this.values.findIndex(item => x >= item.min && x <= item.max);
+		return {values: this.values[i], index: i}
+	}
+
+	get value(){
+
+		return Range.getRandomVal(this.values);
+
+	}
+
+	getRandomVal(dec, fn){
+		return Range.getRandomVal(this.values, dec, fn);
+	}
+
+}
+
+Range.getRandomVal = function(arr, dec, fn){
+
+	if(!arr){return 0}
+	if(!arr.length){return 0}
+
+
+	var ln = fn == "other" ? arr.length - 1 : arr.length;
+	var rnd = Math.floor(Math.random()*ln);
+	var val;
+	dec = dec || 0;
+
+	// pick from array
+	switch(fn){
+		case "remove":
+		val = arr.splice(rnd, 1).pop();
+		break;
+
+		case "other":
+		val = arr.splice(rnd, 1).pop();
+		arr.push(val);
+		break;
+
+		case "sequence":
+		val = arr.shift();
+		arr.push(val);
+		break;
+
+		case "shuffle":
+		default:
+		val = arr[rnd];
+		break;
+	}
+
+	if(val instanceof MinMax){
+
+		// random between two values
+
+		var range = val.max-val.min+1;
+		var num = val.min + Math.random()*range;
+
+		var factor = Math.pow(10, dec);
+		num*=factor;
+		num = Math.floor(num);
+		num/=factor;
+		val = num;
+
+	}
+	return val;
+
+}
+
+class MinMax {
+
+	constructor(min, max){
+		this.min = Math.min(min, max);
+		this.max = Math.max(min, max);
+	}
+
+}
+
+
+
+
+module.exports = Range;
+
+},{"./WebAudioUtils.js":14}],10:[function(require,module,exports){
 
 
 
@@ -2036,7 +2201,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -2083,11 +2248,15 @@ class Synth{
 		}
 
 
-		this.watcher = new Watcher(xmlNode, this._params.follow, this._params.delay, this.waxml, note => {
-			if(note[0]){
-				this.noteOn(note[1]);
-			} else {
-				this.noteOff(note[1]);
+		this.watcher = new Watcher(xmlNode, this._params.follow, {
+			delay: this.getParameter(delay),
+			waxml: this.waxml,
+			callBack: note => {
+				if(note[0]){
+					this.noteOn(note[1]);
+				} else {
+					this.noteOff(note[1]);
+				}
 			}
 		});
 
@@ -2149,58 +2318,54 @@ class Synth{
 		return Array.from(this.voiceNodes).find(voiceNode => voiceNode.MIDInote == note);
 	}
 
-  	getParameter(paramName){
-	  	if(typeof this._params[paramName] === "undefined"){
-		  	if(this._xml.parentNode){
-			  	return this._xml.parentNode.audioObject.getParameter(paramName);
-		  	} else {
-			  	return 0;
-		  	}
-
+	getParameter(paramName){
+  	if(typeof this._params[paramName] === "undefined"){
+	  	if(this._xml.parentNode){
+		  	return this._xml.parentNode.audioObject.getParameter(paramName);
 	  	} else {
-		  	return this._params[paramName];
+		  	return 0;
 	  	}
+
+  	} else {
+	  	return this._params[paramName];
+  	}
+	}
+
+
+	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
+
+  	let startTime = this._ctx.currentTime + (delay || 0);
+  	//transitionTime = transitionTime || 0.001;
+  	//console.log(value, delay, transitionTime, cancelPrevious);
+
+  	if(!this._node){
+	  	console.error("Node error:", this);
+  	}
+  	if(typeof param == "string"){param = this._node[param]}
+
+  	if(cancelPrevious){
+	  	param.cancelScheduledValues(this._ctx.currentTime);
+  	}
+  	if(transitionTime){
+	  	param.setTargetAtTime(value, startTime, transitionTime);
+  	} else {
+	  	param.setValueAtTime(value, startTime);
   	}
 
-
-  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
-
-	  	let startTime = this._ctx.currentTime + (delay || 0);
-	  	//transitionTime = transitionTime || 0.001;
-	  	//console.log(value, delay, transitionTime, cancelPrevious);
-
-	  	if(!this._node){
-		  	console.error("Node error:", this);
-	  	}
-	  	if(typeof param == "string"){param = this._node[param]}
-
-	  	if(cancelPrevious){
-		  	param.cancelScheduledValues(this._ctx.currentTime);
-	  	}
-	  	if(transitionTime){
-		  	param.setTargetAtTime(value, startTime, transitionTime);
-	  	} else {
-		  	param.setValueAtTime(value, startTime);
-	  	}
-
-  	}
+	}
 
 
 }
 
 module.exports = Synth;
 
-},{"./Watcher.js":11,"./WebAudioUtils.js":13}],11:[function(require,module,exports){
-
+},{"./Watcher.js":12,"./WebAudioUtils.js":14}],12:[function(require,module,exports){
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class Watcher {
 
-	constructor(xmlNode, str, delay, waxml, callBack){
-
-		let separator = str.includes(",") ? "," : " ";
-		let arr = str.split(separator);
-		delay = parseFloat(delay);
+	constructor(xmlNode, arr, params){
 
 		// allow for different ways of specifying target, event, variable and delay
 		// possible structures:
@@ -2223,9 +2388,9 @@ class Watcher {
 			// target object is top XML node of this document
 			// variable is a property of the audioObject connected to that XML node
 			//xmlNode.getRootNode().querySelector("audio");
-			this.addVariableWatcher(waxml.variables, variable, delay, callBack);
+			this.addVariableWatcher(params.waxml.variables, variable, params);
 
-			//waxml.addVariableWatcher(variable, callBack);
+			//params.waxml.addVariableWatcher(variable, callBack);
 			return;
 		}
 
@@ -2263,7 +2428,7 @@ class Watcher {
 				target.addEventListener(event, e => {
 					let val = eval(variable);
 					if(typeof val !== "undefined"){
-						callBack(val);
+						params.callBack(val);
 					} else {
 						console.error("Web Audio XML Parameter follow error. Target object event does not contain variable.", variable);
 					}
@@ -2278,7 +2443,7 @@ class Watcher {
 
 	}
 
-	addVariableWatcher(obj, variable, delay, callBack){
+	addVariableWatcher(obj, variable, params){
 
 		let oNv = this.varablePathToObject(obj, variable);
 		obj = oNv.object || obj;
@@ -2307,13 +2472,14 @@ class Watcher {
 			});
 		}
 
-		if(delay){
+		let callBack = params.callBack;
+		if(params.delay){
 			// wrap callBack in a timeout if delay is specified
 			var origCallBack = callBack;
 			callBack = val => {
 				return setTimeout(e => {
 					origCallBack(val);
-				}, delay);
+				}, params.delay);
 			};
 		}
 		obj._props[variable].callBackList.push(callBack);
@@ -2344,7 +2510,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{}],12:[function(require,module,exports){
+},{"./WebAudioUtils.js":14}],13:[function(require,module,exports){
 /*
 MIT License
 
@@ -2524,11 +2690,12 @@ module.exports = WebAudio;
 	* Check envelope separation by comma and space
 	Make a working MIDI example with or without webaudio-controls.
 	* Make "follow"-attributes work with commas and spaces
-	!* Implement CSS-selector for Audio elements - !remember case insensitivity!
+	* Implement CSS-selector for Audio elements - !remember case insensitivity!
 	Add "Channel" as an element that is a blueprint for a Chain element inside a Mixer element. The Mixer then, needs a "channels"-attribute
 	and a routing syntax to allow for multiple channels. (possibly nth-child)
 	Make sure external documents does not inherit variables like timeUnit
 
+	Change "max" to "level" (supporting multiple values)?? Maybe not. Does this only apply to envelopes?
 
 	Synth does not react on gain-attribute
 
@@ -2551,7 +2718,7 @@ module.exports = WebAudio;
 
 	Implement:
 	Simple GUI
-	OK. AudioBufferSourceNode
+  * AudioBufferSourceNode
 
 	Wish:
 	Advanced envelope with multiple times, levels and curves plus gate and release - imitate supercollider
@@ -2568,8 +2735,8 @@ module.exports = WebAudio;
 
 	* Add easy javascript access to nodes
 
-	Send can't be first in a chain
-	Check delay!
+	* Send can't be first in a chain
+	* Check delay!
 
 	* Do I need to floor steps in midi-conversion?
 
@@ -2578,10 +2745,13 @@ module.exports = WebAudio;
 
 
 	Rensa timeouts i sequence
+	* Lägg till PADs på touchArea
+	* portamento på synth
 
+	uppdatera lastGesture!  
 */
 
-},{"./Connector.js":2,"./GUI.js":4,"./InteractionManager.js":5,"./Parser.js":8}],13:[function(require,module,exports){
+},{"./Connector.js":2,"./GUI.js":4,"./InteractionManager.js":5,"./Parser.js":8}],14:[function(require,module,exports){
 
 
 
@@ -2599,13 +2769,14 @@ class WebAudioUtils {
 WebAudioUtils.typeFixParam = (param, value) => {
 
 	//param = param.toLowerCase();
+	let arr;
 
 	switch(param){
 
 		case "volume":
 		case "gain":
 		if(value.includes("dB") || value.includes("db")){
-			value = Math.pow(2, Number(value.split("dB")[0]) / 3);
+			value = Math.pow(2, parseFloat(value) / 3);
 		} else {
 			value = parseFloat(value);
 		}
@@ -2651,28 +2822,62 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "reduction":
 		case "attack":
 		case "release":
-		value = Number(value);
+		value = parseFloat(value);
 		break;
 
 
 		case "maxDelayTime":
-		value = Number(value) || 1;
+		value = parseFloat(value) || 1;
 		break;
 
 		case "adsr":
-		let separator = value.includes(",") ? ",": " ";
-		let arr = value.split(separator);
+		arr = WebAudioUtils.split(value);
 		value = {
-			attack: Number(arr[0]),
-			decay: Number(arr[1]),
-			sustain: Number(arr[2]),
-			release: Number(arr[3])
+			attack: parseFloat(arr[0]),
+			decay: parseFloat(arr[1]),
+			sustain: parseFloat(arr[2]),
+			release: parseFloat(arr[3])
 		};
 		break;
 
+		case "map":
+		// str is a comma separated string with at least four values
+		// minIn, maxIn, minOut, mixOut
+		// potentially also a fifth value indicating Math.power
+		arr = WebAudioUtils.split(value);
+		value = {};
+  	value.minIn = parseFloat(arr.shift());
+  	value.maxIn = parseFloat(arr.shift());
+  	value.minOut = parseFloat(arr.shift());
+  	value.maxOut = parseFloat(arr.shift());
+
+		value.minIn = typeof value.minIn == "number" ? value.minIn : 0;
+		value.maxIn = typeof value.maxIn == "number" ? value.maxIn : 1;
+		value.minOut = typeof value.minOut == "number" ? value.minOut : 0;
+		value.maxOut = typeof value.maxOut == "number" ? value.maxOut : 1;
+
+		if(arr.length){
+			value.conv = arr.shift().trim();
+		} else {
+			value.conv = 1;
+		}
+		if(Number(value.conv) == value.conv){value.conv = "Math.pow(x, " + value.conv + ")"};
+		break;
+
+		case "level":
+		case "steps":
+		value = WebAudioUtils.split(value).map(item => parseFloat(item));
+		break;
+
+		case "range":
+		case "curve":
+		case "follow":
+		value = WebAudioUtils.split(value);
+		break;
 
 
 		default:
+
 
 		break;
 
@@ -2755,7 +2960,12 @@ WebAudioUtils.widthEndingSlash = (str) => {
 WebAudioUtils.MIDInoteToFrequency = note => {
 	return 440 * Math.pow(2, (note - 69) / 12);
 }
+WebAudioUtils.split = str => {
+	let separator = str.includes(",") ? "," : " ";
+	let arr = str.split(separator).map(item => item.trim());
+	return arr;
+}
 
 module.exports = WebAudioUtils;
 
-},{}]},{},[12]);
+},{}]},{},[13]);
