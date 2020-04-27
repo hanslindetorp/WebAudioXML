@@ -1376,7 +1376,7 @@ class InteractionManager {
 		});
 	}
 
-	tounchEnd(e){
+	touchEnd(e){
 
 		//e.preventDefault();
 		Array.prototype.forEach.call(e.changedTouches, touch => {
@@ -1572,7 +1572,7 @@ class InteractionManager {
 		}
 
 		let JSONdata = JSON.stringify(seq._events);
-		let str = "webAudioXML.addSequence(" + JSONdata + ");";
+		let str = "webAudioXML.addSequence('_storedGesture', " + JSONdata + ");";
 
 	  const el = document.createElement('textarea');
 	  el.value = str;
@@ -1594,7 +1594,7 @@ class InteractionManager {
 		return this.eventTracker.lastGesture;
 	}
 
-	addSequence(events, name="_storedGesture"){
+	addSequence(name="_storedGesture", events){
 		this.eventTracker.addSequence(name, events);
 	}
 
@@ -2103,6 +2103,7 @@ class Sequence {
 				ev = this._events[i];
 				if(ev.name == start){
 					startIndex = i;
+					break;
 				}
 			}
 
@@ -2119,6 +2120,7 @@ class Sequence {
 				ev = this._events[i];
 				if(ev.name == end){
 					endIndex = i;
+					break;
 				}
 			}
 		} else if(typeof end == "number"){
@@ -2697,14 +2699,14 @@ module.exports = WebAudio;
 
 	Change "max" to "level" (supporting multiple values)?? Maybe not. Does this only apply to envelopes?
 
-	Synth does not react on gain-attribute
+	* Synth does not react on gain-attribute
 
 	Add map="MIDI" for frequency for initial values.
 	Implement webAudioXML.setVariable(variableName, value);
 
 	* se till att delay ärvs till childNodes
 
-	Lägg till ränder för clienten
+	* Lägg till ränder för clienten
 
 
 	Arpeggio
@@ -2748,7 +2750,17 @@ module.exports = WebAudio;
 	* Lägg till PADs på touchArea
 	* portamento på synth
 
-	uppdatera lastGesture!  
+	Kolla dynamisk pan
+
+	uppdatera lastGesture!
+
+	9:15 Jakob
+	9:30 Sebastian
+	10:30 Edvin
+	10:45 Tuva-Lill
+	11:30 Bobo
+	11:45 Ola
+
 */
 
 },{"./Connector.js":2,"./GUI.js":4,"./InteractionManager.js":5,"./Parser.js":8}],14:[function(require,module,exports){

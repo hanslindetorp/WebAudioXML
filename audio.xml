@@ -3,17 +3,16 @@
 	<Chain portamento="50">
 
 		<OscillatorNode type="sawtooth">
-			<frequency follow="relX" map="0,100,36,72, MIDI" steps="0 2 4 5 7 9 11 12"></frequency>
+			<frequency follow="relX" map="0,100,36,60, MIDI" steps="0 2 4 5 7 9 11 12"></frequency>
 		</OscillatorNode>
 
-		<BiquadFilterNode type="bandpass">
-			<frequency follow="relY" map="0,100,0,5000"></frequency>
+		<BiquadFilterNode type="lowpass">
+			<frequency follow="relY" map="100,0,0,5000, 3"></frequency>
 		</BiquadFilterNode>
-
 
 		<GainNode>
 			<gain>
-				<Envelope adsr="100,100,50,50" trig="pointer" max="1"></Envelope>
+				<Envelope adsr="100,100,50,20" trig="pointer" max="1"></Envelope>
 			</gain>
 		</GainNode>
 

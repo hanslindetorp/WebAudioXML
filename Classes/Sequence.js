@@ -24,6 +24,7 @@ class Sequence {
 				ev = this._events[i];
 				if(ev.name == start){
 					startIndex = i;
+					break;
 				}
 			}
 
@@ -40,6 +41,7 @@ class Sequence {
 				ev = this._events[i];
 				if(ev.name == end){
 					endIndex = i;
+					break;
 				}
 			}
 		} else if(typeof end == "number"){

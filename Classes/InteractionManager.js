@@ -240,7 +240,7 @@ class InteractionManager {
 		});
 	}
 
-	tounchEnd(e){
+	touchEnd(e){
 
 		//e.preventDefault();
 		Array.prototype.forEach.call(e.changedTouches, touch => {
@@ -436,7 +436,7 @@ class InteractionManager {
 		}
 
 		let JSONdata = JSON.stringify(seq._events);
-		let str = "webAudioXML.addSequence(" + JSONdata + ");";
+		let str = "webAudioXML.addSequence('_storedGesture', " + JSONdata + ");";
 
 	  const el = document.createElement('textarea');
 	  el.value = str;
@@ -458,7 +458,7 @@ class InteractionManager {
 		return this.eventTracker.lastGesture;
 	}
 
-	addSequence(events, name="_storedGesture"){
+	addSequence(name="_storedGesture", events){
 		this.eventTracker.addSequence(name, events);
 	}
 

@@ -184,14 +184,14 @@ module.exports = WebAudio;
 
 	Change "max" to "level" (supporting multiple values)?? Maybe not. Does this only apply to envelopes?
 
-	Synth does not react on gain-attribute
+	* Synth does not react on gain-attribute
 
 	Add map="MIDI" for frequency for initial values.
 	Implement webAudioXML.setVariable(variableName, value);
 
 	* se till att delay ärvs till childNodes
 
-	Lägg till ränder för clienten
+	* Lägg till ränder för clienten
 
 
 	Arpeggio
@@ -235,5 +235,15 @@ module.exports = WebAudio;
 	* Lägg till PADs på touchArea
 	* portamento på synth
 
-	uppdatera lastGesture!  
+	Kolla dynamisk pan
+
+	uppdatera lastGesture!
+
+	9:15 Jakob
+	9:30 Sebastian
+	10:30 Edvin
+	10:45 Tuva-Lill
+	11:30 Bobo
+	11:45 Ola
+
 */
