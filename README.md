@@ -1,12 +1,14 @@
 # WebAudioXML v1.0
 WebAudioXML is a javascript library that makes it possible to create Web Audio applications using XML syntax. It is a PhD research project by Hans Lindetorp. The XML syntax is a proposal for a standardized way of structuring audio node trees for Web Audio API using XML. The specification for WebAudioXML defines how to structure Audio objects in a hierarchical, modular way using XML. For integration in a web-based application, it requires WebAudioXML.js, a JavaScript library that parses the XML and creates and connects all Web Audio nodes into a tree-like structure, called an Audio Graph.
 
-### [Documentation](https://github.com/hanslindetorp/WebAudioXML/wiki)
-A detailed documentation covering the different elements, attributes, variable mapping and audio signal routing methods.
-
+### DEMOs
+https://codepen.io/collection/DjaYkE
 
 ### [Tutorial](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
 [![WebAudioXML tutorials](https://img.youtube.com/vi/ZcA9O8_4LQ8/0.jpg)](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
+
+### [Documentation](https://github.com/hanslindetorp/WebAudioXML/wiki)
+A detailed documentation covering the different elements, attributes, variable mapping and audio signal routing methods.
 
 ### Installation
 WebAudioXML is added to a web page using one line of HTML-code added to the <head>-element or at the end of the <body>. The ‘data-source’ attribute specifies the path to a WebAudioXML document.
