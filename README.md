@@ -5,7 +5,7 @@ WebAudioXML is a javascript library that makes it possible to create Web Audio a
 A detailed documentation covering the different elements, attributes, variable mapping and audio signal routing methods.
 
 
-### Tutorial
+### [Tutorial](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
 [![WebAudioXML tutorials](https://img.youtube.com/vi/ZcA9O8_4LQ8/0.jpg)](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
 
 ### Installation
