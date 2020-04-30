@@ -5,6 +5,9 @@ The full documentation is available from this page:
 #### [Documentation](https://github.com/hanslindetorp/WebAudioXML/wiki)
 
 
+#### Tutorial
+<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ### Installation
 WebAudioXML is added to a web page using one line of HTML-code added to the <head>-element or at the end of the <body>. The ‘data-source’ attribute specifies the path to a WebAudioXML document.
 
