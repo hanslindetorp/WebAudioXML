@@ -59,7 +59,11 @@ class WebAudio {
 
 				new Parser(source, this, xmlDoc => {
 					this._xml = xmlDoc;
-					this.ui.registerEvents(this._xml.getAttribute("interactionArea"));
+					let interactionArea = this._xml.getAttribute("interactionArea");
+					if(interactionArea){
+						this.ui.registerEvents(interactionArea);
+					}
+
 					//webAudioXML = xmlDoc.audioObject;
 					//webAudioXML.touch = touches;
 					new Connector(xmlDoc, _ctx);

@@ -2,9 +2,13 @@
 <Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
 	<Chain portamento="50">
 
-		<OscillatorNode type="sawtooth">
+		<!-- <OscillatorNode type="sawtooth">
 			<frequency follow="relX" map="0,100,36,60, MIDI" steps="0 2 4 5 7 9 11 12"></frequency>
-		</OscillatorNode>
+		</OscillatorNode> -->
+
+		<AudioBufferSourceNode loop="true" src="audio/dr1.mp3" trig="pointer" loopStart="0" loopEnd="5050">
+			<playbackRate value="1" follow="relX" map="0, 100, -2, 2"></playbackRate>
+		</AudioBufferSourceNode>
 
 		<BiquadFilterNode type="lowpass">
 			<frequency follow="relY" map="100,0,0,5000, 3"></frequency>
@@ -17,5 +21,4 @@
 		</GainNode>
 
 	</Chain>
-
 </Audio>
