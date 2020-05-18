@@ -29,6 +29,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		break;
 
 		case "normalize":
+		case "loop":
 		value = value == "true";
 		break;
 
@@ -68,6 +69,11 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "reduction":
 		case "attack":
 		case "release":
+
+		// AudioBufferSourceNode
+		case "playbackRate":
+		case "loopStart":
+		case "loopEnd":
 		value = parseFloat(value);
 		break;
 
@@ -179,6 +185,18 @@ WebAudioUtils.caseFixParameter = param => {
 	  	 case "delaytime":
 	  	 param = "delayTime";
 	  	 break;
+
+			 case "loopend":
+			 param = "loopEnd";
+			 break;
+
+			 case "loopstart":
+			 param = "loopStart";
+			 break;
+
+			 case "playbackrate":
+			 param = "playbackRate";
+			 break;
 
 	  	 case "maxdelaytime":
 	  	 param = "maxDelayTime";

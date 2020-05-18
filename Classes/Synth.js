@@ -45,7 +45,7 @@ class Synth{
 
 
 		this.watcher = new Watcher(xmlNode, this._params.follow, {
-			delay: this.getParameter(delay),
+			delay: this.getParameter("delay"),
 			waxml: this.waxml,
 			callBack: note => {
 				if(note[0]){
