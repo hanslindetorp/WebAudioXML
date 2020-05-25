@@ -243,11 +243,5 @@ module.exports = WebAudio;
 
 	uppdatera lastGesture!
 
-	9:15 Jakob
-	9:30 Sebastian
-	10:30 Edvin
-	10:45 Tuva-Lill
-	11:30 Bobo
-	11:45 Ola
 
 */

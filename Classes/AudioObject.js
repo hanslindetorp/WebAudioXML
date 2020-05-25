@@ -116,7 +116,7 @@ class AudioObject{
 			        .then(response => response.arrayBuffer())
 			        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer,
 			        	audioBuffer => this._node.buffer = audioBuffer,
-			        	e => reject(e)
+			        	e => console.error("WebAudioXML error. File not found: " + src)
 			        ));
 
 		  	}
@@ -172,6 +172,24 @@ class AudioObject{
 
 		  	case "iirfilternode":
 		  	break;
+
+        case "audioworkletnode":
+        let src = this._params.src;
+        if(src){
+          let processorName = src.split(".").shift();
+          if(this._ctx.audioWorklet){
+            this._ctx.audioWorklet.addModule(src)
+            .then(e =>{
+              this._node = new AudioWorkletNode(this._ctx, processorName);
+              this._node.connect(this._destination);
+            });
+          } else {
+            console.error("WebAudioXML error. No support for AudioWorkletNode");
+          }
+          // temporary
+          this._node = this._ctx.createGain();
+        }
+        break;
 
 		  	case "xml":
 		  	break;
@@ -324,6 +342,7 @@ class AudioObject{
 
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
+        case "audioworkletnode":
 		  	break;
 
 		  	default:
@@ -368,6 +387,7 @@ class AudioObject{
 
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
+        case "audioworkletnode":
 		  	break;
 
 		  	default:
@@ -406,6 +426,11 @@ class AudioObject{
 		  	this._node.connect(this._destination);
 		  	this._node.start();
 		  	break;
+
+        case "audioworkletnode":
+        // this._node = this._aw;
+        // this._node.connect(this._destination);
+        break;
 
 
 		  	case "frequency":
@@ -517,7 +542,7 @@ class AudioObject{
 		        	audioBuffer => {
 			        	this._buffer = audioBuffer;
 			        },
-		        	e => reject(e)
+		        	e => console.error("WebAudioXML error. File not found: " + src)
 		        ));
 
 
@@ -656,6 +681,8 @@ class AudioObject{
 					})
 					.then((jsonData) => {
 						if(jsonData.real && jsonData.imag){
+                let real = new Float32Array(jsonData.real);
+                let imag = new Float32Array(jsonData.imag);
 					  		let wave = this._ctx.createPeriodicWave(real, imag);
 					  		this._node.setPeriodicWave(wave);
 						}
