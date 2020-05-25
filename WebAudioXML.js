@@ -117,7 +117,7 @@ class AudioObject{
 			        .then(response => response.arrayBuffer())
 			        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer,
 			        	audioBuffer => this._node.buffer = audioBuffer,
-			        	e => reject(e)
+			        	e => console.error("WebAudioXML error. File not found: " + src)
 			        ));
 
 		  	}
@@ -173,6 +173,24 @@ class AudioObject{
 
 		  	case "iirfilternode":
 		  	break;
+
+        case "audioworkletnode":
+        let src = this._params.src;
+        if(src){
+          let processorName = src.split(".").shift();
+          if(this._ctx.audioWorklet){
+            this._ctx.audioWorklet.addModule(src)
+            .then(e =>{
+              this._node = new AudioWorkletNode(this._ctx, processorName);
+              this._node.connect(this._destination);
+            });
+          } else {
+            console.error("WebAudioXML error. No support for AudioWorkletNode");
+          }
+          // temporary
+          this._node = this._ctx.createGain();
+        }
+        break;
 
 		  	case "xml":
 		  	break;
@@ -325,6 +343,7 @@ class AudioObject{
 
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
+        case "audioworkletnode":
 		  	break;
 
 		  	default:
@@ -369,6 +388,7 @@ class AudioObject{
 
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
+        case "audioworkletnode":
 		  	break;
 
 		  	default:
@@ -407,6 +427,11 @@ class AudioObject{
 		  	this._node.connect(this._destination);
 		  	this._node.start();
 		  	break;
+
+        case "audioworkletnode":
+        // this._node = this._aw;
+        // this._node.connect(this._destination);
+        break;
 
 
 		  	case "frequency":
@@ -518,7 +543,7 @@ class AudioObject{
 		        	audioBuffer => {
 			        	this._buffer = audioBuffer;
 			        },
-		        	e => reject(e)
+		        	e => console.error("WebAudioXML error. File not found: " + src)
 		        ));
 
 
@@ -657,6 +682,8 @@ class AudioObject{
 					})
 					.then((jsonData) => {
 						if(jsonData.real && jsonData.imag){
+                let real = new Float32Array(jsonData.real);
+                let imag = new Float32Array(jsonData.imag);
 					  		let wave = this._ctx.createPeriodicWave(real, imag);
 					  		this._node.setPeriodicWave(wave);
 						}
@@ -1905,18 +1932,18 @@ var AudioObject = require('./AudioObject.js');
 var Synth = require('./Synth.js');
 
 
-	
+
 class Parser {
-		  	
+
 	constructor(source, waxml, callBack){
-		
+
 	  	this.waxml = waxml;
 	  	let _ctx = this.waxml._ctx;
-	  	
+
 		this.callBack = callBack;
 		this.externalFiles = [];
 		this._ctx = _ctx;
-		
+
 		if(source){
 			if(source.includes(".") || source.includes("#") || source == "xml"){
 				// if check if XML is embedded in HTML
@@ -1924,19 +1951,19 @@ class Parser {
 				if(xml){
 					this._xml = xml.firstElementChild;
 				}
-				
+
 			}
-			
-			
+
+
 			if(this._xml){
 				this.parseXML(this._xml);
 				this._xml.style.display = "none";
 				this.checkLoadComplete();
 			} else {
-					
+
 				let extFile = new Loader(source, XMLroot => {
 					this._xml = XMLroot;
-					let localPath = Loader.getFolder(source);
+					let localPath = Loader.getFolder(source) || window.location.pathname;
 					this.parseXML(XMLroot, localPath);
 					this.checkLoadComplete();
 				});
@@ -1944,92 +1971,92 @@ class Parser {
 			}
 		} else {
 			console.error("No WebAudioXML source specified");
-		}			
+		}
 	}
-	
+
 	checkLoadComplete(){
 		let loading = this.externalFiles.find(file => file.complete == false);
 		if(!loading){
 			this.callBack(this._xml);
 		}
 	}
-	
+
 	parseXML(xmlNode, localPath){
-		
+
 		let href = xmlNode.getAttribute("href");
 		let nodeName = xmlNode.nodeName.toLowerCase();
-		
-		
+
+
 		if(href && !xmlNode.loaded && nodeName != "link"){
-			
+
 			href = Loader.getPath(href, localPath);
 			localPath = Loader.getFolder(href);
-			
+
 			// if this node is external	and not yet linked
 			let extFile = new Loader(href, externalXML => {
-				
+
 				xmlNode.loaded = true;
 				this.parseXML(externalXML, localPath);
-				
+
 				// import audioObject and children into internal XML DOM
 				xmlNode.audioObject = externalXML.audioObject;
 				Array.from(externalXML.children).forEach(childNode => {
 					if(childNode.nodeName.toLowerCase() != "parsererror"){
 						xmlNode.appendChild(childNode);
 					}
-					
+
 				});
-				
+
 				this.checkLoadComplete();
 			});
 			this.externalFiles.push(extFile);
-			
+
 		} else {
-			
-			// if this node is internal	
-			
-			
+
+			// if this node is internal
+
+
 			switch(nodeName){
-				
+
 				case "parsererror":
 				break;
-				
+
 				case "link":
 				// import style if specified
 				href = Loader.getPath(href, localPath);
 				let linkElement = document.createElement("link");
 				linkElement.setAttribute("href", href);
 				linkElement.setAttribute("rel", "stylesheet");
-				document.head.appendChild(linkElement);	
+				document.head.appendChild(linkElement);
 				break;
-				
+
 				case "style":
 				// import style if specified
-				document.head.appendChild(xmlNode);	
+				document.head.appendChild(xmlNode);
 				break;
-				
+
 				case "synth":
-				let synth = new Synth(xmlNode, this.waxml, localPath);				
+				let synth = new Synth(xmlNode, this.waxml, localPath);
 				xmlNode.audioObject = synth;
 				xmlNode.querySelectorAll("voice").forEach(node => this.parseXML(node, localPath));
 				break;
-				
+
 				default:
 				xmlNode.audioObject = new AudioObject(xmlNode, this.waxml, localPath);
-				Array.from(xmlNode.children).forEach(node => this.parseXML(node, localPath));				
+				Array.from(xmlNode.children).forEach(node => this.parseXML(node, localPath));
 				break;
 			}
 
-			
-		
+
+
 		}
-		
-		
+
+
 	}
 }
-  	
 
-  	
+
+
 module.exports = Parser;
 
 },{"./AudioObject.js":1,"./Loader.js":6,"./Synth.js":11}],9:[function(require,module,exports){
@@ -2819,12 +2846,6 @@ module.exports = WebAudio;
 
 	uppdatera lastGesture!
 
-	9:15 Jakob
-	9:30 Sebastian
-	10:30 Edvin
-	10:45 Tuva-Lill
-	11:30 Bobo
-	11:45 Ola
 
 */
 
