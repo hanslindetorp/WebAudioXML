@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
+	<Chain>
+
+		<OscillatorNode type="noise.json" trig="pointer"></OscillatorNode>
+
+	</Chain>
+</Audio>

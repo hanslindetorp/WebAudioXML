@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
+	<Chain>
+
+		<AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
+		<BiquadFilterNode>
+			<frequency follow="relY" map="100, 0, 0, 20000, 3"></frequency>
+		</BiquadFilterNode>
+		<BiquadFilterNode type="highpass">
+			<frequency follow="relX" map="0, 100, 0, 20000, 3"></frequency>
+		</BiquadFilterNode>
+		<GainNode>
+			<gain follow="pointerdown"></gain>
+		</GainNode>
+
+	</Chain>
+</Audio>
