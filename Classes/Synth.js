@@ -24,9 +24,9 @@ class Synth{
 
 		// duplicate XML nodes until there are correct number of voices
 		this.voiceNodes = this._xml.children;
-		let voiceNodeCount = xmlNode.querySelectorAll("voice").length;
+		let voiceNodeCount = xmlNode.querySelectorAll("voice, Voice").length;
 
-		this.hasEnvelope = xmlNode.querySelectorAll("envelope").length > 0;
+		this.hasEnvelope = xmlNode.querySelectorAll("envelope, Envelope").length > 0;
 
 		if(voiceNodeCount){
 			let curID = 0;
@@ -38,7 +38,7 @@ class Synth{
 				this._xml.appendChild(newNode);
 				curID++;
 			}
-			this.voiceNodes = xmlNode.querySelectorAll("voice");
+			this.voiceNodes = xmlNode.querySelectorAll("voice, Voice");
 		} else {
 			console.error("Web Audio XML error. Voice node(s) are missing in Synth node.");
 		}

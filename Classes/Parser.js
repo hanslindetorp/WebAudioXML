@@ -110,7 +110,7 @@ class Parser {
 				case "synth":
 				let synth = new Synth(xmlNode, this.waxml, localPath);
 				xmlNode.audioObject = synth;
-				xmlNode.querySelectorAll("voice").forEach(node => this.parseXML(node, localPath));
+				xmlNode.querySelectorAll("voice, Voice").forEach(node => this.parseXML(node, localPath));
 				break;
 
 				default:
