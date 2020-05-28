@@ -1,0 +1,77 @@
+<!doctype html>
+
+
+<!--
+
+<h2>Click and slide to play</h2>
+<ul>
+	<li>Pointer relative X position controls pitch</li>
+	<li>Pointer relative Y position controls cutoff frequency of biquad filter</li>
+</ul>
+<p>WebAudioXML is a javascript library that makes it possible to create
+	Web Audio applications using XML syntax. It is a PhD research project by
+	Hans Lindetorp. Please follow me on
+	<a href="https://hans.arapoviclindetorp.se">https://hans.arapoviclindetorp.se</a> and
+	<a href="https://www.facebook.com/hanslindetorpresearch/">https://www.facebook.com/hanslindetorpresearch/</a>
+</p>
+
+-->
+
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, user-scalable=no" />
+		<title>WebAudioXML - by Hans Lindetorp</title>
+		<link rel="stylesheet" type="text/css" href="style.css" />
+	</head>
+
+
+	<body>
+		<div id="container">
+			<div id="synth">
+				<h3>WebAudioXML - FM Synth</h3>
+				<div id="GUI">
+					<div id="oscillators">
+						<h4>OSCILLATORS</h4>
+						<div class="knob">
+							<h5>CARRIER-GAIN</h5>
+							<webaudio-knob id="carrier-gain" src="GUI/LittlePhatty.png" sprites="100" value="50" min="0" max="100" diameter="64"></webaudio-knob>
+						</div>
+						<div class="knob">
+							<h5>MODULATOR-GAIN</h5>
+							<webaudio-knob id="modulator-gain" src="GUI/LittlePhatty.png" sprites="100" value="50" min="0" max="100" diameter="64"></webaudio-knob>
+						</div>
+						<div class="knob">
+							<h5>MODULATOR-PITCH</h5>
+							<webaudio-knob id="modulator-offset" src="GUI/LittlePhatty.png" sprites="100" value="0" min="-36" max="36" diameter="64"></webaudio-knob>
+						</div>
+					</div>
+					<div id="envelope">
+						<h4>ENVELOPE</h4>
+						<div class="slider">
+							<div>A</div>
+							<webaudio-slider id="envelope-attack" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+						</div>
+						<div class="slider">
+							<div>D</div>
+							<webaudio-slider id="envelope-decay" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+						</div>
+						<div class="slider">
+							<div>S</div>
+							<webaudio-slider id="envelope-sustain" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+						</div>
+						<div class="slider">
+							<div>R</div>
+							<webaudio-slider id="envelope-release" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+						</div>
+					</div>
+				</div>
+				<webaudio-keyboard id="keyboard" keys="25" min="48" width="660" height="200" height="250"></webaudio-keyboard>
+			</div>
+		</div>
+
+		<script>WebAudioControlsOptions={useMidi:1}</script>
+		<script src="https://g200kg.github.io/webaudio-controls/webaudio-controls.js"></script>
+		<script src="../../WebAudioXML.js" data-source="audio.xml"></script>
+	</body>
+</html>

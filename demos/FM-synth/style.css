@@ -1,0 +1,68 @@
+html, body {
+	height: 100%;
+	user-select: none;
+	-webkit-user-select: none;
+	font-family: sans-serif;
+}
+
+* {
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webk	it-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Old versions of Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
+}
+
+#container {
+	display: flex;
+	flex-flow: column;
+	height: 100%;
+}
+
+#synth {
+	border-radius: 10px;
+	background-color: #210;
+	padding: 20px;
+	color: #ebab34;
+	width: 700px;
+	text-align: center;
+	font-weight: normal;
+}
+#synth > * {
+	width: 660px;
+	margin: 10px auto;
+}
+#synth h3 {
+	padding: 5px;
+	font-size: 1.5em;
+	font-weight: normal;
+	letter-spacing: 7px;
+	border-top: 1px solid #ebab34;
+	border-bottom: 1px solid #ebab34;
+}
+#synth #GUI {
+	padding: 10px;
+	border-bottom: 1px solid #ebab34;
+}
+
+#synth #GUI > div {
+	display: inline-table;
+}
+#synth #GUI #envelope {
+	margin-left: 50px;
+}
+#synth #GUI .knob {
+	display: inline-block;
+	padding-right: 30px;
+}
+#synth #GUI .slider {
+	display: inline-block;
+	padding-right: 10px;
+}
+#keyboard {
+	padding: 2px;
+	margin: 10px;
+	border-radius: 5px;
+	background-color: #333;
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-10dB">
+
+
+	<Synth follow="webaudio-keyboard, change, e.note">
+		<Voice gain="-6dB">
+
+			<Chain>
+				<OscillatorNode type="sine">
+					<frequency class="osc1" follow="MIDI"></frequency>
+				</OscillatorNode>
+
+				<GainNode>
+					<gain follow="#carrier-gain, change, value" map="0, 100, 0, 1, 2"></gain>
+				</GainNode>
+				<GainNode>
+					<gain>
+						<envelope ADSR="10 100 40 200" max="1"></envelope>
+					</gain>
+				</GainNode>
+			</Chain>
+
+
+
+
+			<Chain output=".osc1">
+				<OscillatorNode type="sine">
+					<frequency follow="MIDI, -24"></frequency>
+				</OscillatorNode>
+				<GainNode>
+					<gain follow="#modulator-gain, change, value" map="0, 100, 0, 1, 2"></gain>
+				</GainNode>
+				<GainNode>
+					<gain>
+						<Envelope adsr="1, 100, 10, 50" max="1000"></Envelope>
+					</gain>
+				</GainNode>
+			</Chain>
+
+
+		</Voice>
+
+	</Synth>
+
+
+</Audio>
