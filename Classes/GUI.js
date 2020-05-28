@@ -43,7 +43,7 @@ class GUI {
 			title.innerHTML = nodeName;
 			el.appendChild(title);
 
-			params.forEach(param => this.addElement(node, el));
+			params.forEach(param => this.addElement(node, el, param));
 		} else {
 			// attach child elements to the parent if this was not a node
 			el = targetElement;
@@ -53,7 +53,7 @@ class GUI {
 		return el;
 	}
 
-	addElement(node, targetElement){
+	addElement(node, targetElement, param){
 
 		let labelEl = document.createElement("label");
 		let header = document.createElement("header");
