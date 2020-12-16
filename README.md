@@ -45,7 +45,6 @@ The structure of the XML-data follows some basic rules. The root element is name
 Any valid Web Audio node can potentially be specified using WebAudioXML. The name structure follows the Web Audio API specification. Currently, the following nodes are implemented and tested:
 
 * [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
-* [MediaStreamAudioSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamAudioSourceNode)
 * [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode)
 * [ConvolverNode](https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode)
 * [DelayNode](https://developer.mozilla.org/en-US/docs/Web/API/DelayNode)
