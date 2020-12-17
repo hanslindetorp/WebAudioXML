@@ -52,7 +52,6 @@ Any valid Web Audio node can potentially be specified using WebAudioXML. The nam
 * [GainNode](https://developer.mozilla.org/en-US/docs/Web/API/GainNode)
 * [OscillatorNode](https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode)
 * [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode)
-* [WaveShaperNode](https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode)
 
 ### Parameters / Attributes
 Any valid Web Audio parameters can be set using attributes. The following example shows an oscillator node with type set to ‘sawtooth’ and frequency set to 880 Hz.
