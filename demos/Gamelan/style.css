@@ -1,0 +1,50 @@
+
+html, body {
+	height: 100%;
+	user-select: none;
+	-webkit-user-select: none;
+  background-color: black;
+}
+
+#container {
+  background-color: white;
+  width: 1000px;
+  height: 440px;
+  background-image: url(img/DemungPL.jpg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.clickArea {
+  top: 80px;
+  width: 80px;
+  height: 240px;
+  background-color: blue;
+  margin: 10px;
+  display: inline-block;
+  position: absolute;
+  opacity: 0;
+}
+
+
+#SDPL1 {
+  left: 180px;
+}
+#SDPL2 {
+  left: 280px;
+}
+#SDPL3 {
+  left: 370px;
+}
+#SDPL4 {
+  left: 460px;
+}
+#SDPL5 {
+  left: 550px;
+}
+#SDPL6 {
+  left: 635px;
+}
+#SDPL7 {
+  left: 730px;
+}

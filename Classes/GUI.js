@@ -1,5 +1,6 @@
 
 var Mapper = require('./Mapper.js');
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class GUI {
@@ -26,7 +27,7 @@ class GUI {
 
 		let node = xmlNode.audioObject._node;
 
-		let params = this.getParameters(node);
+		let params = WebAudioUtils.getParameters(node);
 
 		let el;
 
@@ -81,72 +82,6 @@ class GUI {
 			param.audioParam.setTargetAtTime(val, 0, 0.001);
 		});
 	}
-
-	getParameters(node){
-
-		let params = [];
-
-
-		Object.keys(node.__proto__).forEach(key => {
-
-			let param = node[key];
-			if(param instanceof AudioParam){
-
-				let obj = {};
-				obj.audioParam = param;
-				obj.label = key;
-				let attr = {};
-				obj.attributes = attr;
-				params.push(obj);
-
-				obj.nodeName = "input";
-				attr.type = "range";
-				attr.value = param.value;
-
-				switch(key){
-
-
-					case "frequency":
-					attr.min = 0;
-					attr.max = 22050;
-					attr.conv = "Math.pow(10, x*3)/1000";
-					break;
-
-					case "detune":
-				  	attr.min = -4800;
-				  	attr.max = 4800;
-				  	attr.conv = 1;
-				  	break;
-
-					case "Q":
-					case "q":
-				  	attr.min = 0;
-				  	attr.max = 30;
-				  	attr.conv = 1;
-				  	break;
-
-					default:
-				  	attr.min = 0;
-				  	attr.max = 1;
-				  	attr.conv = "x";
-				  	break;
-
-				}
-				attr.step = (attr.max - attr.min) / 100;
-
-			} else if(param instanceof String){
-				console.log(key, node[key]);
-			}
-
-		});
-
-		return params;
-
-
-	}
-
-
-
 }
 
 

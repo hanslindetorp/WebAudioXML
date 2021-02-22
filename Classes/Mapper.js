@@ -7,6 +7,7 @@ class Mapper{
 	constructor(params){
 
 		this.params = params;
+		this.sourceValues = [];
 
 		if(params.map){
 			this.minIn = params.map.minIn;
@@ -19,13 +20,42 @@ class Mapper{
 		this.steps = params.steps;
 		this.curve = params.curve;
 		this.value = params.value;
+		this.level = params.level;
 		if(params.range){
 			this.range = new Range(params.range);
+		}
+
+		if(params.mapIn){
+			this.mapIn = params.mapIn.sort((a,b) => a-b);
+			this.mapOut = params.mapOut || this.mapIn;
+			this.minIn = Math.min(...this.mapIn);
+			this.maxIn = Math.max(...this.mapIn);
+			this.minOut = Math.min(...this.mapOut);
+			this.maxOut = Math.max(...this.mapOut);
 		}
 	}
 
 
 	getValue(x){
+
+		if(typeof this.minIn == "undefined"){return x}
+
+		x = Math.max(x, this.minIn);
+		x = Math.min(x, this.maxIn);
+
+		if(this.minOut){
+			return this.mapValueSimple(x);
+		} else if(this.mapIn){
+			return this.mapValueComplex(x);
+		}
+
+	}
+
+	mapValueSimple(x){
+
+		// Hahahaha. "Simple" is maybe not the best word but it refers to the
+		// simplified syntax for mapping where minIn, maxIn, minOut, maxOut and
+		// convert algorith is specified in one attribute - "map"
 
 		if(typeof this.minIn == "undefined"){return x}
 
@@ -65,7 +95,7 @@ class Mapper{
 			switch (curve) {
 				case "bell":
 					x = this.mapToBell(x);
-					console.log(x);
+					//console.log(x);
 					break;
 
 				case "sine":
@@ -89,10 +119,6 @@ class Mapper{
 			let level = this.level[rangeObj.index % this.level.length];
 
 			x = x * level / 100;
-		}
-
-		if(x > 1){
-			//console.log(x);
 		}
 
 
@@ -124,6 +150,94 @@ class Mapper{
 
 		return valOut;
 	}
+
+
+
+	mapValueComplex(x){
+
+		// This method supports a more flexible mapping than the "simple"
+		// Given that the attributes "mapIn" and "mapOut" are specified
+		// it will use those two (comma- or space separated) vectors to
+		// map the incoming value (the variable this object is following)
+		// to an "outgoing" value before it stored it in its property "value".
+
+		// There are also posibilities to use different curves between different
+		// mapping values to control how values in between the specifed ones
+		// are interpolated.
+
+		// In addition to the curves, a "convert" algorithm can be specified for
+		// each region between the mapOut values. It can be a javascript expression
+		// using "x" as the processed value or a preset (like "midi->frequency")
+
+		// Finally the output can be rounded to specific steps using the "steps"
+		// attribute. This is useful for mapping values to non-linear output
+		// values, like a musical scale.
+
+    let i = this.mapIn.findIndex(entry => entry == x);
+
+    if(i != -1){
+			// index is one of the in-values
+			if(val == this.maxIn){
+				return this.maxOut;
+			} else {
+				return valObj.mapOut[i % valObj.mapOut.length];
+			}
+
+    } else {
+
+      // interpolate between two in-values
+      let i1 = this.mapIn.findIndex(entry => entry < x);
+      let i2 = this.mapIn.findIndex(entry => entry > x);
+			let in1 = this.mapIn[i1];
+			let in2 = this.mapIn[i2];
+			let out1 = this.mapOut[i1 % this.mapOut.length];
+			let out2 = this.mapOut[i2 % this.mapOut.length];
+
+
+      let relInDiff = (x-in1)/(in1-in2);
+      let valOutDiff = out1 - out2;
+      return out1 + relInDiff * valOutDiff;
+    }
+
+		let conv = this.conv[i1 % this.conv.length];
+
+
+  }
+
+	convertUsingMIDI(x, min, range){
+
+		let noteOffs;
+		if(this.steps){
+			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
+			//let noteInCycle = noteOffs % obj.stepsCycle;
+
+      let notesInCycle = this.steps.length-1;
+			let stepsCycle = this.steps[notesInCycle];
+      let nrOfCycles = rangeOut / stepsCycle;
+      rangeOut = notesInCycle * nrOfCycles + 1;
+      noteOffs = Math.floor(x * range);
+
+      let cycle = Math.floor(noteOffs / notesInCycle);
+      let noteInCycle = Math.floor(noteOffs % notesInCycle);
+			noteOffs = cycle * stepsCycle + this.steps[noteInCycle];
+		} else {
+      noteOffs = Math.floor(x * range);
+    }
+		return WebAudioUtils.MIDInoteToFrequency(min + noteOffs);
+	}
+
+	convertUsingMath(x, conv){
+		if(typeof conv == "number"){
+			x = Math.pow(x, conv);
+		} else {
+			x = eval(conv);
+		}
+
+		valOut = valOut * rangeOut + this.minOut;
+	}
+
+
+
 
 	mapToBell(x, stdD = 1/4, mean = 0.5, skew = 0){
 		//let v = 1;

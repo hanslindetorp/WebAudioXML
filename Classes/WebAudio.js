@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 
+var WebAudioUtils = require('./WebAudioUtils.js');
 var Parser = require('./Parser.js');
 var Connector = require('./Connector.js');
 var GUI = require('./GUI.js');
@@ -53,16 +54,19 @@ class WebAudio {
 
 		this.plugins = [];
 		this._ctx = _ctx;
+		this._listeners = [];
 
 		if(source){
 			window.addEventListener("load", () => {
 
-				new Parser(source, this, xmlDoc => {
+				this.parser = new Parser(source, this, xmlDoc => {
 					this._xml = xmlDoc;
 					let interactionArea = this._xml.getAttribute("interactionArea");
 					if(interactionArea){
 						this.ui.registerEvents(interactionArea);
 					}
+
+					this.master = this._xml.audioObject;
 
 					//webAudioXML = xmlDoc.audioObject;
 					//webAudioXML.touch = touches;
@@ -73,6 +77,9 @@ class WebAudio {
 					if(this._xml.getAttribute("controls") == "true"){
 						new GUI(xmlDoc, document.body);
 					}
+
+					this.dispatchEvent(new CustomEvent("inited"));
+
 				});
 			});
 		} else {
@@ -94,11 +101,30 @@ class WebAudio {
 	}
 
 	start(selector = "*"){
-		this._xml.querySelectorAll(selector).forEach(XMLnode => XMLnode.audioObject.start());
+		this.init();
+		this._xml.querySelectorAll(selector).forEach(XMLnode => {
+			if(XMLnode.audioObject && XMLnode.audioObject.start){
+				XMLnode.audioObject.start();
+			}
+		});
+	}
+
+	trig(selector = "*"){
+		this._xml.querySelectorAll(selector).forEach(XMLnode => {
+			if(XMLnode.audioObject.start){
+				XMLnode.audioObject.start();
+			} else if(XMLnode.audioObject.noteOn){
+				XMLnode.audioObject.noteOn();
+			}
+		});
 	}
 
 	stop(selector = "*"){
-		this._xml.querySelectorAll(selector).forEach(XMLnode => XMLnode.audioObject.stop());
+		this._xml.querySelectorAll(selector).forEach(XMLnode => {
+			if(XMLnode.audioObject && XMLnode.audioObject.stop){
+				XMLnode.audioObject.stop();
+			}
+		});
 	}
 
 	registerPlugin(plugin){
@@ -108,12 +134,125 @@ class WebAudio {
 		// variables here
 	}
 
+	addEventListener(name, fn){
+		if(typeof name !== "string"){return}
+		if(typeof fn !== "function"){return}
+		this._listeners[name] = this._listeners[name] || [];
+		this._listeners[name].push(fn);
+	}
+
+	dispatchEvent(e){
+		this._listeners[e.type] = this._listeners[e.type] || [];
+		this._listeners[e.type].forEach(fn => fn(e));
+	}
+
+	get statistics(){
+		return {
+			elementCount: this.parser.elementCount,
+			followCount: this.parser.followCount
+		}
+	}
+
+	get structure(){
+		// returns the whole configuration in the following format:
+		// [{name: name, children: children}]
+		// children are either child nodes or parameters
+
+		if(!this._xml){return}
+
+		let counter = 0;
+		let parameters = [];
+		let level = 0;
+		let audioObjects = [];
+
+		var retrieveObjects = (el, parentObj = {}) => {
+			let obj = {};
+			if(el.audioObject){
+				obj.name = el.id || [...el.classList].join(".") || el.nodeName;
+				obj.children = [];
+				obj.type = el.nodeName;
+				obj.level = (parentObj.level || 0) + 1;
+				obj.id = counter++;
+				obj.target = el.audioObject;
+				obj.parent = parentObj;
+
+				audioObjects.push(obj);
+
+				// add webAudioXML parameters
+				el.audioObject.getWAXMLparameters().forEach(paramObj => {
+					paramObj.id = counter++;
+					// add to tree
+					obj.children.push(paramObj);
+					paramObj.parent = obj;
+					// add to linear list with parameter objects
+					parameters.push(paramObj);
+				});
+
+
+				// add parameters for audioNode
+				if(el.audioObject._node){
+					for(let key in el.audioObject._node){
+						let param = el.audioObject._node[key];
+						if(param instanceof AudioParam){
+							let range = WebAudioUtils.paramNameToRange(key);
+							let paramObj = {
+								id: counter++,
+								name: key,
+								target: param,
+								min: range.min,
+								max: range.max,
+								conv: range.conv,
+								level: obj.level + 1,
+								default: range.default,
+								parent: obj
+							}
+							// add to tree
+							obj.children.push(paramObj);
+							// add to linear list with parameter objects
+							parameters.push(paramObj);
+						}
+					}
+				}
+
+
+				// add children to containers
+				Array.from(el.children).forEach(childNode => {
+					let childObj = retrieveObjects(childNode, obj);
+					if(childObj){obj.children.push(childObj)}
+				});
+			}
+			return obj;
+		}
+		let struct = {
+			parameters: parameters,
+			audioObjects: audioObjects,
+			tree: retrieveObjects(this._xml),
+			xml: this._xml.outerHTML
+		}
+		return struct;
+	}
+
+	get _variables(){
+		return this.ui.variables;
+	}
+
+	set _variables(val){
+		this.ui.variables = val;
+	}
+
 	get variables(){
 		return this.ui.variables;
 	}
 
+	set variables(val){
+		this.ui.variables = val;
+	}
+
 	setVariable(key, val){
-		this.ui.variables[key] = val;
+		this.ui.setVariable(key, val);
+	}
+	getVariable(key){
+		return this.ui.getVariable(key);
 	}
 
 	// InteractionManager
@@ -152,8 +291,7 @@ class WebAudio {
 	querySelector(selector){
 		let xml = this._xml.querySelector(selector);
 		if(xml){
-			let audioObject = xml.audioObject;
-			if(audioObject){return audioObject}
+			return xml.audioObject || xml.obj;
 		}
 		return -1;
 	}
@@ -242,6 +380,21 @@ module.exports = WebAudio;
 	Kolla dynamisk pan
 
 	uppdatera lastGesture!
+
+	Bugs and ideas from DT2213 at KTH 2020-06-04
+	* Offset problem for interactionArea when window is scrolled
+	* init() needs to be called. Doesn't alway happen from touching touchArea
+	* comma separation on "map" breaks Math.pow(x,y)
+	* sequencer interfers with live events
+	* performance is sometimes low. I.e. slow  update for touchMove events
+
+
+	Wishes:
+	* Use internal variables and properties in "follow" (inkl relative links -> i.e. this.parent.frequency)
+	* Better documentation on nmp installation and init()
+	* Better documentation on javascript hijacking graph
+	* Better structured code for contributions from the community
+	* Ta bort
 
 
 */

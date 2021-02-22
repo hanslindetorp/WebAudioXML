@@ -1,46 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-10dB">
-
-
 	<Synth follow="webaudio-keyboard, change, e.note">
 		<Voice gain="-6dB">
+
+			<Chain output=".osc1">
+				<OscillatorNode type="sine">
+					<frequency follow="MIDI"></frequency>
+					<detune value="-1200" follow="#modulator-pitch, input, target.value" map="-36, 36, -3600, 3600"></detune>
+				</OscillatorNode>
+				<GainNode>
+					<gain value="0.5" follow="#modulator-gain, input, target.value" map="0, 100, 0, 1, 2"></gain>
+				</GainNode>
+				<GainNode>
+					<gain>
+						<Envelope ADSR="1, 100, 30, 50" max="2000">
+							<ADSR>
+								<attack follow="#env-attack, input, target.value"></attack>
+								<decay follow="#env-decay, input, target.value"></decay>
+								<sustain follow="#env-sustain, input, target.value"></sustain>
+								<release follow="#env-release, input, target.value"></release>
+							</ADSR>
+						</Envelope>
+					</gain>
+				</GainNode>
+			</Chain>
 
 			<Chain>
 				<OscillatorNode type="sine">
 					<frequency class="osc1" follow="MIDI"></frequency>
 				</OscillatorNode>
-
 				<GainNode>
-					<gain follow="#carrier-gain, change, value" map="0, 100, 0, 1, 2"></gain>
+					<gain follow="#carrier-gain, input, target.value" map="0, 100, 0, 1, 3"></gain>
 				</GainNode>
 				<GainNode>
 					<gain>
-						<envelope ADSR="10 100 40 200" max="1"></envelope>
+						<Envelope ADSR="1, 100, 30, 50" max="1">
+							<ADSR>
+								<attack follow="#env-attack, input, target.value"></attack>
+								<decay follow="#env-decay, input, target.value"></decay>
+								<sustain follow="#env-sustain, input, target.value"></sustain>
+								<release follow="#env-release, input, target.value"></release>
+							</ADSR>
+						</Envelope>
 					</gain>
 				</GainNode>
 			</Chain>
-
-
-
-
-			<Chain output=".osc1">
-				<OscillatorNode type="sine">
-					<frequency follow="MIDI, -24"></frequency>
-				</OscillatorNode>
-				<GainNode>
-					<gain follow="#modulator-gain, change, value" map="0, 100, 0, 1, 2"></gain>
-				</GainNode>
-				<GainNode>
-					<gain>
-						<Envelope adsr="1, 100, 10, 50" max="1000"></Envelope>
-					</gain>
-				</GainNode>
-			</Chain>
-
-
 		</Voice>
-
 	</Synth>
-
-
 </Audio>

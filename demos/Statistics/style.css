@@ -1,0 +1,11 @@
+body {
+	font-family: sans-serif;
+}
+
+table tr td {
+	width: 5em;
+}
+
+table tr td:nth-child(2){
+	text-align: right;
+}

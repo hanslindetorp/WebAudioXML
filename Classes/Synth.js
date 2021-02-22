@@ -1,26 +1,29 @@
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
+var Trigger = require('./Trigger.js');
 
 class Synth{
 
 
-	constructor(xmlNode, waxml, localPath){
+	constructor(xmlNode, waxml, localPath, params){
 
-	  	this.waxml = waxml;
-	  	let _ctx = this.waxml._ctx;
+  	this.waxml = waxml;
+  	let _ctx = this.waxml._ctx;
 
 		this._xml = xmlNode;
 		this._ctx = _ctx;
 		this._localPath = localPath;
 
-		this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+		this._params = params;
 		this._voices = this._params.voices || 1;
 		this._voiceID = 0;
 
+		this.variables = {};
+
 		this._node = this._ctx.createGain();
 		this._node.gain.value = 1/this._voices;
-	  	console.log(xmlNode.nodeName, this._node.__resource_id__);
+	  	// console.log(xmlNode.nodeName, this._node.__resource_id__);
 
 		// duplicate XML nodes until there are correct number of voices
 		this.voiceNodes = this._xml.children;
@@ -43,19 +46,22 @@ class Synth{
 			console.error("Web Audio XML error. Voice node(s) are missing in Synth node.");
 		}
 
-
-		this.watcher = new Watcher(xmlNode, this._params.follow, {
-			delay: this.getParameter("delay"),
-			waxml: this.waxml,
-			callBack: note => {
-				if(note[0]){
-					this.noteOn(note[1]);
-				} else {
-					this.noteOff(note[1]);
+		if(this._params.follow){
+			this.watcher = new Watcher(xmlNode, this._params.follow, {
+				delay: this.getParameter("delay"),
+				waxml: this.waxml,
+				callBack: note => {
+					if(note[0]){
+						this.noteOn(note[1]);
+					} else {
+						this.noteOff(note[1]);
+					}
 				}
-			}
-		});
+			});
+		}
 
+
+		this.trigger = new Trigger(this, 0, waxml);
 
 	}
 
@@ -84,6 +90,17 @@ class Synth{
 
 	}
 
+	trig(note, vel){
+		this.noteOn(note, vel);
+	}
+
+	start(note, vel){
+		this.trigger.start();
+	}
+
+	stop(note, vel){
+		this.trigger.stop();
+	}
 
 	noteOff(note, vel=1){
 		let voiceNode = this.noteToVoice(note);
@@ -92,14 +109,36 @@ class Synth{
 		if(!this.hasEnvelope){voiceNode.audioObject.stop(data)};
 		voiceNode.querySelectorAll("*").forEach(XMLnode => XMLnode.audioObject.stop(data));
 		voiceNode.MIDInote = 0;
+
+		this.trigger.stop();
 	}
 
 
 	get nextVoice(){
+		let voice;
+		switch (this._params.voiceselect) {
+			case "next":
+				voice = this.voiceNodes[this._voiceID++ % this._voices];
+				break;
 
-		return this.voiceNodes[this._voiceID++ % this._voices];
+			case "random":
+				let rnd = Math.floor(Math.random() * this.voiceNodes.length);
+				voice = this.voiceNodes[rnd];
+				break;
+			default:
+
+		}
+		return voice;
 
 	}
+
+	// set trigger(val){
+	// 	this._trigger.frequency = val;
+	// }
+	//
+	// get trigger(){
+	// 	return this._trigger.frequency;
+	// }
 
 	set gain(val){
   	this.setTargetAtTime("gain", val);
@@ -137,7 +176,11 @@ class Synth{
   	if(!this._node){
 	  	console.error("Node error:", this);
   	}
-  	if(typeof param == "string"){param = this._node[param]}
+  	if(typeof param == "string"){
+			let targetParam = this._node[param];
+			if(!targetParam){targetParam = this[param]}
+			param = targetParam;
+		}
 
   	if(cancelPrevious){
 	  	param.cancelScheduledValues(this._ctx.currentTime);
@@ -150,6 +193,36 @@ class Synth{
 
 	}
 
+	getWAXMLparameters(){
+		let waxmlParams = [];
+		let paramNames = ["trigger"];
+
+		paramNames.forEach((item, i) => {
+			let obj = WebAudioUtils.paramNameToRange(item);
+			obj.name = item;
+			obj.target = this[item];
+			obj.parent = this;
+			waxmlParams.push(obj);
+		});
+		return waxmlParams;
+	}
+
+
+	get variables(){
+		return this._variables;
+	}
+
+  set variables(val){
+    this._variables = val;
+  }
+
+	setVariable(key, val){
+		this._variables[key] = val;
+	}
+
+  getVariable(key){
+		return this._variables[key];
+	}
 
 }
 

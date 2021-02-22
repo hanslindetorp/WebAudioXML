@@ -33,13 +33,21 @@ class Connector {
 					done = true;
 					xmlNode.audioObject.input.connect(xmlNode.audioObject._node);
 				} else {
-					if(targetNode.nodeName == "#text"){continue}
-					if(targetNode.nodeName == "parsererror"){continue}
+					switch (targetNode.nodeName.toLowerCase()) {
+						case "#text":
+						case "parsererror":
+						case "var":
+							continue;
+							break;
+						default:
+					}
+
 
 					switch(targetNode.nodeName.toLowerCase()){
 						//case "send":
 						case "oscillatornode":
 						case "audiobuffernode":
+						case "synth":
 						break;
 
 						case "send":
@@ -81,58 +89,67 @@ class Connector {
 
 			let target;
 			let parentNodeType = xmlNode.parentNode.nodeName.toLowerCase();
-			switch(parentNodeType){
+
+			switch (xmlNode.nodeName.toLowerCase()) {
+				case "var":
+					// don't connect
+					break;
+				default:
+				// connect
 
 
-				case "mixer":
-				case "audio":
-				case "voice":
-				case "synth":
-				xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
-				break;
+				switch(parentNodeType){
 
-				case "chain":
+					case "mixer":
+					case "audio":
+					case "voice":
+					case "synth":
+					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
+					break;
 
-				// run through following nodes to connect all
-				// sends
-				let targetNode = xmlNode;
-				let done = false;
+					case "chain":
 
-				while(!done){
-					targetNode = targetNode.nextElementSibling;
+					// run through following nodes to connect all
+					// sends
+					let targetNode = xmlNode;
+					let done = false;
 
-					if(!targetNode){
+					while(!done){
 
-						// connect last object to chain output
-						done = true;
-						targetNode = xmlNode.parentNode;
-						xmlNode.audioObject.connect(targetNode.audioObject._node);
-					} else {
-						if(targetNode.nodeName == "#text"){continue}
-						done = targetNode.nodeName.toLowerCase() != "send";
-						xmlNode.audioObject.connect(targetNode.audioObject.input);
+						targetNode = targetNode.nextElementSibling;
+
+
+						if(!targetNode){
+
+							// connect last object to chain output
+							done = true;
+							targetNode = xmlNode.parentNode;
+							xmlNode.audioObject.connect(targetNode.audioObject._node);
+						} else {
+							// stupid way of dealing with non-audio elements. But for now...
+							if(targetNode.nodeName == "#text"){continue}
+
+							done = targetNode.nodeName.toLowerCase() != "send";
+							xmlNode.audioObject.connect(targetNode.audioObject.input);
+						}
+
+
 					}
 
+					target = this.getNextInput(xmlNode);
+					break;
 
+
+					// connect to parameter input
+					case "gain":
+					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
+					break;
+
+					default:
+					xmlNode.audioObject.connect(this._ctx.destination);
+					break;
 				}
-
-				target = this.getNextInput(xmlNode);
-				break;
-
-
-				// connect to parameter input
-				case "gain":
-				xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
-				break;
-
-				default:
-				xmlNode.audioObject.connect(this._ctx.destination);
-				break;
 			}
-
-
-
-
 		}
 		Array.from(xmlNode.children).forEach(childNode => this.connect(childNode));
 

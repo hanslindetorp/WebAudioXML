@@ -2,18 +2,20 @@
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
 var Watcher = require('./Watcher.js');
+var Variable = require('./Variable.js');
 var Mapper = require('./Mapper.js');
 
 
 
 class AudioObject{
 
-  	constructor(xmlNode, waxml, localPath){
+  	constructor(xmlNode, waxml, localPath, params){
 
 	  	this.waxml = waxml;
 	  	let _ctx = this.waxml._ctx;
 
-	  	this._params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+	  	this._params = params;
+      this.variables = {};
 	  	this._xml = xmlNode;
 	  	let timeUnit = this.getParameter("timeunit");
 
@@ -36,6 +38,12 @@ class AudioObject{
 	  	let fn, src;
 	  	this._nodeType = nodeType;
 
+      // make sure ALL audioObjects have their parent object set
+      if(this._xml.parentNode.audioObject){
+        this.parent = this._xml.parentNode.audioObject;
+      }
+
+
 	  	switch(nodeType){
 
 
@@ -52,7 +60,10 @@ class AudioObject{
 
 		  	case "oscillatornode":
 		  	this._node = this._ctx.createOscillator();
-		  	this._node.start();
+        this._params.type = this._params.type || "sine";
+        if(!this._params.type.includes(".js")) {
+          this._node.start();
+        }
 		  	break;
 
 
@@ -133,6 +144,7 @@ class AudioObject{
 		  	break;
 
 		  	case "dynamicscompressornode":
+        this._node = this._ctx.createDynamicsCompressor();
 		  	break;
 
 		  	case "stereopannernode":
@@ -165,6 +177,20 @@ class AudioObject{
 		  	break;
 
 		  	case "waveshapernode":
+        this._node = this._ctx.createWaveShaper();
+
+        var k = 400,
+          n_samples = 44100,
+          curve = new Float32Array(n_samples),
+          deg = Math.PI / 180,
+          i = 0,
+          x;
+        for ( ; i < n_samples; ++i ) {
+          x = i * 2 / n_samples - 1;
+          curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        this._node.curve = curve;
+        this._node.oversample = '4x';
 		  	break;
 
 		  	case "periodicwavenode":
@@ -174,9 +200,9 @@ class AudioObject{
 		  	break;
 
         case "audioworkletnode":
-        let src = this._params.src;
+        src = this._params.src;
         if(src){
-          let processorName = src.split(".").shift();
+          let processorName = src.split(".").shift().split("/").pop();
           if(this._ctx.audioWorklet){
             this._ctx.audioWorklet.addModule(src)
             .then(e =>{
@@ -217,68 +243,110 @@ class AudioObject{
 		  	this._node = xmlNode.parentNode.audioObject._node;
 		  	this._params.max = this._params.max || 1;
 		  	this._params.valuescale = this._params.max / 100;
+
+        // check if ADSR has parameters that should follow
+        // external variables (this should be more generic)
+        // Array.from(xmlNode.children).forEach(paramElement => {
+        //   let follow = paramElement.getAttribute("follow");
+        //   if(follow){
+        //     follow = WebAudioUtils.typeFixParam("follow", follow);
+        //     let watcher = new Watcher(paramElement, follow, {
+        //
+        //       callBack: val => {
+        //         this._params.adsr[paramElement.nodeName] = val;
+        //       }
+        //     });
+        //   }
+        // });
+
+
+        // init envelope to be "closed" on startup
 		  	this.setTargetAtTime(this._node, 0, 0, 0, true);
 		  	break;
 
 
 
-		  	// parameters
+		  	// parameters for
 		  	default:
 		  	this.mapper = new Mapper(this._params);
 
 		  	nodeType = WebAudioUtils.caseFixParameter(nodeType);
 		  	let parentAudioObj = xmlNode.parentNode.audioObject;
+        this._parentAudioObj = parentAudioObj;
 
 		  	if(parentAudioObj){
 
 			  	this._node = parentAudioObj.getParameterNode(nodeType);
-			  	if(this._params.value){
+          let targetName;
+          let target;
+          if(this._node){
+            target = this._node;
+            targetName = this._nodeType;
+          } else {
+
+            targetName = nodeType;
+
+            // check if this parameter is a paramater within a parameters
+            // ie attack within "ADSR" inside "Envelope"
+            target = parentAudioObj._targetObject;
+            if(target){
+              target = target[parentAudioObj._nodeType];
+            } else {
+              target = parentAudioObj._params;
+            }
+            this._targetObject = target;
+          }
+
+			  	if(this._params.value && this._node){
 				  	this._params.value = WebAudioUtils.typeFixParam(nodeType, this._params.value);
 				  	this._node.value = this._params.value;
             parentAudioObj._params[nodeType] = this._params.value;
 				  }
-          let isPartOfASynth = xmlNode.closest("Synth");
-  				if(this._params.follow && !isPartOfASynth){
+          if(this._params.follow){ // && !isPartOfASynth){
+            let isPartOfASynth = xmlNode.closest("Synth");
+            let controlledByMIDI = isPartOfASynth && this._params.follow.includes("MIDI");
+    				if(!controlledByMIDI){
+              this.watcher = new Watcher(xmlNode, this._params.follow, {
+                delay: this.getParameter("delay"),
+                waxml: this.waxml,
+                range: this._params.range,
+                value: this._params.value,
+                curve: this._params.curve,
+                callBack: val => {
 
-  					this.watcher = new Watcher(xmlNode, this._params.follow, {
-              delay: this.getParameter("delay"),
-              waxml: this.waxml,
-              range: this._params.range,
-              value: this._params.value,
-              curve: this._params.curve,
-              callBack: val => {
+      						val = this.mapper.getValue(val);
+                  let time = 0;
 
-    						val = this.mapper.getValue(val);
-                let time = 0;
+      						switch(targetName){
+      							case "delayTime":
+      							val *= this._params.timescale;
+      							break;
 
-    						switch(this._node.name){
-    							case "delayTime":
-    							val *= this._params.timescale;
-    							break;
-
-                  case "frequency":
-                  if(parentAudioObj){
-                    if(parentAudioObj._nodeType.toLowerCase() == "oscillatornode"){
-                      time = this.getParameter("portamento") || 0;
-                      time *= this._params.timescale;
+                    case "frequency":
+                    if(parentAudioObj){
+                      if(parentAudioObj._nodeType.toLowerCase() == "oscillatornode"){
+                        time = this.getParameter("portamento") || 0;
+                        time = this.getParameter("transitionTime") || time;
+                        time *= this._params.timescale;
+                      }
                     }
+                    break;
+
+                    case "playbackRate":
+                    parentAudioObj.playbackRate = val;
+                    break;
+
+      							default:
+      							break;
+      						}
+                  if(this._nodeType == "playbackrate"){
+                    //console.log("playbackRate", val);
                   }
-                  break;
-
-                  case "playbackRate":
-                  parentAudioObj.playbackRate = val;
-                  break;
-
-    							default:
-    							break;
-    						}
-                if(this._nodeType == "playbackrate"){
-                  //console.log("playbackRate", val);
-                }
-    						this.setTargetAtTime(this._node, val, 0, time, true);
-    					 }
-             });
-  				 }
+      						this.setTargetAtTime(targetName, val, 0, time, true);
+      					 }
+               });
+              }
+  				  }
 
   		  	} else {
   			  	console.error("WebAudioXML: Invalid element - '" + nodeType + "'");
@@ -295,13 +363,14 @@ class AudioObject{
   			});
   		};
 
+
   	}
 
     follow(val){
 
       val = this.mapper.getValue(val);
 
-      switch(this._node.name){
+      switch(this._nodeType){
         case "delayTime":
         val *= this._params.timescale;
         break;
@@ -309,6 +378,7 @@ class AudioObject{
         default:
         break;
       }
+      let transitionTime = this.getParameter("transitionTime");
 
       this.setTargetAtTime(this._node, val, 0, 0, true);
     }
@@ -419,8 +489,12 @@ class AudioObject{
 
         this.loop = this._params.loop;
         if(this.loop){
-          this.loopEnd = this._params.loopEnd;
-          this.loopStart = this._params.loopStart;
+          if(typeof this._params.loopEnd != "undefined"){
+            this.loopEnd = this._params.loopEnd;
+          }
+          if(typeof this._params.loopStart != "undefined"){
+            this.loopStart = this._params.loopStart;
+          }
         }
         this.playbackRate = this._params.playbackRate;
 		  	this._node.connect(this._destination);
@@ -493,7 +567,8 @@ class AudioObject{
 		  	break;
 
         case "audiobuffersourcenode":
-        this._node.stop();
+        //if(this._node.stop){this._node.stop()}
+        this._node.disconnect();
         break;
 	  	}
   	}
@@ -507,23 +582,75 @@ class AudioObject{
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
 
-	  	if(!this._node){
-		  	console.error("Node error:", this);
-	  	}
-	  	if(typeof param == "string"){param = this._node[param]}
+      // checking that value is OK (i.e. not undefined)
+      if(!isFinite(value)){
+        console.log("non-finite");
+        return;
+      }
 
-      if(param.value == value){return}
 
-	  	if(cancelPrevious){
-		  	param.cancelScheduledValues(this._ctx.currentTime);
-	  	}
-	  	if(transitionTime){
-		  	param.setTargetAtTime(value, startTime, transitionTime);
-	  	} else {
-		  	param.setValueAtTime(value, startTime);
-	  	}
+
+      if(this._node){
+
+        //  web audio parameter
+        if(typeof param == "string"){
+          // stupid code because Classes are not structured into
+          // AudioNode, AudioParameter and WebAudioXML objects
+          if(this._nodeType == param){
+            param = this._node;
+          } else {
+            param = this._node[param];
+          }
+          if(!param){return}
+        }
+        //if(typeof param == "string"){param = this._node}
+        //if(param.value == value){return}
+
+  	  	if(cancelPrevious){
+  		  	param.cancelScheduledValues(this._ctx.currentTime);
+  	  	}
+  	  	if(transitionTime){
+  		  	param.setTargetAtTime(value, startTime, transitionTime);
+  	  	} else {
+  		  	param.setValueAtTime(value, startTime);
+  	  	}
+
+      } else {
+
+        // javascript object
+        switch (param) {
+          case "pan":
+            this[param] = value;
+            break;
+          default:
+            break;
+        }
+        this._targetObject[param] = value;
+
+      }
+
 
   	}
+
+
+    getWAXMLparameters(){
+      let waxmlParams = [];
+      let paramNames = [];
+      switch (this._nodeType) {
+        default:
+
+      }
+      paramNames.forEach((item, i) => {
+        let obj = WebAudioUtils.paramNameToRange(item);
+        obj.name = item;
+        obj.target = this[item];
+        obj.parent = this;
+        waxmlParams.push(obj);
+      });
+      return waxmlParams;
+    }
+
+
 
   	set src(path){
 	  	this._src = path;
@@ -607,7 +734,7 @@ class AudioObject{
     }
 
     set playbackRate(val){
-      val = val ? val : 1;
+      val = typeof val == "undefined" ? 1 : val;
       this.setTargetAtTime("playbackRate", val);
     }
 
@@ -615,8 +742,18 @@ class AudioObject{
       return this._node.playbackRate.value;
     }
 
+    set playbackrate(val){
+      this.playbackRate = val;
+    }
+
+    get playbackrate(){
+      return this.playbackRate;
+    }
+
+
   	set gain(val){
-	  	this.setTargetAtTime("gain", val);
+	  	this.setTargetAtTime("gain", val, 0, 0.001, true);
+      //console.log(this._nodeType + ".gain = " + val);
   	}
 
   	get gain(){
@@ -646,6 +783,13 @@ class AudioObject{
   	get q(){
 	  	return this._node.Q.value;
   	}
+
+    set Q(val){
+      this.q = val;
+    }
+    get Q(){
+      return this.q;
+    }
 
   	set type(val){
 
@@ -685,6 +829,7 @@ class AudioObject{
                 let imag = new Float32Array(jsonData.imag);
 					  		let wave = this._ctx.createPeriodicWave(real, imag);
 					  		this._node.setPeriodicWave(wave);
+                this._node.start();
 						}
 					});
 
@@ -694,7 +839,8 @@ class AudioObject{
 				  	let jsonData = JSON.parse(el.innerHTML);
 				  	let wave = this._ctx.createPeriodicWave(real, imag);
 				  	this._node.setPeriodicWave(wave);
-				}
+            this._node.start();
+				   }
 		  	}
 
 		  	break;
@@ -726,8 +872,9 @@ class AudioObject{
   	}
 
   	set pan(val){
-	  	if(this.fakePanner){
-			this._node.setPosition(val, 0, 1 - Math.abs(val));
+      this._params.pan = val;
+	  	if(this.parent.fakePanner){
+			     this._parentAudioObj._node.setPosition(val, 0, 1-Math.abs(val));
 /*
 		  	this.setTargetAtTime(this.L.gain, 0.5-(val/2));
 		  	this.setTargetAtTime(this.R.gain, 0.5+(val/2));
@@ -739,13 +886,94 @@ class AudioObject{
   	}
 
   	get pan(){
-	  	return this._params.pan;
+	  	return this._params.pan || 0;
   	}
+
+
+
+    set attack(val){
+      this.setTargetAtTime("attack", val);
+    }
+
+    get attack(){
+      this._params.attack;
+    }
+
+
+
+    set knee(val){
+      this.setTargetAtTime("knee", val);
+    }
+
+    get knee(){
+      this._params.knee;
+    }
+
+    set ratio(val){
+      this.setTargetAtTime("ratio", val);
+    }
+
+    get ratio(){
+      this._params.ratio;
+    }
+
+
+
+    set release(val){
+      this.setTargetAtTime("release", val);
+    }
+
+    get release(){
+      this._params.release;
+    }
+
+
+
+    set threshold(val){
+      this.setTargetAtTime("threshold", val);
+    }
+
+    get threshold(){
+      this._params.threshold;
+    }
+
+
+    get parent(){
+      return this._parentAudioObj;
+    }
+
+    set parent(audioObj){
+      this._parentAudioObj = audioObj;
+    }
+
+
+
 
   	set(key, value){
 	  	if(typeof this._node[key] !== "undefined"){
 		  	this[key] = value;
 	  	}
+  	}
+
+    get parameters(){
+      return this._params;
+    }
+
+
+  	get variables(){
+  		return this._variables;
+  	}
+
+    set variables(val){
+      this._variables = val;
+    }
+
+  	setVariable(key, val){
+  		this._variables[key] = val;
+  	}
+
+    getVariable(key){
+  		return this._variables[key];
   	}
 
 

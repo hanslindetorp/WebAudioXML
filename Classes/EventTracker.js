@@ -55,7 +55,7 @@ class EventTracker {
 			targetEl = document.querySelector(target);
 		}
 		if(targetEl == null){
-			console.warn("WebAudioXML error: There is no interactionArea with selector " + target + ". Document will be used instead.");
+			//console.warn("WebAudioXML error: There is no interactionArea with selector " + target + ". Document will be used instead.");
 			target = document;
 		} else {
 			target = targetEl;

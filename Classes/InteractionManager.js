@@ -1,5 +1,6 @@
 
 var EventTracker = require('./EventTracker.js');
+var VariableContainer = require('./VariableContainer.js');
 
 
 class InteractionManager {
@@ -8,7 +9,7 @@ class InteractionManager {
 		this.eventTracker = new EventTracker();
 		this.waxml = waxml;
 		this.inited = false;
-		this._data = {};
+		this.variables = new VariableContainer();
 
 		// variables
 		// create a way of keeping track of each touch
@@ -17,12 +18,12 @@ class InteractionManager {
 		while(touches.length < (navigator.maxTouchPoints || 1)){
 			touches.push({});
 		}
-		this._data.touch = touches;
+		this._variables.touch = touches;
 		this.touchIDs = [];
 
-		this._data.client = [];
+		this._variables.client = [];
 
-		while(this._data.client.length < 10){
+		while(this._variables.client.length < 10){
 			let c = {};
 			c.touchIDs = [];
 
@@ -37,7 +38,7 @@ class InteractionManager {
 
 			c.deviceOrientation = {};
 
-			this._data.client.push(c);
+			this._variables.client.push(c);
 		}
 
 	}
@@ -92,7 +93,7 @@ class InteractionManager {
 	}
 
 	get variables(){
-		return this._data;
+		return this._variables;
 	}
 
 	registerEvents(target = document){
@@ -152,9 +153,9 @@ class InteractionManager {
 	setDeviceMotion(e){}
 
 	setDeviceOrientation(e){
-		this._data.alpha = e.alpha;
-		this._data.beta = e.beta;
-		this._data.gamma = e.gamma;
+		this._variables.alpha = e.alpha;
+		this._variables.beta = e.beta;
+		this._variables.gamma = e.gamma;
 	}
 
 	copyTouchProperties(source, target){
@@ -204,7 +205,7 @@ class InteractionManager {
 
 		//e.preventDefault();
 		Array.prototype.forEach.call(e.changedTouches, touch => {
-			let identifier = this.touchIDs.find((el, id) => this._data.touch[id].down != 1);
+			let identifier = this.touchIDs.find((el, id) => this._variables.touch[id].down != 1);
 			let i;
 
 			if(identifier){
@@ -215,7 +216,7 @@ class InteractionManager {
 				this.touchIDs.push(touch.identifier);
 			}
 
-			let touchObj = this._data.touch[i];
+			let touchObj = this._variables.touch[i];
 			this.copyTouchProperties(touch, touchObj);
 			this.setRelativePos(touchObj, touch);
 			this.setMovePos(touchObj);
@@ -230,7 +231,7 @@ class InteractionManager {
 
 		//e.preventDefault();
 		Array.prototype.forEach.call(e.changedTouches, touch => {
-			let touchObj = this._data.touch[touchIDs.indexOf(touch.identifier)];
+			let touchObj = this._variables.touch[touchIDs.indexOf(touch.identifier)];
 
 			if(touchObj){
 				this.copyTouchProperties(touch, touchObj);
@@ -247,7 +248,7 @@ class InteractionManager {
 			let i = touchIDs.indexOf(touch.identifier);
 
 
-			let touchObj = this._data.touch[i];
+			let touchObj = this._variables.touch[i];
 			if(touchObj){
 				touchObj.down = 0;
 				touchObj.force = 0;
@@ -258,7 +259,7 @@ class InteractionManager {
 
 			// reset touch list if last touch
 			let stillDown = 0;
-			this._data.touch.forEach(touch => {
+			this._variables.touch.forEach(touch => {
 				stillDown = stillDown || touch.down;
 			});
 			if(!stillDown){
@@ -280,7 +281,7 @@ class InteractionManager {
 
 		if(!navigator.maxTouchPoints){
 
-			let touchObj = this._data.touch[0];
+			let touchObj = this._variables.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj);
@@ -304,7 +305,7 @@ class InteractionManager {
 		// simulate touch behaviour if needed
 		if(!navigator.maxTouchPoints){
 
-			let touchObj = this._data.touch[0];
+			let touchObj = this._variables.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj);
@@ -313,23 +314,23 @@ class InteractionManager {
 			this.waxml.start("*[trig='client[0].touch[0]']");
 		}
 
-		this._data.mouseX = e.clientX;
-		this._data.mouseY = e.clientY;
+		this._variables.mouseX = e.clientX;
+		this._variables.mouseY = e.clientY;
 
-		this._data.pointerX = e.clientX;
-		this._data.pointerY = e.clientY;
+		this._variables.pointerX = e.clientX;
+		this._variables.pointerY = e.clientY;
 
-		this._data.relX = e.relX;
-		this._data.relY = e.relY;
+		this._variables.relX = e.relX;
+		this._variables.relY = e.relY;
 
-		this._data.moveX = e.moveX;
-		this._data.moveY = e.moveY;
-		this._data.relMoveX = e.relMoveX;
-		this._data.relMoveY = e.relMoveY;
+		this._variables.moveX = e.moveX;
+		this._variables.moveY = e.moveY;
+		this._variables.relMoveX = e.relMoveX;
+		this._variables.relMoveY = e.relMoveY;
 
-		this._data.mousedown = 1;
-		this._data.pointerdown = 1;
-		this._data.touchdown = 1;
+		this._variables.mousedown = 1;
+		this._variables.pointerdown = 1;
+		this._variables.touchdown = 1;
 		this.waxml.start("*[trig='mousedown']");
 		this.waxml.start("*[trig='pointerdown']");
 		this.waxml.start("*[trig='mouse']");
@@ -353,24 +354,24 @@ class InteractionManager {
 	}
 
 	pointerMoveExecute(e){
-		this._data.mouseX = e.clientX;
-		this._data.mouseY = e.clientY;
+		this._variables.mouseX = e.clientX;
+		this._variables.mouseY = e.clientY;
 
-		this._data.pointerX = e.clientX;
-		this._data.pointerY = e.clientY;
+		this._variables.pointerX = e.clientX;
+		this._variables.pointerY = e.clientY;
 
-		this._data.relX = e.relX;
-		this._data.relY = e.relY;
+		this._variables.relX = e.relX;
+		this._variables.relY = e.relY;
 
-		this._data.moveX = e.moveX;
-		this._data.moveY = e.moveY;
-		this._data.relMoveX = e.relMoveX;
-		this._data.relMoveY = e.relMoveY;
+		this._variables.moveX = e.moveX;
+		this._variables.moveY = e.moveY;
+		this._variables.relMoveX = e.relMoveX;
+		this._variables.relMoveY = e.relMoveY;
 
 		// simulate touch behaviour if needed
 		if(!navigator.maxTouchPoints){
 
-			let touchObj = this._data.touch[0];
+			let touchObj = this._variables.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj);
@@ -378,7 +379,7 @@ class InteractionManager {
 			//this.setRelativePos(touchObj);
 			//this.setMovePos(touchObj, e.clientX, e.clientY);
 
-			touchObj = this._data.client[0].touch[0];
+			touchObj = this._variables.client[0].touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj);
@@ -396,9 +397,9 @@ class InteractionManager {
 			return data;
 	}
 	pointerUpExecute(e){
-		this._data.mousedown = 0;
-		this._data.pointerdown = 0;
-		this._data.touchdown = 0;
+		this._variables.mousedown = 0;
+		this._variables.pointerdown = 0;
+		this._variables.touchdown = 0;
 
 		this.waxml.stop("*[trig='mouseup']");
 		this.waxml.stop("*[trig='pointerup']");
@@ -409,7 +410,7 @@ class InteractionManager {
 		// simulate touch behaviour if needed
 		if(!navigator.maxTouchPoints){
 
-			let touchObj = this._data.touch[0];
+			let touchObj = this._variables.touch[0];
 			this.copyTouchProperties(e, touchObj);
 			this.setRelativePos(touchObj, e);
 			this.setMovePos(touchObj, e.clientX, e.clientY);
@@ -464,6 +465,21 @@ class InteractionManager {
 
 	getSequence(name="_storedGesture"){
 		return this.eventTracker.getSequence(name);
+	}
+
+
+	get variables(){
+		return this._variables;
+	}
+	set variables(val){
+		this._variables = this._variables || val;
+	}
+
+	setVariable(key, val){
+		this._variables[key] = val;
+	}
+	getVariable(key, val){
+		return this._variables[key];
 	}
 
 	play(name="_storedGesture"){

@@ -29,45 +29,59 @@
 	<body>
 		<div id="container">
 			<div id="synth">
-				<h3>WebAudioXML - FM Synth</h3>
+				<h3>WebAudioXML - FM Synth <button id="power" onclick="webAudioXML.init(); document.querySelector('#keyboard').style.opacity=1">ON</button></h3>
 				<div id="GUI">
-					<div id="oscillators">
-						<h4>OSCILLATORS</h4>
+					<div id="modulator">
+						<h4>MODULATOR</h4>
 						<div class="knob">
-							<h5>CARRIER-GAIN</h5>
-							<webaudio-knob id="carrier-gain" src="GUI/LittlePhatty.png" sprites="100" value="50" min="0" max="100" diameter="64"></webaudio-knob>
-						</div>
-						<div class="knob">
-							<h5>MODULATOR-GAIN</h5>
+							<h5>GAIN</h5>
 							<webaudio-knob id="modulator-gain" src="GUI/LittlePhatty.png" sprites="100" value="50" min="0" max="100" diameter="64"></webaudio-knob>
+							<webaudio-param link="modulator-gain"></webaudio-param>
 						</div>
+
 						<div class="knob">
-							<h5>MODULATOR-PITCH</h5>
-							<webaudio-knob id="modulator-offset" src="GUI/LittlePhatty.png" sprites="100" value="0" min="-36" max="36" diameter="64"></webaudio-knob>
+							<h5>PITCH</h5>
+							<webaudio-knob id="modulator-pitch" src="GUI/LittlePhatty.png" sprites="100" value="-12" min="-36" max="36" diameter="64"></webaudio-knob>
+							<webaudio-param link="modulator-pitch"></webaudio-param>
 						</div>
 					</div>
+					<div id="carrier">
+						<h4>CARRIER</h4>
+						<div class="knob">
+							<h5>GAIN</h5>
+							<webaudio-knob id="carrier-gain" src="GUI/LittlePhatty.png" sprites="100" value="50" min="0" max="100" diameter="64"></webaudio-knob>
+							<webaudio-param link="carrier-gain"></webaudio-param>
+						</div>
+					</div>
+
 					<div id="envelope">
-						<h4>ENVELOPE</h4>
+						<h4>ENV</h4>
 						<div class="slider">
 							<div>A</div>
-							<webaudio-slider id="envelope-attack" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+							<webaudio-slider id="env-attack" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" value="1" min="1" max="2000"></webaudio-slider>
+							<webaudio-param link="env-attack"></webaudio-param>
 						</div>
 						<div class="slider">
 							<div>D</div>
-							<webaudio-slider id="envelope-decay" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+							<webaudio-slider id="env-decay" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" value="100" min="1" max="2000"></webaudio-slider>
+							<webaudio-param link="env-decay"></webaudio-param>
 						</div>
 						<div class="slider">
 							<div>S</div>
-							<webaudio-slider id="envelope-sustain" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+							<webaudio-slider id="env-sustain" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" value="30" min="0" max="100"></webaudio-slider>
+							<webaudio-param link="env-sustain"></webaudio-param>
 						</div>
 						<div class="slider">
 							<div>R</div>
-							<webaudio-slider id="envelope-release" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" sprites="100"></webaudio-slider>
+							<webaudio-slider id="env-release" src="GUI/vsliderbody.png" knobsrc="GUI/vsliderknob.png" value="50" min="1" max="1000"></webaudio-slider>
+							<webaudio-param link="env-release"></webaudio-param>
 						</div>
 					</div>
 				</div>
 				<webaudio-keyboard id="keyboard" keys="25" min="48" width="660" height="200" height="250"></webaudio-keyboard>
 			</div>
+
+			<div id="code"></div>
 		</div>
 
 		<script>WebAudioControlsOptions={useMidi:1}</script>

@@ -4,7 +4,7 @@ var WebAudioUtils = require('./WebAudioUtils.js');
 class Range {
 
 	constructor(arr){
-
+		this._valueType = "number";
 		this.values = [];
 
 			arr.forEach(val => {
@@ -15,7 +15,18 @@ class Range {
 					var numValMax = parseFloat(minMaxStrings[1]);
 
 					this.values.push(new MinMax(numValMin, numValMax));
+				} else {
+					// These lines are used in iMusic. Should it maybe be used here as well?
+
+					// let v = Number(val);
+					// if(isNaN(v)){
+					// 	this._valueType = "string";
+					// } else {
+					// 	val = v;
+					// }
+					// this.values.push(val);
 				}
+				//this.values.sort();
 			});
 
 	}
@@ -34,6 +45,24 @@ class Range {
 	getRandomVal(dec, fn){
 		return Range.getRandomVal(this.values, dec, fn);
 	}
+
+
+	get min() {
+		return this.values[0];
+	}
+
+	get max(){
+		return this.values[this.values.length-1];
+	}
+
+	get type(){
+		return this._valueType;
+	}
+
+	get isNumber(){
+		return this._valueType == "number";
+	}
+
 
 }
 

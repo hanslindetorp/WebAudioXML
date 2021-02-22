@@ -1,6 +1,9 @@
 
+var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
 var AudioObject = require('./AudioObject.js');
+var Variable = require('./Variable.js');
+var Watcher = require('./Watcher.js');
 var Synth = require('./Synth.js');
 
 
@@ -9,8 +12,11 @@ class Parser {
 
 	constructor(source, waxml, callBack){
 
-	  	this.waxml = waxml;
-	  	let _ctx = this.waxml._ctx;
+		this.elementCount = {};
+		this.followCount = {};
+
+  	this.waxml = waxml;
+  	let _ctx = this.waxml._ctx;
 
 		this.callBack = callBack;
 		this.externalFiles = [];
@@ -34,9 +40,9 @@ class Parser {
 			} else {
 
 				let extFile = new Loader(source, XMLroot => {
-					this._xml = XMLroot;
-					let localPath = Loader.getFolder(source) || window.location.pathname;
-					this.parseXML(XMLroot, localPath);
+					this._xml = XMLroot.parentNode.querySelector("Audio, audio");
+					let localPath = Loader.getFolder(source) || location.href.substr(0,location.href.lastIndexOf("/")+1);
+					this.parseXML(this._xml, localPath);
 					this.checkLoadComplete();
 				});
 				this.externalFiles.push(extFile);
@@ -58,6 +64,8 @@ class Parser {
 		let href = xmlNode.getAttribute("href");
 		let nodeName = xmlNode.nodeName.toLowerCase();
 
+		this.elementCount[nodeName] = this.elementCount[nodeName] ? this.elementCount[nodeName] + 1 : 1;
+
 
 		if(href && !xmlNode.loaded && nodeName != "link"){
 
@@ -72,6 +80,8 @@ class Parser {
 
 				// import audioObject and children into internal XML DOM
 				xmlNode.audioObject = externalXML.audioObject;
+				xmlNode.obj = xmlNode.audioObject;
+
 				Array.from(externalXML.children).forEach(childNode => {
 					if(childNode.nodeName.toLowerCase() != "parsererror"){
 						xmlNode.appendChild(childNode);
@@ -86,7 +96,9 @@ class Parser {
 		} else {
 
 			// if this node is internal
-
+			let parentNode = xmlNode.parentNode;
+			let params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+			params.waxml = this.waxml;
 
 			switch(nodeName){
 
@@ -108,18 +120,40 @@ class Parser {
 				break;
 
 				case "synth":
-				let synth = new Synth(xmlNode, this.waxml, localPath);
+				let synth = new Synth(xmlNode, this.waxml, localPath, params);
 				xmlNode.audioObject = synth;
+				xmlNode.obj = xmlNode.audioObject;
 				xmlNode.querySelectorAll("voice, Voice").forEach(node => this.parseXML(node, localPath));
 				break;
 
+				case "var":
+				let variableObj = new Variable(params);
+				if(params.follow){
+
+					new Watcher(xmlNode, params.follow, {
+						waxml: this.waxml,
+						variableObj: variableObj,
+						callBack: val => {
+							variableObj.value = val;
+						}
+					});
+				}
+				xmlNode.obj = variableObj;
+				parentNode.obj.setVariable(params.name, variableObj);
+				break;
+
 				default:
-				xmlNode.audioObject = new AudioObject(xmlNode, this.waxml, localPath);
+				xmlNode.audioObject = new AudioObject(xmlNode, this.waxml, localPath, params);
+				xmlNode.obj = xmlNode.audioObject;
 				Array.from(xmlNode.children).forEach(node => this.parseXML(node, localPath));
 				break;
 			}
 
-
+			// statistics
+			let follow = xmlNode.getAttribute("follow");
+			if(follow){
+					this.followCount[follow] = this.followCount[follow] ? this.followCount[follow] + 1 : 1;
+			}
 
 		}
 

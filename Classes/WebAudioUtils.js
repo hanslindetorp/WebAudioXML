@@ -43,6 +43,9 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "release":
 		case "active":
 
+		// WebAudioXML _objects
+		case "transitionTime":
+		case "transitiontime":
 
 		// Web Audio Synth
 		case "voices":
@@ -108,25 +111,34 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		value.minOut = typeof value.minOut == "number" ? value.minOut : 0;
 		value.maxOut = typeof value.maxOut == "number" ? value.maxOut : 1;
 
+		let conv = 1;
 		if(arr.length){
-			value.conv = arr.shift().trim();
-		} else {
-			value.conv = 1;
+			conv = arr.shift();
+			let float = parseFloat(conv)
+			conv = float == conv ? float : conv;
 		}
-		if(Number(value.conv) == value.conv){value.conv = "Math.pow(x, " + value.conv + ")"};
+		value.conv = [conv];
 		break;
 
 		case "level":
 		case "steps":
-		value = WebAudioUtils.split(value).map(item => parseFloat(item));
-		break;
-
 		case "range":
 		case "curve":
 		case "follow":
+		case "mapSrc":
+		case "mapDest":
+		case "mapCurve":
+		case "mapConvert":
 		value = WebAudioUtils.split(value);
 		break;
 
+		case "value":
+		// try to convert to Number if possible
+		let floatVal = parseFloat(value);
+		if(!Number.isNaN(floatVal)){
+			value = floatVal;
+		}
+		break;
 
 		default:
 
@@ -226,8 +238,126 @@ WebAudioUtils.MIDInoteToFrequency = note => {
 }
 WebAudioUtils.split = str => {
 	let separator = str.includes(",") ? "," : " ";
-	let arr = str.split(separator).map(item => item.trim());
+	let arr = str.split(separator).map(item => {
+		item = item.trim();
+		let i = parseFloat(item);
+		return i == item ? i : item;
+	});
 	return arr;
+}
+
+
+
+WebAudioUtils.getParameters = node => {
+
+	let params = [];
+
+
+	Object.keys(node.__proto__).forEach(key => {
+
+		let param = node[key];
+		if(param instanceof AudioParam){
+
+			let obj = {};
+			obj.audioParam = param;
+			obj.label = key;
+			let attr = {};
+			obj.attributes = attr;
+			params.push(obj);
+
+			obj.nodeName = "input";
+			attr.type = "range";
+			attr.value = param.value;
+
+			let range = WebAudioUtils.paramNameToRange(key);
+			attr.min = range.min;
+			attr.max = range.max;
+			attr.conv = range.conv;
+
+			attr.step = (attr.max - attr.min) / 100;
+
+		} else if(param instanceof String){
+			console.log(key, node[key]);
+		}
+
+	});
+
+	return params;
+}
+
+
+WebAudioUtils.paramNameToRange = name => {
+	range = {};
+
+	switch(name){
+
+
+		case "frequency":
+			range.default = 440;
+			range.min = 0;
+			range.max = 20000; //22050;
+			range.conv = 2; //"Math.pow(10, x*3)/1000";
+			break;
+
+		case "detune":
+			range.default = 0;
+	  	range.min = -4800;
+	  	range.max = 4800;
+	  	range.conv = 1;
+	  	break;
+
+		case "Q":
+		case "q":
+			range.default = 0;
+	  	range.min = 0;
+	  	range.max = 100;
+	  	range.conv = 1;
+	  	break;
+
+		case "playbackRate":
+		case "playbackrate":
+			range.default = 1;
+	  	range.min = 0;
+	  	range.max = 5;
+	  	range.conv = 2;
+	  	break;
+
+		case "pan":
+			range.default = 0;
+	  	range.min = -1;
+	  	range.max = 1;
+	  	range.conv = 1;
+	  	break;
+
+		case "trigger":
+			range.default = 0;
+	  	range.min = 0;
+	  	range.max = 30;
+	  	range.conv = 1;
+	  	break;
+
+		case "gain":
+			range.default = 1;
+	  	range.min = 0;
+	  	range.max = 4;
+	  	range.conv = 2;
+			break;
+
+
+		default:
+			range.default = 1;
+	  	range.min = 0;
+	  	range.max = 1;
+	  	range.conv = 1;
+	  	break;
+
+	}
+
+	return range;
+}
+
+WebAudioUtils.convertUsingMath = (x, conv) => {
+
 }
 
 module.exports = WebAudioUtils;
