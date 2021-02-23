@@ -9,7 +9,7 @@ This XML snippet...
 </audio>
 ```
 
-...can be used instead of these javascript lines:
+...will do the same thing as these javascript lines:
 
 ```javascript
 var ctx = new AudioContext();
@@ -17,6 +17,7 @@ var osc = ctx.createOscillator();
 osc.type = "sawtooth";
 osc.frequency.value = 880;
 osc.connect(ctx.destination);
+osc.start();
 ```
 WebAudioXML is both a specification and a parser library. It defines how to structure Audio objects in a hierarchical, modular way using XML. The integration in a web-based application requires WebAudioXML.js - a free JavaScript library that parses the XML and creates and connects all Web Audio nodes into a tree-like structure, called an Audio Graph.
 WebAudioXML is a PhD research project invented and maintained
