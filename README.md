@@ -20,8 +20,8 @@ osc.connect(ctx.destination);
 osc.start();
 ```
 WebAudioXML is both a specification and a parser library. It defines how to structure Audio objects in a hierarchical, modular way using XML. The integration in a web-based application requires WebAudioXML.js - a free JavaScript library that parses the XML and creates and connects all Web Audio nodes into a tree-like structure, called an Audio Graph.
-WebAudioXML is a PhD research project invented and maintained
-by Hans Lindetorp
+
+WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. It's free for anyone to use, but comes with no guarantees or support. Please don't hesitate to contact me if you find the project interesting.
 
 ### DEMOs
 https://codepen.io/collection/DjaYkE
