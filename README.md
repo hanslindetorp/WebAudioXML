@@ -4,7 +4,7 @@ WebAudioXML makes it possible to build a WebAudio application with HTML and XML 
 This XML snippet...
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
-<audio version="1.0">
+<audio version="1.0" gain="-6dB">
  <OscillatorNode type="sawtooth" frequency="880"></OscillatorNode>
 </audio>
 ```
@@ -16,8 +16,14 @@ var ctx = new AudioContext();
 var osc = ctx.createOscillator();
 osc.type = "sawtooth";
 osc.frequency.value = 880;
-osc.connect(ctx.destination);
 osc.start();
+
+var mixer = ctx.createGain();
+mixer.gain.value = Math.pow(2, -6 / 3);
+
+osc.connect(mixer);
+mixer.connect(ctx.destination);
+
 ```
 WebAudioXML is both a specification and a parser library. It defines how to structure Audio objects in a hierarchical, modular way using XML. The integration in a web-based application requires WebAudioXML.js - a free JavaScript library that parses the XML and creates and connects all Web Audio nodes into a tree-like structure, called an Audio Graph.
 
