@@ -1,7 +1,7 @@
 # WebAudioXML v1.0
 WebAudioXML makes it possible to build a WebAudio application with HTML and XML without writing a single line of javascript. It aims at making it easy to get started with WebAudio and also contributes with a syntax that gives a clear overview of the audio connections and configurations.
 
-This XML snippet...
+This WebAudioXML snippet...
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
 <audio version="1.0" gain="-6dB">
@@ -9,7 +9,7 @@ This XML snippet...
 </audio>
 ```
 
-...will do the same thing as these javascript lines:
+...makes you not having to write these javascript lines:
 
 ```javascript
 var ctx = new AudioContext();
