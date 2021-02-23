@@ -29,6 +29,9 @@ WebAudioXML is both a specification and a parser library. It defines how to stru
 
 WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. It's free for anyone to use, but comes with no guarantees or support. Please don't hesitate to contact me if you find the project interesting.
 
+Best wishes,
+Hans
+
 ### DEMOs
 https://codepen.io/collection/DjaYkE
 
