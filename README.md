@@ -33,6 +33,10 @@ Best wishes,
 Hans
 
 ### DEMOs
+Basic example with a touch controlled synth:
+https://hanslindetorp.github.io/WebAudioXML/
+
+Interactive examples on CodePen:
 https://codepen.io/collection/DjaYkE
 
 ### [Tutorial](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
