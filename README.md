@@ -76,17 +76,6 @@ The following shows the simplest configuration using only one OscillatorNode con
 
 The structure of the XML-data follows some basic rules. The root element is named <audio> and the other elements can be either a valid Web Audio node, a Web Audio parameter or one of the following custom elements: mixer, chain, synth, voice, send, envelope or link. See the separate pages for comments on each element type.
 
-### Native WebAudio nodes
-Any valid Web Audio node can potentially be specified using WebAudioXML. The name structure follows the Web Audio API specification. Currently, the following nodes are implemented and tested:
-
-* [AudioBufferSourceNode](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode)
-* [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode)
-* [ConvolverNode](https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode)
-* [DelayNode](https://developer.mozilla.org/en-US/docs/Web/API/DelayNode)
-* [DynamicsCompressorNode](https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode)
-* [GainNode](https://developer.mozilla.org/en-US/docs/Web/API/GainNode)
-* [OscillatorNode](https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode)
-* [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode)
 
 ### Parameters / Attributes
 Any valid Web Audio parameters can be set using attributes. The following example shows an oscillator node with type set to ‘sawtooth’ and frequency set to 880 Hz.
