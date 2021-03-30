@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0">
+  <Chain>
+		<!-- This demo shows how the MediaStreamAudioSourceNode can be used to take the input from the audio driver specified in the
+		computer's audio settings and sends the signal further down in the hierarchy in WebAudioXML. -->
+    <MediaStreamAudioSourceNode></MediaStreamAudioSourceNode>
+    <Send output="#reverb" gain="-6dB"></Send>
+  </Chain>
+  <ConvolverNode id="reverb" src="audio/large-bottle-hall.wav"></ConvolverNode>
+</Audio>
