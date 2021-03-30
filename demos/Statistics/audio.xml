@@ -2,100 +2,76 @@
 <Audio version="1.0" timeUnit="ms" gain="-10dB">
 
 
-	<Chain id="Worklet_Noise1">
-
-		<!--
-		The AudioWorkletNode can generate any sound from a javascript object.
-		The example script below generates white noise by adding random sample
-		values to the audio buffer. (This is quite advanced and is not recommended
-		for beginners. Also controlling AudioWorkletNode parameters from WebAudioXML
-		is not yet implemented.
-		(Read more on https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletNode)
-		-->
-		<AudioWorkletNode src="sound-data/white-noise-processor.js"></AudioWorkletNode>
-
-		<!--
-		The BiquadFilterNode filters the sound and can have the following attributes. It has the following attributes. All attributes can be set to a fixed value. The attributes
-		with numeric values can be controlled by WebAudioXML Sonification Toolkit.
-		(read more on https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode)
-
-		type: (lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch and allpass)
-		detune: frequency offset in cent (https://en.wikipedia.org/wiki/Cent_%28music%29)
-		frequency: cutoff frequency for the filter
-		gain: the boost or attenuation of the frequencies specified
-		Q: the "q-factor" of the filter (https://en.wikipedia.org/wiki/Q_factor)
-		-->
-		<BiquadFilterNode class="Bandpass_Filter" type="bandpass" Q="70"></BiquadFilterNode>
-
-		<!--
-		The GainNode controls the volume of the audio signal. The attribute "gain" can
-		be set to a fixed value ("0" = no sound, "1" = max volume) or controlled by the
-		WebAudioXML Sonification Toolkit.
-		-->
+	
+	<Chain id="Trigger_industry_short">
+		<Synth voiceselect="random">
+			<Voice>
+				<AudioBufferSourceNode src="audio/factory.wav"></AudioBufferSourceNode>
+			</Voice>
+			<Voice>
+				<AudioBufferSourceNode src="audio/factory2.wav"></AudioBufferSourceNode>
+			</Voice>
+			<Voice>
+				<AudioBufferSourceNode src="audio/factory3.wav"></AudioBufferSourceNode>
+			</Voice>
+		</Synth>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
 		<GainNode></GainNode>
-
-
-		<!--
-		The StereoPannerNode controls the panning of the sound between left and right speaker
-		The "pan"-attribute can be set with a fixed value or controlled by the WeAudioXML
-		Sonification Toolkit
-		-->
-		<StereoPannerNode pan="1"></StereoPannerNode>
+		<StereoPannerNode></StereoPannerNode>
+	</Chain>
+	
+		
+	<Chain id="Trigger_2006">
+		<Synth voiceselect="random">
+			<Voice>
+				<AudioBufferSourceNode src="audio/2006.mp3"></AudioBufferSourceNode>
+			</Voice>
+		</Synth>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+		<GainNode></GainNode>
+		<StereoPannerNode></StereoPannerNode>
+	</Chain>
+	
+	<Chain id="Looper_female">
+		<AudioBufferSourceNode src="audio/female.mp3" loop="true"></AudioBufferSourceNode>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+		<GainNode></GainNode>
+		<StereoPannerNode></StereoPannerNode>
+	</Chain>
+	
+		<Chain id="Looper_short">
+		<AudioBufferSourceNode src="audio/short.mp3" loop="true"></AudioBufferSourceNode>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+		<GainNode></GainNode>
+		<StereoPannerNode></StereoPannerNode>
+	</Chain>
+	
+		
+	
+		<Chain id="Looper_male">
+		<AudioBufferSourceNode src="audio/male.mp3" loop="true"></AudioBufferSourceNode>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+		<GainNode></GainNode>
+		<StereoPannerNode></StereoPannerNode>
 	</Chain>
 
 
-	<Mixer id="Oscillator_Square">
-		<!-- This Sound module is built with a Mixer element containing two Chain elements.
-		The first Chain contains an OscillatorNode that is sent through a BiquadFilterNode.
-		The second Chain contains an OscillatorNode that is used to modulate the filter in
-		first Chain.
-		-->
-		<Chain class="Carrier">
-			<!-- The OscillatorNode generates a pitched, electronical sound.  (Read more on https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode)
-			It has the following attributes. All attributes can be set to a fixed value. The attributes
-			with numeric values can be controlled by WebAudioXML Sonification Toolkit.
+	<Chain id="Looper_IndustryLong">
+		<AudioBufferSourceNode src="audio/industry.mp3" loop="true"></AudioBufferSourceNode>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+</Chain>
 
-			detune: offsets the frequency in cent (https://en.wikipedia.org/wiki/Cent_%28music%29)
-			frequency: controls the pitch (440 Hz is "normal A" )
-			type: "sine", "triangle", "sawtooth" or "square" (diffent sound characters)
-			-->
-			<OscillatorNode type="square"></OscillatorNode>
+	
+	<Chain id="Looper_farm">
+	
+		<AudioBufferSourceNode src="audio/farm.wav" loop="true"></AudioBufferSourceNode>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+</Chain>
+			
+			
+	
 
-			<!-- This BiquadFilterNode is setup to recieve a modulator signal
-			from the OscillatorNode below. The result is a filter vibrato where
-			the amount of vibrato can be controlled by mapping a variable in WebAudioXML
-			Sonification Toolkit to the gain of the modulating OscillatorNode.
-			-->
-			<BiquadFilterNode type="lowpass" frequency="500">
-				<detune id="modulatorInput1"></detune>
-			</BiquadFilterNode>
-		</Chain>
-
-		<Chain class="Modulator">
-			<!-- This OscillatorNode works as a modulator (LFO - Low Frequency Oscillator)
-			for the filter above.
-			The frequency can be set to a fixed value or be controlled by WebAudioXML
-			Sonification Toolkit. The gain attribute controls the amount of vibrato.
-
-			-->
-			<OscillatorNode class="LFO" frequency="5"></OscillatorNode>
-
-			<!-- This GainNode is used as a target for WebAudioXML Sonification Toolkit.
-			It makes it possible for a variable to control the amount of filter vibrato.
-			The gain attribute is set to "0" from start to not make any modulation if
-			variable is mapped.
-			-->
-			<GainNode class="LFO_amount" gain="0"></GainNode>
-
-			<!-- This Gain is used to multiply the output value to oscillate between
-			-1200 to 1200. The output attribute is set to #modulatorInput1 to affect the
-			detune attribute of the filter above. 1200 cent equals one octave in pitch.
-			-->
-			<GainNode output="#modulatorInput1" gain="1200"></GainNode>
-		</Chain>
-
-	</Mixer>
-
+	
 	<Chain id="Looper_Music">
 		<!--
 		The AudioBufferSourceNode is used to playback audio files. This setup
@@ -108,6 +84,11 @@
 		The "playbackRate" attribute can be set to a fixed value or controlled by the
 		WebAudioXML Sonification Toolkit. "1" is normal speed. "2" is double. "0" stops
 		the playback and negative values playes the audio backwards.
+
+		Useful parameters to control are:
+
+		AudioBufferSourceNode.playbackRate for pitch
+		BiquadFilterNode.frequency or detune for timbre
 		-->
 
 		<AudioBufferSourceNode src="audio/loop1.mp3" loop="true"></AudioBufferSourceNode>
@@ -118,9 +99,14 @@
 		a fixed value or controlled by the WebAudioXML Sonification Toolkit - it will start
 		to filter the sound.
 		-->
-		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode
+</Chain>
 
-	</Chain>
+
+	
+
+
+
 
 	<Mixer id="Trigger_Footsteps">
 		<Chain>
@@ -130,6 +116,13 @@
 			files playing back one after another.
 			By setting voiceselect="random" the files will be randomly selected.
 			There can be any number of voices with different files.
+
+			Useful parameters to control are:
+
+			Synth.trigger for trigger speed
+			BiquadFilterNode.frequency or detune for timbre
+			StereoPannerNode.pan for stereo panning
+			ReverbSend.gain for reverb control
 			-->
 			<Synth voiceselect="next">
 				<Voice>
@@ -139,6 +132,8 @@
 					<AudioBufferSourceNode src="audio/step2.mp3"></AudioBufferSourceNode>
 				</Voice>
 			</Synth>
+
+			<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
 
 			<StereoPannerNode></StereoPannerNode>
 
@@ -151,7 +146,7 @@
 			it to "0.25" as in this example turns the reverb level down from the beginning.
 			(Read more about routing signals: https://github.com/hanslindetorp/WebAudioXML/wiki/Connecting)
 			-->
-			<Send output="#reverb1" gain="0"></Send>
+			<Send class="ReverbSend" output="#reverb1" gain="0"></Send>
 
 			<!--
 			By having a GainNode AFTER the ReverbSend, the dry (without reverb) level can
@@ -161,6 +156,20 @@
 			-->
 			<GainNode></GainNode>
 		</Chain>
+
+<Chain id="Trigger_Factory">
+		<!-- choose "random" or "next" for voiceselect. Add as many voices as desired -->
+		<Synth voiceselect="next">
+			<Voice>
+				<AudioBufferSourceNode src="audio/factory.mp3"></AudioBufferSourceNode>
+			</Voice>
+		</Synth>
+		<BiquadFilterNode type="lowpass" frequency="20000"></BiquadFilterNode>
+		<GainNode></GainNode>
+		<StereoPannerNode></StereoPannerNode>
+	</Chain>
+
+
 
 
 		<Chain id="reverb1">
