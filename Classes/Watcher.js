@@ -46,7 +46,7 @@ class Watcher {
 				try {
 					target = curNode.querySelector(variable);
 				} catch(e){
-					console.log(e);
+					//console.log(e);
 				}
 				if(target && target.obj){
 						// if target is any element near xmlNode
@@ -97,6 +97,9 @@ class Watcher {
 				if(variable.substr(0, 2) != "e."){
 					if(variable.substr(0, 6) == "event."){
 						variable = variable.substr(6);
+					}
+					if(variable.substr(0, 7) != "target."){
+						variable = "target." + variable;
 					}
 					variable = "e." + variable;
 				}

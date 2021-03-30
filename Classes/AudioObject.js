@@ -66,6 +66,11 @@ class AudioObject{
         }
 		  	break;
 
+        case "mediastreamaudiosourcenode":
+        // make sure both an input and an output is specified
+        this._node = this._ctx.createGain();
+        break;
+
 
 		  	case "biquadfilternode":
 		  	this._node = this._ctx.createBiquadFilter();
@@ -466,6 +471,11 @@ class AudioObject{
 		  }
   	}
 
+    initStream(stream){
+      let input = this._ctx.createMediaStreamSource(stream);
+      input.connect(this._node);
+    }
+
   	start(data){
 	  	switch(this._nodeType){
 
@@ -645,10 +655,23 @@ class AudioObject{
         obj.name = item;
         obj.target = this[item];
         obj.parent = this;
+        obj.path = e => this.path;
         waxmlParams.push(obj);
       });
       return waxmlParams;
     }
+
+    fadeIn(fadeTime = 0.001){
+      this.fade(this.parameters.gain || 1, fadeTime);
+    }
+
+    fadeOut(fadeTime = 0.001){
+      this.fade(0, fadeTime);
+    }
+    fade(val, fadeTime = 0.001){
+      this.setTargetAtTime("gain", val, 0, fadeTime, true);
+    }
+
 
 
 
@@ -789,6 +812,10 @@ class AudioObject{
     }
     get Q(){
       return this.q;
+    }
+
+    get path(){
+      return this.parent ? this.parent.path + (this._xml.className || this._xml.id || this._xml.nodeName) + "." : "";
     }
 
   	set type(val){

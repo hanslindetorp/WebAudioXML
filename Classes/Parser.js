@@ -14,6 +14,7 @@ class Parser {
 
 		this.elementCount = {};
 		this.followCount = {};
+		this.allElements = {};
 
   	this.waxml = waxml;
   	let _ctx = this.waxml._ctx;
@@ -55,9 +56,24 @@ class Parser {
 	checkLoadComplete(){
 		let loading = this.externalFiles.find(file => file.complete == false);
 		if(!loading){
+			if(this.allElements.mediastreamaudiosourcenode){
+				navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+			}
 			this.callBack(this._xml);
 		}
 	}
+
+
+	onStream(stream){
+		this.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
+	}
+
+	onStreamError(){
+		console.warn("Audio input error");
+	}
+
+
+
 
 	parseXML(xmlNode, localPath){
 
@@ -65,6 +81,9 @@ class Parser {
 		let nodeName = xmlNode.nodeName.toLowerCase();
 
 		this.elementCount[nodeName] = this.elementCount[nodeName] ? this.elementCount[nodeName] + 1 : 1;
+		this.allElements[nodeName] = this.allElements[nodeName] || [];
+		this.allElements[nodeName].push(xmlNode);
+
 
 
 		if(href && !xmlNode.loaded && nodeName != "link"){

@@ -43,7 +43,7 @@ class Mapper{
 		x = Math.max(x, this.minIn);
 		x = Math.min(x, this.maxIn);
 
-		if(this.minOut){
+		if(typeof this.minOut != "undefined"){
 			return this.mapValueSimple(x);
 		} else if(this.mapIn){
 			return this.mapValueComplex(x);
@@ -122,7 +122,7 @@ class Mapper{
 		}
 
 
-		if(this.conv == "MIDI"){
+		if(this.conv.includes("MIDI")){
 			let noteOffs;
 			if(this.steps){
 				//let cycle = Math.floor(noteOffs / obj.stepsCycle);
@@ -143,7 +143,7 @@ class Mapper{
 			valOut = WebAudioUtils.MIDInoteToFrequency(this.minOut + noteOffs);
 
 		} else {
-			valOut = eval(this.conv);
+			valOut = WebAudioUtils.convert(x, this.conv[0]);
 			valOut = valOut * rangeOut + this.minOut;
 		}
 

@@ -67,6 +67,11 @@ class AudioObject{
         }
 		  	break;
 
+        case "mediastreamaudiosourcenode":
+        // make sure both an input and an output is specified
+        this._node = this._ctx.createGain();
+        break;
+
 
 		  	case "biquadfilternode":
 		  	this._node = this._ctx.createBiquadFilter();
@@ -467,6 +472,11 @@ class AudioObject{
 		  }
   	}
 
+    initStream(stream){
+      let input = this._ctx.createMediaStreamSource(stream);
+      input.connect(this._node);
+    }
+
   	start(data){
 	  	switch(this._nodeType){
 
@@ -646,10 +656,23 @@ class AudioObject{
         obj.name = item;
         obj.target = this[item];
         obj.parent = this;
+        obj.path = e => this.path;
         waxmlParams.push(obj);
       });
       return waxmlParams;
     }
+
+    fadeIn(fadeTime = 0.001){
+      this.fade(this.parameters.gain || 1, fadeTime);
+    }
+
+    fadeOut(fadeTime = 0.001){
+      this.fade(0, fadeTime);
+    }
+    fade(val, fadeTime = 0.001){
+      this.setTargetAtTime("gain", val, 0, fadeTime, true);
+    }
+
 
 
 
@@ -790,6 +813,10 @@ class AudioObject{
     }
     get Q(){
       return this.q;
+    }
+
+    get path(){
+      return this.parent ? this.parent.path + (this._xml.className || this._xml.id || this._xml.nodeName) + "." : "";
     }
 
   	set type(val){
@@ -2016,7 +2043,7 @@ class Mapper{
 		x = Math.max(x, this.minIn);
 		x = Math.min(x, this.maxIn);
 
-		if(this.minOut){
+		if(typeof this.minOut != "undefined"){
 			return this.mapValueSimple(x);
 		} else if(this.mapIn){
 			return this.mapValueComplex(x);
@@ -2095,7 +2122,7 @@ class Mapper{
 		}
 
 
-		if(this.conv == "MIDI"){
+		if(this.conv.includes("MIDI")){
 			let noteOffs;
 			if(this.steps){
 				//let cycle = Math.floor(noteOffs / obj.stepsCycle);
@@ -2116,7 +2143,7 @@ class Mapper{
 			valOut = WebAudioUtils.MIDInoteToFrequency(this.minOut + noteOffs);
 
 		} else {
-			valOut = eval(this.conv);
+			valOut = WebAudioUtils.convert(x, this.conv[0]);
 			valOut = valOut * rangeOut + this.minOut;
 		}
 
@@ -2252,6 +2279,7 @@ class Parser {
 
 		this.elementCount = {};
 		this.followCount = {};
+		this.allElements = {};
 
   	this.waxml = waxml;
   	let _ctx = this.waxml._ctx;
@@ -2293,9 +2321,24 @@ class Parser {
 	checkLoadComplete(){
 		let loading = this.externalFiles.find(file => file.complete == false);
 		if(!loading){
+			if(this.allElements.mediastreamaudiosourcenode){
+				navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+			}
 			this.callBack(this._xml);
 		}
 	}
+
+
+	onStream(stream){
+		this.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
+	}
+
+	onStreamError(){
+		console.warn("Audio input error");
+	}
+
+
+
 
 	parseXML(xmlNode, localPath){
 
@@ -2303,6 +2346,9 @@ class Parser {
 		let nodeName = xmlNode.nodeName.toLowerCase();
 
 		this.elementCount[nodeName] = this.elementCount[nodeName] ? this.elementCount[nodeName] + 1 : 1;
+		this.allElements[nodeName] = this.allElements[nodeName] || [];
+		this.allElements[nodeName].push(xmlNode);
+
 
 
 		if(href && !xmlNode.loaded && nodeName != "link"){
@@ -2690,6 +2736,11 @@ class Synth{
 
 		this._node = this._ctx.createGain();
 		this._node.gain.value = 1/this._voices;
+
+		if(this._xml.parentNode.audioObject){
+			this.parent = this._xml.parentNode.audioObject;
+		}
+
 	  	// console.log(xmlNode.nodeName, this._node.__resource_id__);
 
 		// duplicate XML nodes until there are correct number of voices
@@ -2719,7 +2770,7 @@ class Synth{
 				waxml: this.waxml,
 				callBack: note => {
 					if(note[0]){
-						this.noteOn(note[1]);
+						this.noteOn(note[1], note[2]);
 					} else {
 						this.noteOff(note[1]);
 					}
@@ -2771,6 +2822,7 @@ class Synth{
 
 	noteOff(note, vel=1){
 		let voiceNode = this.noteToVoice(note);
+		if(!voiceNode){return}
 
 		let data = {note:note, vel:vel};
 		if(!this.hasEnvelope){voiceNode.audioObject.stop(data)};
@@ -2784,15 +2836,16 @@ class Synth{
 	get nextVoice(){
 		let voice;
 		switch (this._params.voiceselect) {
-			case "next":
-				voice = this.voiceNodes[this._voiceID++ % this._voices];
-				break;
 
 			case "random":
 				let rnd = Math.floor(Math.random() * this.voiceNodes.length);
 				voice = this.voiceNodes[rnd];
-				break;
+			break;
+
+			case "next":
 			default:
+				voice = this.voiceNodes[this._voiceID++ % this._voices];
+			break;
 
 		}
 		return voice;
@@ -2889,6 +2942,9 @@ class Synth{
 
   getVariable(key){
 		return this._variables[key];
+	}
+	get path(){
+		return this.parent ? this.parent.path + (this._xml.className || this._xml.id || this._xml.nodeName) + "." : "";
 	}
 
 }
@@ -3137,7 +3193,7 @@ class Watcher {
 				try {
 					target = curNode.querySelector(variable);
 				} catch(e){
-					console.log(e);
+					//console.log(e);
 				}
 				if(target && target.obj){
 						// if target is any element near xmlNode
@@ -3188,6 +3244,9 @@ class Watcher {
 				if(variable.substr(0, 2) != "e."){
 					if(variable.substr(0, 6) == "event."){
 						variable = variable.substr(6);
+					}
+					if(variable.substr(0, 7) != "target."){
+						variable = "target." + variable;
 					}
 					variable = "e." + variable;
 				}
@@ -3336,6 +3395,12 @@ var InteractionManager = require('./InteractionManager.js');
 
 var source = document.currentScript.dataset.source;
 
+navigator.getUserMedia = (
+	navigator.getUserMedia ||
+	navigator.webkitGetUserMedia ||
+	navigator.mozGetUserMedia ||
+	navigator.msGetUserMedia
+);
 
 
 
@@ -3358,6 +3423,7 @@ class WebAudio {
 		this.plugins = [];
 		this._ctx = _ctx;
 		this._listeners = [];
+		this.audioInited = false;
 
 		if(source){
 			window.addEventListener("load", () => {
@@ -3370,6 +3436,7 @@ class WebAudio {
 					}
 
 					this.master = this._xml.audioObject;
+					//this.master.fadeOut();
 
 					//webAudioXML = xmlDoc.audioObject;
 					//webAudioXML.touch = touches;
@@ -3400,11 +3467,18 @@ class WebAudio {
 	}
 	*/
 	init(){
-		this._ctx.resume();
+		if(!this.audioInited){
+			this.audioInited = true;
+			this._ctx.resume();
+			//this.master.fadeIn(0.01);
+		}
 	}
 
 	start(selector = "*"){
-		this.init();
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
 			if(XMLnode.audioObject && XMLnode.audioObject.start){
 				XMLnode.audioObject.start();
@@ -3478,6 +3552,7 @@ class WebAudio {
 				obj.id = counter++;
 				obj.target = el.audioObject;
 				obj.parent = parentObj;
+				obj.path = el.audioObject.path;
 
 				audioObjects.push(obj);
 
@@ -3487,6 +3562,8 @@ class WebAudio {
 					// add to tree
 					obj.children.push(paramObj);
 					paramObj.parent = obj;
+					paramObj.path = obj.path + "." + paramObj.name;
+
 					// add to linear list with parameter objects
 					parameters.push(paramObj);
 				});
@@ -3507,6 +3584,7 @@ class WebAudio {
 								conv: range.conv,
 								level: obj.level + 1,
 								default: range.default,
+								path: obj.path + "." + key,
 								parent: obj
 							}
 							// add to tree
@@ -3822,6 +3900,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 			let float = parseFloat(conv)
 			conv = float == conv ? float : conv;
 		}
+		// allow for multiple values
 		value.conv = [conv];
 		break;
 
@@ -3855,11 +3934,16 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 }
 
-WebAudioUtils.evalConvString = (x=1, str) => {
-	if(!str){
-		return x;
-	} else {
-		return eval(str);
+WebAudioUtils.convert = (x=1, conv) => {
+	switch (typeof conv) {
+		case "number":
+			return Math.pow(x, conv);
+		break;
+		case "string":
+			return eval(str);
+		break;
+		default:
+			return x;
 	}
 }
 

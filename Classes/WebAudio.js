@@ -33,6 +33,12 @@ var InteractionManager = require('./InteractionManager.js');
 
 var source = document.currentScript.dataset.source;
 
+navigator.getUserMedia = (
+	navigator.getUserMedia ||
+	navigator.webkitGetUserMedia ||
+	navigator.mozGetUserMedia ||
+	navigator.msGetUserMedia
+);
 
 
 
@@ -55,6 +61,7 @@ class WebAudio {
 		this.plugins = [];
 		this._ctx = _ctx;
 		this._listeners = [];
+		this.audioInited = false;
 
 		if(source){
 			window.addEventListener("load", () => {
@@ -67,6 +74,7 @@ class WebAudio {
 					}
 
 					this.master = this._xml.audioObject;
+					//this.master.fadeOut();
 
 					//webAudioXML = xmlDoc.audioObject;
 					//webAudioXML.touch = touches;
@@ -97,11 +105,18 @@ class WebAudio {
 	}
 	*/
 	init(){
-		this._ctx.resume();
+		if(!this.audioInited){
+			this.audioInited = true;
+			this._ctx.resume();
+			//this.master.fadeIn(0.01);
+		}
 	}
 
 	start(selector = "*"){
-		this.init();
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
 			if(XMLnode.audioObject && XMLnode.audioObject.start){
 				XMLnode.audioObject.start();
@@ -175,6 +190,7 @@ class WebAudio {
 				obj.id = counter++;
 				obj.target = el.audioObject;
 				obj.parent = parentObj;
+				obj.path = el.audioObject.path;
 
 				audioObjects.push(obj);
 
@@ -184,6 +200,8 @@ class WebAudio {
 					// add to tree
 					obj.children.push(paramObj);
 					paramObj.parent = obj;
+					paramObj.path = obj.path + "." + paramObj.name;
+
 					// add to linear list with parameter objects
 					parameters.push(paramObj);
 				});
@@ -204,6 +222,7 @@ class WebAudio {
 								conv: range.conv,
 								level: obj.level + 1,
 								default: range.default,
+								path: obj.path + "." + key,
 								parent: obj
 							}
 							// add to tree

@@ -10,15 +10,15 @@
 		</OscillatorNode>
 
 		<BiquadFilterNode type="lowpass">
-			<frequency follow="relY" map="100 0 0 5000 3"></frequency>
+			<frequency follow="relY" map="0 100 2000 20 3"></frequency>
 		</BiquadFilterNode>
 
 		<GainNode>
-
 			<gain>
 				<Envelope adsr="100 10 50 20" trig="pointer" max="1"></Envelope>
 			</gain>
 		</GainNode>
 
 	</Chain>
+
 </Audio>

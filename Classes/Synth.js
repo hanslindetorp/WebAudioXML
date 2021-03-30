@@ -23,6 +23,11 @@ class Synth{
 
 		this._node = this._ctx.createGain();
 		this._node.gain.value = 1/this._voices;
+
+		if(this._xml.parentNode.audioObject){
+			this.parent = this._xml.parentNode.audioObject;
+		}
+
 	  	// console.log(xmlNode.nodeName, this._node.__resource_id__);
 
 		// duplicate XML nodes until there are correct number of voices
@@ -52,7 +57,7 @@ class Synth{
 				waxml: this.waxml,
 				callBack: note => {
 					if(note[0]){
-						this.noteOn(note[1]);
+						this.noteOn(note[1], note[2]);
 					} else {
 						this.noteOff(note[1]);
 					}
@@ -104,6 +109,7 @@ class Synth{
 
 	noteOff(note, vel=1){
 		let voiceNode = this.noteToVoice(note);
+		if(!voiceNode){return}
 
 		let data = {note:note, vel:vel};
 		if(!this.hasEnvelope){voiceNode.audioObject.stop(data)};
@@ -117,15 +123,16 @@ class Synth{
 	get nextVoice(){
 		let voice;
 		switch (this._params.voiceselect) {
-			case "next":
-				voice = this.voiceNodes[this._voiceID++ % this._voices];
-				break;
 
 			case "random":
 				let rnd = Math.floor(Math.random() * this.voiceNodes.length);
 				voice = this.voiceNodes[rnd];
-				break;
+			break;
+
+			case "next":
 			default:
+				voice = this.voiceNodes[this._voiceID++ % this._voices];
+			break;
 
 		}
 		return voice;
@@ -222,6 +229,9 @@ class Synth{
 
   getVariable(key){
 		return this._variables[key];
+	}
+	get path(){
+		return this.parent ? this.parent.path + (this._xml.className || this._xml.id || this._xml.nodeName) + "." : "";
 	}
 
 }

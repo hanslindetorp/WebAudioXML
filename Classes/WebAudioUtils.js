@@ -117,6 +117,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 			let float = parseFloat(conv)
 			conv = float == conv ? float : conv;
 		}
+		// allow for multiple values
 		value.conv = [conv];
 		break;
 
@@ -150,11 +151,16 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 }
 
-WebAudioUtils.evalConvString = (x=1, str) => {
-	if(!str){
-		return x;
-	} else {
-		return eval(str);
+WebAudioUtils.convert = (x=1, conv) => {
+	switch (typeof conv) {
+		case "number":
+			return Math.pow(x, conv);
+		break;
+		case "string":
+			return eval(str);
+		break;
+		default:
+			return x;
 	}
 }
 
