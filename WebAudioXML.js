@@ -310,7 +310,7 @@ class AudioObject{
 				  }
           if(this._params.follow){ // && !isPartOfASynth){
             let isPartOfASynth = xmlNode.closest("Synth");
-            let controlledByMIDI = isPartOfASynth && this._params.follow.includes("MIDI");
+            let controlledByMIDI = isPartOfASynth && this._params.follow.join("").includes("MIDI");
     				if(!controlledByMIDI){
               this.watcher = new Watcher(xmlNode, this._params.follow, {
                 delay: this.getParameter("delay"),
@@ -520,7 +520,7 @@ class AudioObject{
 
 		  	case "frequency":
 		  	if(this._params.follow){
-			  	if(this._params.follow.includes("MIDI")){
+			  	if(this._params.follow.join("").includes("MIDI")){
             let offset = this._params.follow[1];
             offset = offset ?  parseFloat(offset) : 0;
 				  	let MIDInote = data.note + offset;
@@ -2764,7 +2764,7 @@ class Synth{
 			console.error("Web Audio XML error. Voice node(s) are missing in Synth node.");
 		}
 
-		if(this._params.follow){
+		if(this._params.follow && this._params.follow.length){
 			this.watcher = new Watcher(xmlNode, this._params.follow, {
 				delay: this.getParameter("delay"),
 				waxml: this.waxml,
@@ -3804,10 +3804,12 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		case "volume":
 		case "gain":
-		if(value.includes("dB") || value.includes("db")){
-			value = Math.pow(2, parseFloat(value) / 3);
-		} else {
-			value = parseFloat(value);
+		if(typeof value == "string"){
+			if(value.includes("dB") || value.includes("db")){
+				value = Math.pow(2, parseFloat(value) / 3);
+			} else {
+				value = parseFloat(value);
+			}
 		}
 		break;
 
