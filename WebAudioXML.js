@@ -3386,6 +3386,7 @@ SOFTWARE.
 
 var version = "1.0.1";
 
+
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Parser = require('./Parser.js');
 var Connector = require('./Connector.js');

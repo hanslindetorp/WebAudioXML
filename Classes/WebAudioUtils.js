@@ -21,10 +21,12 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		case "volume":
 		case "gain":
-		if(value.includes("dB") || value.includes("db")){
-			value = Math.pow(2, parseFloat(value) / 3);
-		} else {
-			value = parseFloat(value);
+		if(typeof value == "string"){
+			if(value.includes("dB") || value.includes("db")){
+				value = Math.pow(2, parseFloat(value) / 3);
+			} else {
+				value = parseFloat(value);
+			}
 		}
 		break;
 

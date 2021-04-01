@@ -309,7 +309,7 @@ class AudioObject{
 				  }
           if(this._params.follow){ // && !isPartOfASynth){
             let isPartOfASynth = xmlNode.closest("Synth");
-            let controlledByMIDI = isPartOfASynth && this._params.follow.includes("MIDI");
+            let controlledByMIDI = isPartOfASynth && this._params.follow.join("").includes("MIDI");
     				if(!controlledByMIDI){
               this.watcher = new Watcher(xmlNode, this._params.follow, {
                 delay: this.getParameter("delay"),
@@ -519,7 +519,7 @@ class AudioObject{
 
 		  	case "frequency":
 		  	if(this._params.follow){
-			  	if(this._params.follow.includes("MIDI")){
+			  	if(this._params.follow.join("").includes("MIDI")){
             let offset = this._params.follow[1];
             offset = offset ?  parseFloat(offset) : 0;
 				  	let MIDInote = data.note + offset;

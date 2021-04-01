@@ -51,7 +51,7 @@ class Synth{
 			console.error("Web Audio XML error. Voice node(s) are missing in Synth node.");
 		}
 
-		if(this._params.follow){
+		if(this._params.follow && this._params.follow.length){
 			this.watcher = new Watcher(xmlNode, this._params.follow, {
 				delay: this.getParameter("delay"),
 				waxml: this.waxml,

@@ -27,7 +27,7 @@
 
 			<Chain>
 				<OscillatorNode type="sine">
-					<frequency class="osc1" follow="MIDI"></frequency>
+					<frequency class="osc1" follow="MIDI+12"></frequency>
 				</OscillatorNode>
 				<GainNode>
 					<gain follow="#carrier-gain, input, target.value" map="0, 100, 0, 1, 3"></gain>
