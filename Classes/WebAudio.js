@@ -46,7 +46,7 @@ navigator.getUserMedia = (
 
 class WebAudio {
 
-	constructor(_ctx){
+	constructor(_ctx, src){
 
 		if(!_ctx){
 
@@ -59,6 +59,12 @@ class WebAudio {
 				console.error("This browser does not support Web Audio API");
 			}
 
+		}
+
+		source = source || src;
+		if(!source){
+			console.error("No WebAudioXML configuration file specified");
+			return;
 		}
 
 		this.plugins = [];
