@@ -165,13 +165,17 @@ class Mapper{
 		// mapping values to control how values in between the specifed ones
 		// are interpolated.
 
-		// In addition to the curves, a "convert" algorithm can be specified for
+		// The output can be rounded to specific steps using the "steps"
+		// attribute. This is useful for mapping values to non-linear output
+		// values, like a musical scale. Steps could be one or multiple arrays with values
+		// If multiple values are used, then a JSON-formated hierarchical array should be
+		// specified with the "steps" attribute. E.g.
+		// steps="[[0,2,4,5,7,9,11,12], [0,2,3,5,7,8,10,12]]" for a major + minor scale
+				
+		// Finally a "convert" algorithm can be specified for
 		// each region between the mapOut values. It can be a javascript expression
 		// using "x" as the processed value or a preset (like "midi->frequency")
 
-		// Finally the output can be rounded to specific steps using the "steps"
-		// attribute. This is useful for mapping values to non-linear output
-		// values, like a musical scale.
 
     let i = this.mapIn.findIndex(entry => entry == x);
 
