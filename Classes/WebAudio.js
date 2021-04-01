@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+var version = "1.0.1";
+
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Parser = require('./Parser.js');
@@ -52,6 +54,7 @@ class WebAudio {
 			if (AudioContext) {
 					// Web Audio API is available.
 					_ctx = new AudioContext();
+					console.log("WebAudioXML is installed. Version " + version);
 			} else {
 				console.error("This browser does not support Web Audio API");
 			}
