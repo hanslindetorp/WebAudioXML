@@ -840,7 +840,8 @@ class AudioObject{
 
 
 		  	default:
-
+        let real, imag, wave;
+        
 		  	if(val.includes(".js") || val.includes(".json")){
 				// load PeriodicWave data
 			  	let src = Loader.getPath(val, this._localPath);
@@ -852,9 +853,9 @@ class AudioObject{
 					})
 					.then((jsonData) => {
 						if(jsonData.real && jsonData.imag){
-                let real = new Float32Array(jsonData.real);
-                let imag = new Float32Array(jsonData.imag);
-					  		let wave = this._ctx.createPeriodicWave(real, imag);
+                real = new Float32Array(jsonData.real);
+                imag = new Float32Array(jsonData.imag);
+					  		wave = this._ctx.createPeriodicWave(real, imag);
 					  		this._node.setPeriodicWave(wave);
                 this._node.start();
 						}
@@ -864,7 +865,7 @@ class AudioObject{
 			  	let el = document.querySelector(val);
 			  	if(el){
 				  	let jsonData = JSON.parse(el.innerHTML);
-				  	let wave = this._ctx.createPeriodicWave(real, imag);
+				  	wave = this._ctx.createPeriodicWave(real, imag);
 				  	this._node.setPeriodicWave(wave);
             this._node.start();
 				   }

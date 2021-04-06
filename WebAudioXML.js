@@ -841,7 +841,8 @@ class AudioObject{
 
 
 		  	default:
-
+        let real, imag, wave;
+        
 		  	if(val.includes(".js") || val.includes(".json")){
 				// load PeriodicWave data
 			  	let src = Loader.getPath(val, this._localPath);
@@ -853,9 +854,9 @@ class AudioObject{
 					})
 					.then((jsonData) => {
 						if(jsonData.real && jsonData.imag){
-                let real = new Float32Array(jsonData.real);
-                let imag = new Float32Array(jsonData.imag);
-					  		let wave = this._ctx.createPeriodicWave(real, imag);
+                real = new Float32Array(jsonData.real);
+                imag = new Float32Array(jsonData.imag);
+					  		wave = this._ctx.createPeriodicWave(real, imag);
 					  		this._node.setPeriodicWave(wave);
                 this._node.start();
 						}
@@ -865,7 +866,7 @@ class AudioObject{
 			  	let el = document.querySelector(val);
 			  	if(el){
 				  	let jsonData = JSON.parse(el.innerHTML);
-				  	let wave = this._ctx.createPeriodicWave(real, imag);
+				  	wave = this._ctx.createPeriodicWave(real, imag);
 				  	this._node.setPeriodicWave(wave);
             this._node.start();
 				   }
@@ -2001,16 +2002,17 @@ module.exports = Loader;
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
-// var EaseIn  = power => t => Math.pow(t, power);
-// var EaseOut = power => t => 1 - Math.abs(Math.pow(t-1, power));
-// var EaseInOut = power => t => t<.5 ? EaseIn(power)(t*2)/2 : EaseOut(power)(t*2 - 1)/2+0.5;
-// var EaseInSin: t => 1 + Math.sin(Math.PI / 2 * t - Math.PI / 2);
-// var EaseOutSin : t => Math.sin(Math.PI / 2 * t);
-// var EaseInOutSin: t => (1 + Math.sin(Math.PI * t - Math.PI / 2)) / 2;
-// var EaseInElastic: t => (.04 - .04 / t) * Math.sin(25 * t) + 1;
-// var EaseOutElastic: t => .04 * t / (--t) * Math.sin(25 * t);
-// var EaseInOutElastic: t => (t -= .5) < 0 ? (.02 + .01 / t) * Math.sin(50 * t) : (.02 - .01 / t) * Math.sin(50 * t) + 1;
-//
+var EaseIn  = power => t => Math.pow(t, power);
+var EaseOut = power => t => 1 - Math.abs(Math.pow(t-1, power));
+var EaseInOut = power => t => t<.5 ? EaseIn(power)(t*2)/2 : EaseOut(power)(t*2 - 1)/2+0.5;
+var EaseInSin = t => 1 + Math.sin(Math.PI / 2 * t - Math.PI / 2);
+var EaseOutSin = t => Math.sin(Math.PI / 2 * t);
+var EaseInOutSin = t => (1 + Math.sin(Math.PI * t - Math.PI / 2)) / 2;
+var EaseInElastic = t => (.04 - .04 / t) * Math.sin(25 * t) + 1;
+var EaseOutElastic = t => .04 * t / (--t) * Math.sin(25 * t);
+var EaseInOutElastic = t => (t -= .5) < 0 ? (.02 + .01 / t) * Math.sin(50 * t) : (.02 - .01 / t) * Math.sin(50 * t) + 1;
+
+
 
 class Mapper{
 
@@ -2020,137 +2022,77 @@ class Mapper{
 		this.params = params;
 		this.sourceValues = [];
 
-		if(params.map){
-			this.minIn = params.map.minIn;
-			this.maxIn = params.map.maxIn;
-			this.minOut = params.map.minOut;
-			this.maxOut = params.map.maxOut;
-			this.conv = params.map.conv;
-		}
 
 		this.steps = params.steps;
 		this.curve = params.curve;
 		this.value = params.value;
+		this.conv = params.convert;
+
+		// like a gain control for the variable
+		// do I still need it?
 		this.level = params.level;
+
 		if(params.range){
 			this.range = new Range(params.range);
 		}
 
-		if(params.mapIn){
+		if(params.mapin){
 
-			if(!params.mapOut){
-				console.error(`mapIn given; ${params.mapIn}, but mapOut is missing`);
+			// complex style
+
+			// remove duplicates
+			this.mapin = params.mapin.filter((a, index) => params.mapin.indexOf(a) === index);
+			// sort
+			this.mapin = this.mapin.sort((a,b) => a-b);
+			// init mapout
+			this.mapout = params.mapout || this.mapin;
+
+
+
+		} else if(params.map){
+
+			// simplified (old) style
+			this.mapin = [params.map.minIn, params.map.maxIn];
+			this.mapout = [params.map.minOut, params.map.maxOut];
+
+			switch (typeof params.map.conv) {
+				case "number":
+				this.curve = this.curve || [params.map.conv];
+				break;
+
+				case "string":
+				if(params.map.conv.includes("MIDI")){
+					this.steps = this.steps || [[0,1]];
+					this.conv = this.conv || ["MIDI->frequency"];
+				} else {
+					// conv is a math function
+					if(params.map.conv.includes("x")){
+						this.curve = this.curve || [params.map.conv];
+					}
+				}
+				break;
+
 			}
 
-			this.mapIn = params.mapIn.sort((a,b) => a-b);
-			this.mapOut = params.mapOut || this.mapIn;
-			this.minIn = Math.min(...this.mapIn);
-			this.maxIn = Math.max(...this.mapIn);
-			this.minOut = Math.min(...this.mapOut);
-			this.maxOut = Math.max(...this.mapOut);
-
-			this.isNumeric = this.mapOut.every(element => typeof element === 'number');
 		}
+		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element === 'number') : true;
 	}
 
 
 	getValue(x){
 
-		if(typeof this.minIn == "undefined"){return x}
+		// truncate x if needed
+		x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
+		x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
 
-		x = Math.max(x, this.minIn);
-		x = Math.min(x, this.maxIn);
-
-		if(typeof this.minOut != "undefined"){
-			return this.mapValueSimple(x);
-		} else if(this.mapIn){
-			return this.mapValueComplex(x);
-		}
-
-	}
-
-	mapValueSimple(x){
-
-		// Hahahaha. "Simple" is maybe not the best word but it refers to the
-		// simplified syntax for mapping where minIn, maxIn, minOut, maxOut and
-		// convert algorith is specified in one attribute - "map"
-
-		if(typeof this.minIn == "undefined"){return x}
-
-		let rangeObj, targetRange, relVal, rangeIn, rangeOut, valOut;
-
-		rangeObj = {
-			values: {min: this.minIn, max: this.maxIn},
-			index: 0
-		}
-
-		if(this.range){
-			let ro = this.range.getRange(x);
-			if(ro.index == -1){
-				rangeObj.values.min = 0;
-				rangeObj.values.max = 0;
-			} else {
-				rangeObj = ro;
-			}
-		}
-
-		targetRange = rangeObj.values;
-		rangeIn = targetRange.max - targetRange.min;
-		rangeOut = this.maxOut - this.minOut;
-		x = (x - targetRange.min)/rangeIn;
-
-
-		// kanske kolla alla ranges vilken som ger högst output
-		// multiplicera med "gain" för att göra kurvorna brantare
-
-		// crop
-		x = Math.max(0, Math.min(x, 1));
-
-		// scale
-		// use curve and levels (what about max?)
-		// to calculate output
-		if(this.level){
-			let level = this.level[rangeObj.index % this.level.length];
-
-			x = x * level / 100;
-		}
-
-
-		if(this.conv.includes("MIDI")){
-			let noteOffs;
-			if(this.steps){
-				//let cycle = Math.floor(noteOffs / obj.stepsCycle);
-				//let noteInCycle = noteOffs % obj.stepsCycle;
-
-	      let notesInCycle = this.steps.length-1;
-				let stepsCycle = this.steps[notesInCycle];
-	      let nrOfCycles = rangeOut / stepsCycle;
-	      rangeOut = notesInCycle * nrOfCycles + 1;
-	      noteOffs = Math.floor(x * rangeOut);
-
-	      let cycle = Math.floor(noteOffs / notesInCycle);
-	      let noteInCycle = Math.floor(noteOffs % notesInCycle);
-				noteOffs = cycle * stepsCycle + this.steps[noteInCycle];
-			} else {
-	      noteOffs = Math.floor(x * rangeOut);
-	    }
-			valOut = WebAudioUtils.MIDInoteToFrequency(this.minOut + noteOffs);
-
-		} else {
-			valOut = WebAudioUtils.convert(x, this.conv[0]);
-			valOut = valOut * rangeOut + this.minOut;
-		}
-
-
-		return valOut;
+		return this.mapValue(x);
 	}
 
 
-
-	mapValueComplex(x){
+	mapValue(x){
 
 		// This method supports a more flexible mapping than the "simple"
-		// Given that the attributes "mapIn" and "mapOut" are specified
+		// Given that the attributes "mapin" and "mapout" are specified
 		// it will use those two (comma- or space separated) vectors to
 		// map the incoming value (the variable this object is following)
 		// to an "outgoing" value before it stored it in its property "value".
@@ -2167,63 +2109,151 @@ class Mapper{
 		// steps="[[0,2,4,5,7,9,11,12], [0,2,3,5,7,8,10,12]]" for a major + minor scale
 
 		// Finally a "convert" algorithm can be specified for
-		// each region between the mapOut values. It can be a javascript expression
+		// each region between the mapout values. It can be a javascript expression
 		// using "x" as the processed value or a preset (like "midi->frequency")
 
-		let i = this.mapIn.findIndex(entry => entry == x);
-		i = this.mapIn.filter(entry => entry <= x).pop();
+		let e = this.mapin.filter(entry => entry <= x).pop();
+		let i = this.mapin.indexOf(e);
 
-		let mappedVal = this.mapIn2Out(x, i);
+		x = this.in2Rel(x, i);
+		x = this.applyCurve(x, i);
+		x = this.rel2Out(x, i);
+		x = this.offset(x, i);
+		x = this.convert(x, i);
 
-
-		let conv = this.conv[i1 % this.conv.length];
+		return x;
 
   }
 
+	in2Rel(x, i){
+		let in1 = this.mapin[i % this.mapin.length];
+		let in2 = this.mapin[(i+1) % this.mapin.length];
+		return (x-in1)/(in2-in1);
+	}
 
-	mapIn2Out(x, i){
-		// MAPPING from mapIn values to mapOut values
-
-
-
+	rel2Out(x, i){
 		if(this.isNumeric){
+			// interpolate between two in-values
 
-	    if(i != -1){
-				// index is one of the in-values
-				if(val == this.maxIn){
-					return this.maxOut;
-				} else {
-					return valObj.mapOut[i % valObj.mapOut.length];
+
+
+			if(this.steps){
+				let curSteps = this.steps[i % this.steps.length];
+				if(curSteps){
+					return this.applySteps(x, i, curSteps);
 				}
+			}
 
-	    } else {
+			let out1 = this.mapout[i % this.mapout.length];
+			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let range = out2 - out1;
+			return x * range;
 
-	      // interpolate between two in-values
-
-	      let i2 = this.mapIn.findIndex(entry => entry > x);
-				let in1 = this.mapIn[i1];
-				let in2 = this.mapIn[i2];
-				let out1 = this.mapOut[i1 % this.mapOut.length];
-				let out2 = this.mapOut[i2 % this.mapOut.length];
-	      let relInDiff = (x-in1)/(in1-in2);
-	      let valOutRange = out2 - out1;
-
-				// apply curve
-				let curve = this.curve[i1 % this.curve.length];
-				relInDiff = this.applyCurve(relInDiff, curve);
-
-	      return out1 + relInDiff * valOutRange;
-	    }
 		} else {
-			// return nearest string value to the left of the in-value
-			return valObj.mapOut[i1 % valObj.mapOut.length];
+
+			// pick a string value from mapout
+			return this.mapout[i % this.mapout.length];
 		}
+	}
+
+
+	applySteps(x, i, steps){
+			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
+			//let noteInCycle = noteOffs % obj.stepsCycle;
+
+
+		if(steps){
+			let out1 = this.mapout[i % this.mapout.length];
+			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let range = Math.abs(out2 - out1);
+
+			// create a pattern for range
+			let values = [];
+			let c, n = 0, v = 0;
+			let patternCnt = steps.length-1;
+			let patternWidth = steps[patternCnt];
+			while(v < range){
+				c = Math.floor(n / patternCnt);
+				v = c * patternWidth + steps[n % patternCnt];
+				values.push(v);
+				n++;
+			}
+			if(out2 >= out1){
+				return values[Math.floor(x * values.length)];
+			} else {
+				// invert
+				values.reverse();
+				return values[Math.floor(x * values.length)] - range;
+			}
+		} else {
+			return x;
+		}
+		return
 
 	}
 
-	applyCurve(x, type){
+	offset(x, i){
+		if(this.isNumeric){
+			return x + this.mapout[i % this.mapout.length];
+		} else {
+			return x;
+		}
+	}
 
-			switch (type) {
+
+	convert(x, i){
+		if(this.conv){
+			let convert = this.conv[i % this.conv.length];
+			switch (convert) {
+
+				case "MIDI->frequency":
+				return WebAudioUtils.MIDInoteToFrequency(x);
+				break;
+
+
+				default:
+				if(typeof convert == "string" && convert.includes("x"));
+				try {
+					return eval(convert);
+				} catch {
+					return x;
+				}
+				break;
+
+
+			}
+		} else {
+			return x;
+		}
+	}
+
+
+
+
+	mapToBell(x, stdD = 1/4, mean = 0.5, skew = 0){
+		//let v = 1;
+		//x = Math.sqrt( -2.0 * Math.log( x ) ) * Math.cos( 2.0 * Math.PI * v );
+
+	  //This is the real workhorse of this algorithm. It returns values along a bell curve from 0 - 1 - 0 with an input of 0 - 1.
+		// I found the example here: https://codepen.io/zapplebee/pen/ByvmMo
+
+		//https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
+
+		let max = this.bellFn(0, stdD, mean, skew);
+		let min = this.bellFn(mean, stdD, mean, skew);
+		x = this.bellFn(x, stdD, mean, skew);
+		return (max - x) / (max-min);
+	}
+
+	bellFn(x, stdD, mean, skew){
+		return  1 / (( 1/( stdD * Math.sqrt(2 * Math.PI) ) ) * Math.pow(Math.E , -1 * Math.pow(x - mean, 2) / (2 * Math.pow(stdD,2))));
+	}
+
+	applyCurve(x, i){
+		if(this.curve){
+			let curve = this.curve[i % this.curve.length];
+
+			switch (curve) {
 
 				case "lin":
 				case "linear":
@@ -2309,85 +2339,30 @@ class Mapper{
 				break;
 
 				case "bell":
-					x = this.mapToBell(x);
-					//console.log(x);
-					break;
+				return this.mapToBell(x);
+				break;
 
 				case "sine":
-					x = Math.sin(2 * x * Math.PI) / 2 + 0.5;
-					break;
+				return Math.sin(2 * x * Math.PI) / 2 + 0.5;
+				break;
 
 				case "half-sine":
-					x = Math.sin(x * Math.PI);
-					break;
+				return Math.sin(x * Math.PI);
+				break;
 
 				default:
-					break;
+				if(typeof curve == "number"){
+					return Math.pow(x, curve);
+				} else {
+					return x;
+				}
+				break;
+
 			}
+		} else {
 			return x;
-	}
-
-	applySteps(x){
-
-	}
-
-
-	convert(x){
-
-	}
-
-	convertUsingMIDI(x, min, range){
-
-		let noteOffs;
-		if(this.steps){
-			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
-			//let noteInCycle = noteOffs % obj.stepsCycle;
-
-      let notesInCycle = this.steps.length-1;
-			let stepsCycle = this.steps[notesInCycle];
-      let nrOfCycles = rangeOut / stepsCycle;
-      rangeOut = notesInCycle * nrOfCycles + 1;
-      noteOffs = Math.floor(x * range);
-
-      let cycle = Math.floor(noteOffs / notesInCycle);
-      let noteInCycle = Math.floor(noteOffs % notesInCycle);
-			noteOffs = cycle * stepsCycle + this.steps[noteInCycle];
-		} else {
-      noteOffs = Math.floor(x * range);
-    }
-		return WebAudioUtils.MIDInoteToFrequency(min + noteOffs);
-	}
-
-	convertUsingMath(x, conv){
-		if(typeof conv == "number"){
-			x = Math.pow(x, conv);
-		} else {
-			x = eval(conv);
 		}
 
-		valOut = valOut * rangeOut + this.minOut;
-	}
-
-
-
-
-	mapToBell(x, stdD = 1/4, mean = 0.5, skew = 0){
-		//let v = 1;
-		//x = Math.sqrt( -2.0 * Math.log( x ) ) * Math.cos( 2.0 * Math.PI * v );
-
-	  //This is the real workhorse of this algorithm. It returns values along a bell curve from 0 - 1 - 0 with an input of 0 - 1.
-		// I found the example here: https://codepen.io/zapplebee/pen/ByvmMo
-
-		//https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
-
-		let max = this.bellFn(0, stdD, mean, skew);
-		let min = this.bellFn(mean, stdD, mean, skew);
-		x = this.bellFn(x, stdD, mean, skew);
-		return (max - x) / (max-min);
-	}
-
-	bellFn(x, stdD, mean, skew){
-		return  1 / (( 1/( stdD * Math.sqrt(2 * Math.PI) ) ) * Math.pow(Math.E , -1 * Math.pow(x - mean, 2) / (2 * Math.pow(stdD,2))));
 	}
 
 }
@@ -3516,7 +3491,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.1";
+var version = "1.0.2";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -4044,19 +4019,31 @@ WebAudioUtils.typeFixParam = (param, value) => {
 			conv = float == conv ? float : conv;
 		}
 		// allow for multiple values
-		value.conv = [conv];
+		value.conv = conv;
 		break;
 
 		case "level":
-		case "steps":
 		case "range":
 		case "curve":
 		case "follow":
-		case "mapSrc":
-		case "mapDest":
+		case "mapin":
+		case "mapout":
 		case "mapCurve":
 		case "mapConvert":
+		case "convert":
 		value = WebAudioUtils.split(value);
+		break;
+
+
+
+		case "steps":
+		try {
+			// multi dimensional array
+			value = JSON.parse(value);
+		} catch {
+			// single array
+			value = [WebAudioUtils.split(value)];
+		}
 		break;
 
 		case "value":

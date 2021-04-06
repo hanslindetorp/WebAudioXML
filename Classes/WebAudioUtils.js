@@ -120,19 +120,31 @@ WebAudioUtils.typeFixParam = (param, value) => {
 			conv = float == conv ? float : conv;
 		}
 		// allow for multiple values
-		value.conv = [conv];
+		value.conv = conv;
 		break;
 
 		case "level":
-		case "steps":
 		case "range":
 		case "curve":
 		case "follow":
-		case "mapSrc":
-		case "mapDest":
+		case "mapin":
+		case "mapout":
 		case "mapCurve":
 		case "mapConvert":
+		case "convert":
 		value = WebAudioUtils.split(value);
+		break;
+
+
+
+		case "steps":
+		try {
+			// multi dimensional array
+			value = JSON.parse(value);
+		} catch {
+			// single array
+			value = [WebAudioUtils.split(value)];
+		}
 		break;
 
 		case "value":

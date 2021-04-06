@@ -1,6 +1,18 @@
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
+var EaseIn  = power => t => Math.pow(t, power);
+var EaseOut = power => t => 1 - Math.abs(Math.pow(t-1, power));
+var EaseInOut = power => t => t<.5 ? EaseIn(power)(t*2)/2 : EaseOut(power)(t*2 - 1)/2+0.5;
+var EaseInSin = t => 1 + Math.sin(Math.PI / 2 * t - Math.PI / 2);
+var EaseOutSin = t => Math.sin(Math.PI / 2 * t);
+var EaseInOutSin = t => (1 + Math.sin(Math.PI * t - Math.PI / 2)) / 2;
+var EaseInElastic = t => (.04 - .04 / t) * Math.sin(25 * t) + 1;
+var EaseOutElastic = t => .04 * t / (--t) * Math.sin(25 * t);
+var EaseInOutElastic = t => (t -= .5) < 0 ? (.02 + .01 / t) * Math.sin(50 * t) : (.02 - .01 / t) * Math.sin(50 * t) + 1;
+
+
+
 class Mapper{
 
 
@@ -9,154 +21,77 @@ class Mapper{
 		this.params = params;
 		this.sourceValues = [];
 
-		if(params.map){
-			this.minIn = params.map.minIn;
-			this.maxIn = params.map.maxIn;
-			this.minOut = params.map.minOut;
-			this.maxOut = params.map.maxOut;
-			this.conv = params.map.conv;
-		}
 
 		this.steps = params.steps;
 		this.curve = params.curve;
 		this.value = params.value;
+		this.conv = params.convert;
+
+		// like a gain control for the variable
+		// do I still need it?
 		this.level = params.level;
+
 		if(params.range){
 			this.range = new Range(params.range);
 		}
 
-		if(params.mapIn){
-			this.mapIn = params.mapIn.sort((a,b) => a-b);
-			this.mapOut = params.mapOut || this.mapIn;
-			this.minIn = Math.min(...this.mapIn);
-			this.maxIn = Math.max(...this.mapIn);
-			this.minOut = Math.min(...this.mapOut);
-			this.maxOut = Math.max(...this.mapOut);
+		if(params.mapin){
+
+			// complex style
+
+			// remove duplicates
+			this.mapin = params.mapin.filter((a, index) => params.mapin.indexOf(a) === index);
+			// sort
+			this.mapin = this.mapin.sort((a,b) => a-b);
+			// init mapout
+			this.mapout = params.mapout || this.mapin;
+
+
+
+		} else if(params.map){
+
+			// simplified (old) style
+			this.mapin = [params.map.minIn, params.map.maxIn];
+			this.mapout = [params.map.minOut, params.map.maxOut];
+
+			switch (typeof params.map.conv) {
+				case "number":
+				this.curve = this.curve || [params.map.conv];
+				break;
+
+				case "string":
+				if(params.map.conv.includes("MIDI")){
+					this.steps = this.steps || [[0,1]];
+					this.conv = this.conv || ["MIDI->frequency"];
+				} else {
+					// conv is a math function
+					if(params.map.conv.includes("x")){
+						this.curve = this.curve || [params.map.conv];
+					}
+				}
+				break;
+
+			}
+
 		}
+		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element === 'number') : true;
 	}
 
 
 	getValue(x){
 
-		if(typeof this.minIn == "undefined"){return x}
+		// truncate x if needed
+		x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
+		x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
 
-		x = Math.max(x, this.minIn);
-		x = Math.min(x, this.maxIn);
-
-		if(typeof this.minOut != "undefined"){
-			return this.mapValueSimple(x);
-		} else if(this.mapIn){
-			return this.mapValueComplex(x);
-		}
-
-	}
-
-	mapValueSimple(x){
-
-		// Hahahaha. "Simple" is maybe not the best word but it refers to the
-		// simplified syntax for mapping where minIn, maxIn, minOut, maxOut and
-		// convert algorith is specified in one attribute - "map"
-
-		if(typeof this.minIn == "undefined"){return x}
-
-		let rangeObj, targetRange, relVal, rangeIn, rangeOut, valOut;
-
-		rangeObj = {
-			values: {min: this.minIn, max: this.maxIn},
-			index: 0
-		}
-
-		if(this.range){
-			let ro = this.range.getRange(x);
-			if(ro.index == -1){
-				rangeObj.values.min = 0;
-				rangeObj.values.max = 0;
-			} else {
-				rangeObj = ro;
-			}
-		}
-
-		targetRange = rangeObj.values;
-		rangeIn = targetRange.max - targetRange.min;
-		rangeOut = this.maxOut - this.minOut;
-		x = (x - targetRange.min)/rangeIn;
-
-
-		// kanske kolla alla ranges vilken som ger högst output
-		// multiplicera med "gain" för att göra kurvorna brantare
-
-		// crop
-		x = Math.max(0, Math.min(x, 1));
-
-
-		if(this.curve){
-			let curve = this.curve[rangeObj.index % this.curve.length];
-
-			switch (curve) {
-				case "bell":
-					x = this.mapToBell(x);
-					//console.log(x);
-					break;
-
-				case "sine":
-					x = Math.sin(2 * x * Math.PI) / 2 + 0.5;
-					break;
-
-				case "half-sine":
-					x = Math.sin(x * Math.PI);
-					break;
-
-				default:
-					break;
-
-			}
-
-		}
-		// scale
-		// use curve and levels (what about max?)
-		// to calculate output
-		if(this.level){
-			let level = this.level[rangeObj.index % this.level.length];
-
-			x = x * level / 100;
-		}
-
-
-		if(this.conv.includes("MIDI")){
-			let noteOffs;
-			if(this.steps){
-				//let cycle = Math.floor(noteOffs / obj.stepsCycle);
-				//let noteInCycle = noteOffs % obj.stepsCycle;
-
-	      let notesInCycle = this.steps.length-1;
-				let stepsCycle = this.steps[notesInCycle];
-	      let nrOfCycles = rangeOut / stepsCycle;
-	      rangeOut = notesInCycle * nrOfCycles + 1;
-	      noteOffs = Math.floor(x * rangeOut);
-
-	      let cycle = Math.floor(noteOffs / notesInCycle);
-	      let noteInCycle = Math.floor(noteOffs % notesInCycle);
-				noteOffs = cycle * stepsCycle + this.steps[noteInCycle];
-			} else {
-	      noteOffs = Math.floor(x * rangeOut);
-	    }
-			valOut = WebAudioUtils.MIDInoteToFrequency(this.minOut + noteOffs);
-
-		} else {
-			valOut = WebAudioUtils.convert(x, this.conv[0]);
-			valOut = valOut * rangeOut + this.minOut;
-		}
-
-
-		return valOut;
+		return this.mapValue(x);
 	}
 
 
-
-	mapValueComplex(x){
+	mapValue(x){
 
 		// This method supports a more flexible mapping than the "simple"
-		// Given that the attributes "mapIn" and "mapOut" are specified
+		// Given that the attributes "mapin" and "mapout" are specified
 		// it will use those two (comma- or space separated) vectors to
 		// map the incoming value (the variable this object is following)
 		// to an "outgoing" value before it stored it in its property "value".
@@ -171,73 +106,124 @@ class Mapper{
 		// If multiple values are used, then a JSON-formated hierarchical array should be
 		// specified with the "steps" attribute. E.g.
 		// steps="[[0,2,4,5,7,9,11,12], [0,2,3,5,7,8,10,12]]" for a major + minor scale
-				
+
 		// Finally a "convert" algorithm can be specified for
-		// each region between the mapOut values. It can be a javascript expression
+		// each region between the mapout values. It can be a javascript expression
 		// using "x" as the processed value or a preset (like "midi->frequency")
 
+		let e = this.mapin.filter(entry => entry <= x).pop();
+		let i = this.mapin.indexOf(e);
 
-    let i = this.mapIn.findIndex(entry => entry == x);
+		x = this.in2Rel(x, i);
+		x = this.applyCurve(x, i);
+		x = this.rel2Out(x, i);
+		x = this.offset(x, i);
+		x = this.convert(x, i);
 
-    if(i != -1){
-			// index is one of the in-values
-			if(val == this.maxIn){
-				return this.maxOut;
-			} else {
-				return valObj.mapOut[i % valObj.mapOut.length];
-			}
-
-    } else {
-
-      // interpolate between two in-values
-      let i1 = this.mapIn.findIndex(entry => entry < x);
-      let i2 = this.mapIn.findIndex(entry => entry > x);
-			let in1 = this.mapIn[i1];
-			let in2 = this.mapIn[i2];
-			let out1 = this.mapOut[i1 % this.mapOut.length];
-			let out2 = this.mapOut[i2 % this.mapOut.length];
-
-
-      let relInDiff = (x-in1)/(in1-in2);
-      let valOutDiff = out1 - out2;
-      return out1 + relInDiff * valOutDiff;
-    }
-
-		let conv = this.conv[i1 % this.conv.length];
-
+		return x;
 
   }
 
-	convertUsingMIDI(x, min, range){
+	in2Rel(x, i){
+		let in1 = this.mapin[i % this.mapin.length];
+		let in2 = this.mapin[(i+1) % this.mapin.length];
+		return (x-in1)/(in2-in1);
+	}
 
-		let noteOffs;
-		if(this.steps){
+	rel2Out(x, i){
+		if(this.isNumeric){
+			// interpolate between two in-values
+
+
+
+			if(this.steps){
+				let curSteps = this.steps[i % this.steps.length];
+				if(curSteps){
+					return this.applySteps(x, i, curSteps);
+				}
+			}
+
+			let out1 = this.mapout[i % this.mapout.length];
+			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let range = out2 - out1;
+			return x * range;
+
+		} else {
+
+			// pick a string value from mapout
+			return this.mapout[i % this.mapout.length];
+		}
+	}
+
+
+	applySteps(x, i, steps){
 			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
-      let notesInCycle = this.steps.length-1;
-			let stepsCycle = this.steps[notesInCycle];
-      let nrOfCycles = rangeOut / stepsCycle;
-      rangeOut = notesInCycle * nrOfCycles + 1;
-      noteOffs = Math.floor(x * range);
 
-      let cycle = Math.floor(noteOffs / notesInCycle);
-      let noteInCycle = Math.floor(noteOffs % notesInCycle);
-			noteOffs = cycle * stepsCycle + this.steps[noteInCycle];
+		if(steps){
+			let out1 = this.mapout[i % this.mapout.length];
+			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let range = Math.abs(out2 - out1);
+
+			// create a pattern for range
+			let values = [];
+			let c, n = 0, v = 0;
+			let patternCnt = steps.length-1;
+			let patternWidth = steps[patternCnt];
+			while(v < range){
+				c = Math.floor(n / patternCnt);
+				v = c * patternWidth + steps[n % patternCnt];
+				values.push(v);
+				n++;
+			}
+			if(out2 >= out1){
+				return values[Math.floor(x * values.length)];
+			} else {
+				// invert
+				values.reverse();
+				return values[Math.floor(x * values.length)] - range;
+			}
 		} else {
-      noteOffs = Math.floor(x * range);
-    }
-		return WebAudioUtils.MIDInoteToFrequency(min + noteOffs);
+			return x;
+		}
+		return
+
 	}
 
-	convertUsingMath(x, conv){
-		if(typeof conv == "number"){
-			x = Math.pow(x, conv);
+	offset(x, i){
+		if(this.isNumeric){
+			return x + this.mapout[i % this.mapout.length];
 		} else {
-			x = eval(conv);
+			return x;
 		}
+	}
 
-		valOut = valOut * rangeOut + this.minOut;
+
+	convert(x, i){
+		if(this.conv){
+			let convert = this.conv[i % this.conv.length];
+			switch (convert) {
+
+				case "MIDI->frequency":
+				return WebAudioUtils.MIDInoteToFrequency(x);
+				break;
+
+
+				default:
+				if(typeof convert == "string" && convert.includes("x"));
+				try {
+					return eval(convert);
+				} catch {
+					return x;
+				}
+				break;
+
+
+			}
+		} else {
+			return x;
+		}
 	}
 
 
@@ -260,6 +246,122 @@ class Mapper{
 
 	bellFn(x, stdD, mean, skew){
 		return  1 / (( 1/( stdD * Math.sqrt(2 * Math.PI) ) ) * Math.pow(Math.E , -1 * Math.pow(x - mean, 2) / (2 * Math.pow(stdD,2))));
+	}
+
+	applyCurve(x, i){
+		if(this.curve){
+			let curve = this.curve[i % this.curve.length];
+
+			switch (curve) {
+
+				case "lin":
+				case "linear":
+				return x;
+				break;
+
+				case "easeInQuad":
+				case "easeIn":
+				return EaseIn(2)(x);
+				break;
+
+				case "easeOutQuad":
+				case "easeOut":
+				return EaseOut(2)(x);
+				break;
+
+				case "easeInOutQuad":
+				case "easeInOut":
+				return EaseInOut(2)(x);
+				break;
+
+				case "easeInCubic":
+				return EaseIn(3)(x);
+				break;
+
+				case "easeOutCubic":
+				return EaseOut(3)(x);
+				break;
+
+				case "easeInOutCubic":
+				return EaseInOut(3)(x);
+				break;
+
+				case "easeInQuart":
+				return EaseIn(4)(x);
+				break;
+
+				case "easeOutQuart":
+				return EaseOut(4)(x);
+				break;
+
+				case "easeInOutQuart":
+				return EaseInOut(4)(x);
+				break;
+
+				case "easeInQuint":
+				return EaseIn(5)(x);
+				break;
+
+				case "easeOutQuint":
+				return EaseOut(5)(x);
+				break;
+
+				case "easeInOutQuint":
+				return EaseInOut(5)(x);
+				break;
+
+				case "easeInSin":
+				case "easeInSine":
+				return EaseInSin(x);
+				break;
+
+				case "easeOutSin":
+				case "easeOutSine":
+				return EaseOutSin(x);
+				break;
+
+				case "easeInOutSin":
+				case "easeInOutSine":
+				return EaseInOutSin(x);
+				break;
+
+				case "easeInElastic":
+				return EaseInElastic(x);
+				break;
+
+				case "easeOutElastic":
+				return EaseOutElastic(x);
+				break;
+
+				case "easeInOutElastic":
+				return EaseInOutElastic(x);
+				break;
+
+				case "bell":
+				return this.mapToBell(x);
+				break;
+
+				case "sine":
+				return Math.sin(2 * x * Math.PI) / 2 + 0.5;
+				break;
+
+				case "half-sine":
+				return Math.sin(x * Math.PI);
+				break;
+
+				default:
+				if(typeof curve == "number"){
+					return Math.pow(x, curve);
+				} else {
+					return x;
+				}
+				break;
+
+			}
+		} else {
+			return x;
+		}
+
 	}
 
 }

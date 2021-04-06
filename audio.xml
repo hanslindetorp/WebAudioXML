@@ -6,11 +6,12 @@
 		<var name="y" follow="x"></var>
 
 		<OscillatorNode type="sawtooth">
-			<frequency follow="y" map="0 100 36 60 MIDI" steps="0 2 3 5 7 8 10 12"></frequency>
+			<!--frequency follow="y" map="0 100 36 60 MIDI" steps="0 2 3 5 7 8 10 12"></frequency-->
+			<frequency follow="y" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [0, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency>
 		</OscillatorNode>
 
 		<BiquadFilterNode type="lowpass">
-			<frequency follow="relY" map="0 100 2000 20 3"></frequency>
+			<frequency follow="relY" map="0 100 2000 20" curve="easeOut"></frequency>
 		</BiquadFilterNode>
 
 		<GainNode>

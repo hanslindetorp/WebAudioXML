@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.1";
+var version = "1.0.2";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
