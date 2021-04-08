@@ -23,7 +23,7 @@ class Variable {
 		// }
 
 		if(typeof params.value != "undefined"){
-			this.set(params.value);
+			this.value = params.value;
 		}
 
 	}
@@ -33,6 +33,10 @@ class Variable {
 		if(typeof this.value != "undefined"){
 			callBack(this.value);
 		}
+	}
+
+	valueOf(){
+		return this.value;
 	}
 
 	get value() {

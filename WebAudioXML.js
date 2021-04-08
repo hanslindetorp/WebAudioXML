@@ -2075,7 +2075,7 @@ class Mapper{
 			}
 
 		}
-		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element === 'number') : true;
+		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
 	}
 
 
@@ -3184,7 +3184,7 @@ class Variable {
 		// }
 
 		if(typeof params.value != "undefined"){
-			this.set(params.value);
+			this.value = params.value;
 		}
 
 	}
@@ -3194,6 +3194,10 @@ class Variable {
 		if(typeof this.value != "undefined"){
 			callBack(this.value);
 		}
+	}
+
+	valueOf(){
+		return this.value;
 	}
 
 	get value() {
@@ -3283,19 +3287,21 @@ class Watcher {
 
 		if(!target) {
 
+			target = WebAudioUtils.getVariableContainer(variable, xmlNode, Variable);
+			// let curNode = xmlNode;
+			// let rootNode = curNode.getRootNode();
+			// while(!target && curNode != rootNode){
+			// 	if(curNode.obj && curNode.obj.getVariable(variable) instanceof Variable){
+			// 		// if target is the name of a variable that is specified
+			// 		// for a parent object (at any distans from xmlNode)
+			// 		// as a dynamic variable object using the "var" element
+			// 		target = curNode.obj;
+			// 	}
+			// 	curNode = curNode.parentNode;
+			// }
+
 			let curNode = xmlNode;
 			let rootNode = curNode.getRootNode();
-			while(!target && curNode != rootNode){
-				if(curNode.obj && curNode.obj.getVariable(variable) instanceof Variable){
-					// if target is the name of a variable that is specified
-					// for a parent object (at any distans from xmlNode)
-					// as a dynamic variable object using the "var" element
-					target = curNode.obj;
-				}
-				curNode = curNode.parentNode;
-			}
-
-			curNode = xmlNode;
 			while(!target && curNode.parentNode != rootNode){
 				try {
 					target = curNode.querySelector(variable);
@@ -3305,6 +3311,8 @@ class Watcher {
 				if(target && target.obj){
 						// if target is any element near xmlNode
 						// (at any distanse from xmlNode, but the closest will be selected)
+						// Is this really a good idea?? There ought to be a strict hierarchical
+						// rule for variable referencing. Or?
 						target = target.obj;
 						variable = "value";
 				}
@@ -3898,11 +3906,6 @@ module.exports = WebAudio;
 
 },{"./Connector.js":2,"./GUI.js":4,"./InteractionManager.js":5,"./Parser.js":8,"./WebAudioUtils.js":17}],17:[function(require,module,exports){
 
-
-
-
-
-
 class WebAudioUtils {
 
 
@@ -4277,6 +4280,23 @@ WebAudioUtils.paramNameToRange = name => {
 
 WebAudioUtils.convertUsingMath = (x, conv) => {
 
+}
+
+
+WebAudioUtils.getVariableContainer = (variable, callerNode, variableType) => {
+	let target;
+	let curNode = callerNode;
+	let rootNode = curNode.getRootNode();
+	while(!target && curNode != rootNode){
+		if(curNode.obj && curNode.obj.getVariable(variable) instanceof variableType){
+			// if target is the name of a variable that is specified
+			// for a parent object (at any distans from xmlNode)
+			// as a dynamic variable object using the "var" element
+			target = curNode.obj;
+		}
+		curNode = curNode.parentNode;
+	}
+	return target;
 }
 
 module.exports = WebAudioUtils;
