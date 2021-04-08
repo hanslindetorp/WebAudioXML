@@ -339,6 +339,7 @@ class AudioObject{
                     break;
 
                     case "playbackRate":
+                    case "playbackrate":
                     parentAudioObj.playbackRate = val;
                     break;
 
@@ -507,7 +508,9 @@ class AudioObject{
             this.loopStart = this._params.loopStart;
           }
         }
-        this.playbackRate = this._params.playbackRate;
+        if(typeof this._params.playbackRate != "undefined"){
+          this.playbackRate = this._params.playbackRate;
+        }
 		  	this._node.connect(this._destination);
 		  	this._node.start();
 		  	break;
@@ -758,8 +761,10 @@ class AudioObject{
     }
 
     set playbackRate(val){
-      val = typeof val == "undefined" ? 1 : val;
-      this.setTargetAtTime("playbackRate", val);
+      if(typeof val != "undefined"){
+        this._params.playbackRate = val;
+        this.setTargetAtTime("playbackRate", val);
+      }
     }
 
     get playbackRate(){
@@ -842,7 +847,7 @@ class AudioObject{
 
 		  	default:
         let real, imag, wave;
-        
+
 		  	if(val.includes(".js") || val.includes(".json")){
 				// load PeriodicWave data
 			  	let src = Loader.getPath(val, this._localPath);
