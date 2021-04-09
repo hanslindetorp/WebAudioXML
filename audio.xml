@@ -4,11 +4,15 @@
 	<var name="x" follow="relX"></var>
 	<Chain portamento="10">
 		<var name="y" follow="x"></var>
+		<var name="c" value="0"></var>
 
-		<OscillatorNode type="sawtooth">
-			<!--frequency follow="y" map="0 100 36 60 MIDI" steps="0 2 3 5 7 8 10 12"></frequency-->
-			<frequency follow="y" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [0, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency>
-		</OscillatorNode>
+		<!--OscillatorNode type="sawtooth">
+			<frequency follow="y" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [c, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency>
+		</OscillatorNode-->
+
+		<AudioBufferSourceNode src="audio/SDPL1.mp3" loop="true" trig="pointer">
+			<playbackRate follow="y" mapin="0, 100" mapout="-6, 6" convert="Math.pow(2, x/12)"></playbackRate>
+		</AudioBufferSourceNode>
 
 		<BiquadFilterNode type="lowpass">
 			<frequency follow="relY" map="0 100 2000 20" curve="easeOut"></frequency>

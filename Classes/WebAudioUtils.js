@@ -1,9 +1,4 @@
 
-
-
-
-
-
 class WebAudioUtils {
 
 
@@ -129,12 +124,13 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "follow":
 		case "mapin":
 		case "mapout":
-		case "mapCurve":
-		case "mapConvert":
-		case "convert":
 		value = WebAudioUtils.split(value);
 		break;
 
+
+		case "convert":
+		value = WebAudioUtils.split(value, ";");
+		break;
 
 
 		case "steps":
@@ -256,8 +252,8 @@ WebAudioUtils.widthEndingSlash = (str) => {
 WebAudioUtils.MIDInoteToFrequency = note => {
 	return 440 * Math.pow(2, (note - 69) / 12);
 }
-WebAudioUtils.split = str => {
-	let separator = str.includes(",") ? "," : " ";
+WebAudioUtils.split = (str, separator) => {
+	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : " ";
 	let arr = str.split(separator).map(item => {
 		item = item.trim();
 		let i = parseFloat(item);
@@ -378,6 +374,23 @@ WebAudioUtils.paramNameToRange = name => {
 
 WebAudioUtils.convertUsingMath = (x, conv) => {
 
+}
+
+
+WebAudioUtils.getVariableContainer = (variable, callerNode, variableType) => {
+	let target;
+	let curNode = callerNode;
+	let rootNode = curNode.getRootNode();
+	while(!target && curNode != rootNode){
+		if(curNode.obj && curNode.obj.getVariable(variable) instanceof variableType){
+			// if target is the name of a variable that is specified
+			// for a parent object (at any distans from xmlNode)
+			// as a dynamic variable object using the "var" element
+			target = curNode.obj;
+		}
+		curNode = curNode.parentNode;
+	}
+	return target;
 }
 
 module.exports = WebAudioUtils;

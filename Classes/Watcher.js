@@ -29,19 +29,21 @@ class Watcher {
 
 		if(!target) {
 
+			target = WebAudioUtils.getVariableContainer(variable, xmlNode, Variable);
+			// let curNode = xmlNode;
+			// let rootNode = curNode.getRootNode();
+			// while(!target && curNode != rootNode){
+			// 	if(curNode.obj && curNode.obj.getVariable(variable) instanceof Variable){
+			// 		// if target is the name of a variable that is specified
+			// 		// for a parent object (at any distans from xmlNode)
+			// 		// as a dynamic variable object using the "var" element
+			// 		target = curNode.obj;
+			// 	}
+			// 	curNode = curNode.parentNode;
+			// }
+
 			let curNode = xmlNode;
 			let rootNode = curNode.getRootNode();
-			while(!target && curNode != rootNode){
-				if(curNode.obj && curNode.obj.getVariable(variable) instanceof Variable){
-					// if target is the name of a variable that is specified
-					// for a parent object (at any distans from xmlNode)
-					// as a dynamic variable object using the "var" element
-					target = curNode.obj;
-				}
-				curNode = curNode.parentNode;
-			}
-
-			curNode = xmlNode;
 			while(!target && curNode.parentNode != rootNode){
 				try {
 					target = curNode.querySelector(variable);
@@ -51,6 +53,8 @@ class Watcher {
 				if(target && target.obj){
 						// if target is any element near xmlNode
 						// (at any distanse from xmlNode, but the closest will be selected)
+						// Is this really a good idea?? There ought to be a strict hierarchical
+						// rule for variable referencing. Or?
 						target = target.obj;
 						variable = "value";
 				}

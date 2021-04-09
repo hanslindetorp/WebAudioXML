@@ -74,7 +74,7 @@ class Mapper{
 			}
 
 		}
-		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element === 'number') : true;
+		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
 	}
 
 

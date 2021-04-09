@@ -4036,12 +4036,13 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "follow":
 		case "mapin":
 		case "mapout":
-		case "mapCurve":
-		case "mapConvert":
-		case "convert":
 		value = WebAudioUtils.split(value);
 		break;
 
+
+		case "convert":
+		value = WebAudioUtils.split(value, ";");
+		break;
 
 
 		case "steps":
@@ -4163,8 +4164,8 @@ WebAudioUtils.widthEndingSlash = (str) => {
 WebAudioUtils.MIDInoteToFrequency = note => {
 	return 440 * Math.pow(2, (note - 69) / 12);
 }
-WebAudioUtils.split = str => {
-	let separator = str.includes(",") ? "," : " ";
+WebAudioUtils.split = (str, separator) => {
+	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : " ";
 	let arr = str.split(separator).map(item => {
 		item = item.trim();
 		let i = parseFloat(item);
