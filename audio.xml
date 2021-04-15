@@ -6,23 +6,25 @@
 		<var name="y" follow="x"></var>
 		<var name="c" value="0"></var>
 
-		<!--OscillatorNode type="sawtooth">
-			<frequency follow="y" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [c, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency>
-		</OscillatorNode-->
-
-		<AudioBufferSourceNode src="audio/SDPL1.mp3" loop="true" trig="pointer">
-			<playbackRate follow="y" mapin="0, 100" mapout="-6, 6" convert="Math.pow(2, x/12)"></playbackRate>
-		</AudioBufferSourceNode>
+		<OscillatorNode type="sawtooth">
+			<frequency follow="y" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [0, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency>
+		</OscillatorNode>
 
 		<BiquadFilterNode type="lowpass">
-			<frequency follow="relY" map="0 100 2000 20" curve="easeOut"></frequency>
+			<frequency value="1000" map="0 100 2000 20" curve="easeOut"></frequency>
 		</BiquadFilterNode>
 
 		<GainNode>
 			<gain>
-				<Envelope adsr="100 10 50 20" trig="pointer" max="1"></Envelope>
+				<Envelope adsr="100 10 50 20" trig="mouse" max="1"></Envelope>
 			</gain>
 		</GainNode>
+
+		<PannerNode panningModel="HRTF" rotationZ="-1" coneInnerAngle="0" coneOuterAngle="360" coneOuterGain="1" positionZ="1">
+			<positionX follow="relX" map="0 100 -5 5"></positionX>
+			<positionY follow="relY" map="100 0 -5 5"></positionY>
+			<positionZ follow="relY" map="100 0 -5 5"></positionZ>
+		</PannerNode>
 
 	</Chain>
 

@@ -32,7 +32,11 @@ class AudioObject{
 
 	  	this._localPath = localPath;
 
-		  let nodeType = xmlNode.nodeName.toLowerCase();
+      // i'm in a vary bad state with case insensitivity
+      // While all parameters in Web Audio API of course
+      // are case sensitive, the attribute names and nodeNames
+      // in XML are not...
+		  let nodeType = WebAudioUtils.caseFixParameter(xmlNode.nodeName.toLowerCase());
 
 	  	this._ctx = _ctx;
 	  	let fn, src;
@@ -160,6 +164,11 @@ class AudioObject{
 			    this._node = this._ctx.createPanner();
 			    this._node.panningModel = 'equalpower';
 			  }
+        break;
+
+        case "pannernode":
+        this._node = this._ctx.createPanner();
+        break;
 
 
 /*
@@ -338,16 +347,13 @@ class AudioObject{
                     break;
 
                     case "playbackRate":
-                    case "playbackrate":
                     parentAudioObj.playbackRate = val;
                     break;
 
       							default:
       							break;
       						}
-                  if(this._nodeType == "playbackrate"){
-                    //console.log("playbackRate", val);
-                  }
+
       						this.setTargetAtTime(targetName, val, 0, time, true);
       					 }
                });
@@ -365,7 +371,14 @@ class AudioObject{
 	  	// set parameters
 	  	if(this._params){
 		  	Object.keys(this._params).forEach(key => {
-		  		this[key] = this._params[key];
+          if(typeof this[key] !== "function"){
+            // varning!! Super dangerous feature. Must be changed
+            // so that attributes don't overwrite any class functions
+            // typeof this[key] == "undefined" was added to save from
+            // a disaster
+            this[key] = this._params[key];
+          }
+
   			});
   		};
 
@@ -435,6 +448,7 @@ class AudioObject{
 
   	getParameterNode(param){
 	  	if(!this._node){return}
+      //if(param == "pan"){return this._node}
 	  	return this._node[param];
   	}
 
@@ -612,7 +626,14 @@ class AudioObject{
           if(this._nodeType == param){
             param = this._node;
           } else {
-            param = this._node[param];
+            // some properties, like "coneInnerAngle" are not parameter objects but numbers
+            if(typeof this._node[param] == "object"){
+              param = this._node[param];
+            } else {
+              this._node[param] = value;
+              return;
+            }
+
           }
           if(!param){return}
         }
@@ -631,14 +652,12 @@ class AudioObject{
       } else {
 
         // javascript object
-        switch (param) {
-          case "pan":
-            this[param] = value;
-            break;
-          default:
-            break;
+        if(param == "pan"){
+            this._parentAudioObj.pan = value;
+        } else {
+          this._targetObject[param] = value;
         }
-        this._targetObject[param] = value;
+
 
       }
 
@@ -675,6 +694,19 @@ class AudioObject{
       this.setTargetAtTime("gain", val, 0, fadeTime, true);
     }
 
+    // this utility converts amount of rotation around the Y axis
+  // (i.e. rotation in the 'horizontal plane') to an orientation vector
+  yRotationToVector(degrees) {
+    // convert degrees to radians and offset the angle so 0 points towards the listener
+    const radians = (degrees - 90) * (Math.PI / 180);
+    // using cosine and sine here ensures the output values are always normalized
+    // i.e. they range between -1 and 1
+    const x = Math.cos(radians);
+    const z = Math.sin(radians);
+
+    // we hard-code the Y component to 0, as Y is the axis of rotation
+    return [x, 0, z];
+  }
 
 
 
@@ -767,7 +799,10 @@ class AudioObject{
     }
 
     get playbackRate(){
-      return this._node.playbackRate.value;
+      if(typeof this._params.playbackRate == "undefined"){
+        this._params.playbackRate = his._node.playbackRate.value;
+      }
+      return this._params.playbackRate;
     }
 
     set playbackrate(val){
@@ -969,6 +1004,183 @@ class AudioObject{
     get threshold(){
       this._params.threshold;
     }
+
+
+    get coneInnerAngle(){
+      if(typeof this._params.coneInnerAngle == "undefined"){
+        this._params.coneInnerAngle = this._node.coneInnerAngle;
+      }
+      return this._params.coneInnerAngle;
+    }
+    set coneInnerAngle(val){
+      this._params.coneInnerAngle = val;
+      this.setTargetAtTime("coneInnerAngle", val);
+    }
+
+    get coneOuterAngle(){
+      if(typeof this._params.coneOuterAngle == "undefined"){
+        this._params.coneOuterAngle = this._node.coneOuterAngle;
+      }
+      return this._params.coneOuterAngle;
+    }
+    set coneOuterAngle(val){
+      this._params.coneOuterAngle = val;
+      this.setTargetAtTime("coneOuterAngle", val);
+    }
+
+    get coneOuterGain(){
+      if(typeof this._params.coneOuterGain == "undefined"){
+        this._params.coneOuterGain = this._node.coneOuterGain;
+      }
+      return this._params.coneOuterGain;
+    }
+    set coneOuterGain(val){
+      this._params.coneOuterGain = val;
+      this.setTargetAtTime("coneOuterGain", val);
+    }
+
+    get distanceModel(){
+      // string
+      if(typeof this._params.distanceModel == "undefined"){
+        this._params.distanceModel = this._node.distanceModel;
+      }
+      return this._params.distanceModel;
+    }
+    set distanceModel(val){
+      this._params.distanceModel = val;
+      this._node.distanceModel = val;
+    }
+
+    get maxDistance(){
+      if(typeof this._params.maxDistance == "undefined"){
+        this._params.maxDistance = this._node.maxDistance;
+      }
+      return this._params.maxDistance;
+    }
+    set maxDistance(val){
+      this._params.maxDistance = val;
+      this.setTargetAtTime("maxDistance", val);
+    }
+
+    get orientationX(){
+      if(typeof this._params.orientationX == "undefined"){
+        this._params.orientationX = this._node.orientationX;
+      }
+      return this._params.orientationX;
+    }
+    set orientationX(val){
+      this._params.orientationX = val;
+      this.setTargetAtTime("orientationX", val);
+    }
+
+    get orientationY(){
+      if(typeof this._params.orientationY == "undefined"){
+        this._params.orientationY = this._node.orientationY;
+      }
+      return this._params.orientationY;
+    }
+    set orientationY(val){
+      this._params.orientationY = val;
+      this.setTargetAtTime("orientationY", val);
+    }
+
+    get orientationZ(){
+      if(typeof this._params.orientationZ == "undefined"){
+        this._params.orientationZ = this._node.orientationZ;
+      }
+      return this._params.orientationZ;
+    }
+    set orientationZ(val){
+      this._params.orientationZ = val;
+      this.setTargetAtTime("orientationZ", val);
+    }
+
+    set rotationY(deg){
+      let [x,y,z] = this.yRotationToVector(deg);
+      this.setTargetAtTime("orientationY", x);
+      this.setTargetAtTime("orientationY", y);
+      this.setTargetAtTime("orientationZ", z);
+    }
+
+
+    get panningModel(){
+      // string
+      if(typeof this._params.panningModel == "undefined"){
+        this._params.panningModel = this._node.panningModel;
+      }
+      return this._params.panningModel;
+    }
+    set panningModel(val){
+      this._params.panningModel = val;
+      this._node.panningModel = val;
+    }
+
+    get positionX(){
+      if(typeof this._params.positionX == "undefined"){
+        this._params.positionX = this._node.positionX;
+      }
+      return this._params.positionX;
+    }
+    set positionX(val){
+      this._params.positionX = val;
+      this.setTargetAtTime("positionX", val);
+    }
+
+    get positionY(){
+      if(typeof this._params.positionY == "undefined"){
+        this._params.positionY = this._node.positionY;
+      }
+      return this._params.positionY;
+    }
+    set positionY(val){
+      this._params.positionY = val;
+      this.setTargetAtTime("positionY", val);
+    }
+
+    get positionZ(){
+      if(typeof this._params.positionZ == "undefined"){
+        this._params.positionZ = this._node.positionZ;
+      }
+      return this._params.positionZ;
+    }
+    set positionZ(val){
+      this._params.positionZ = val;
+      this.setTargetAtTime("positionZ", val);
+    }
+
+    get refDistance(){
+      if(typeof this._params.refDistance == "undefined"){
+        this._params.refDistance = this._node.refDistance;
+      }
+      return this._params.refDistance;
+    }
+    set refDistance(val){
+      this._params.refDistance = val;
+      this.setTargetAtTime("refDistance", val);
+    }
+
+    get rolloffFactor(){
+      if(typeof this._params.rolloffFactor == "undefined"){
+        this._params.rolloffFactor = this._node.rolloffFactor;
+      }
+      return this._params.rolloffFactor;
+    }
+    set rolloffFactor(val){
+      this._params.rolloffFactor = val;
+      this.setTargetAtTime("rolloffFactor", val);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     get parent(){

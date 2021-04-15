@@ -11,6 +11,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 	//param = param.toLowerCase();
 	let arr;
+	let floatVal;
 
 	switch(param){
 
@@ -37,7 +38,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "loopActive":
 		case "blockRetrig":
 		case "repeat":
-		case "release":
+		case "xrelease": // detta krockar med relase i WebAudioXML
 		case "active":
 
 		// WebAudioXML _objects
@@ -145,15 +146,17 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		case "value":
 		// try to convert to Number if possible
-		let floatVal = parseFloat(value);
+		floatVal = parseFloat(value);
 		if(!Number.isNaN(floatVal)){
 			value = floatVal;
 		}
 		break;
 
 		default:
-
-
+		floatVal = parseFloat(value);
+		if(!Number.isNaN(floatVal)){
+			value = floatVal;
+		}
 		break;
 
 	}
@@ -228,6 +231,62 @@ WebAudioUtils.caseFixParameter = param => {
 
 	  	 case "maxdelaytime":
 	  	 param = "maxDelayTime";
+	  	 break;
+
+	  	 case "coneinnerangle":
+	  	 param = "coneInnerAngle";
+	  	 break;
+
+	  	 case "coneouterangle":
+	  	 param = "coneOuterAngle";
+	  	 break;
+
+	  	 case "coneoutergain":
+	  	 param = "coneOuterGain";
+	  	 break;
+
+	  	 case "distancemodel":
+	  	 param = "distanceModel";
+	  	 break;
+
+	  	 case "maxdistance":
+	  	 param = "maxDistance";
+	  	 break;
+
+	  	 case "orientationx":
+	  	 param = "orientationX";
+	  	 break;
+
+	  	 case "orientationy":
+	  	 param = "orientationY";
+	  	 break;
+
+	  	 case "orientationz":
+	  	 param = "orientationZ";
+	  	 break;
+
+	  	 case "panningmodel":
+	  	 param = "panningModel";
+	  	 break;
+
+	  	 case "positionx":
+	  	 param = "positionX";
+	  	 break;
+
+	  	 case "positiony":
+	  	 param = "positionY";
+	  	 break;
+
+	  	 case "positionz":
+	  	 param = "positionZ";
+	  	 break;
+
+	  	 case "refdistance":
+	  	 param = "refDistance";
+	  	 break;
+
+	  	 case "rollofffactor":
+	  	 param = "rolloffFactor";
 	  	 break;
 
   	}
