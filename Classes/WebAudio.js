@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.2";
+var version = "1.0.3";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -95,7 +95,9 @@ class WebAudio {
 						new GUI(xmlDoc, document.body);
 					}
 
+
 					this.dispatchEvent(new CustomEvent("inited"));
+
 
 				});
 			});
