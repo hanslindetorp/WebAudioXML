@@ -1,6 +1,7 @@
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class InteractionManager {
@@ -40,6 +41,8 @@ class InteractionManager {
 
 			this._variables.client.push(c);
 		}
+
+		this.waxml.addEventListener("inited", e => this.connectToHTMLelements());
 
 	}
 
@@ -90,6 +93,43 @@ class InteractionManager {
 		} else {
 			console.log("this device does not support DeviceOrientationEvent");
 		}
+	}
+
+	connectToHTMLelements(){
+		this.waxml.querySelectorAll("[start]:not([start=''])").forEach((obj, i) => {
+			let trigData = WebAudioUtils.split(obj.parameters.start);
+			let trigSelector = trigData[0];
+
+			if(trigSelector){
+				document.querySelectorAll(trigSelector).forEach((el, i) => {
+					let trigEventName = trigData[1] || "pointerdown";
+					el.addEventListener(trigEventName, e => obj.start());
+				});
+
+				if(obj.parameters.stop){
+					let releaseData = WebAudioUtils.split(obj.parameters.stop);
+					let releaseSelector = releaseData[0];
+					if(releaseSelector){
+						document.querySelectorAll(releaseSelector).forEach((el, i) => {
+							let releaseEventName = releaseData[1] || "pointerup";
+							el.addEventListener(releaseEventName, e => obj.stop());
+						});
+					}
+				}
+			}
+		});
+
+		this.waxml.querySelectorAll("[release]:not([release=''])").forEach((obj, i) => {
+			let trigData = WebAudioUtils.split(obj.parameters.trig);
+			let selector = trigData[0];
+			let eventName = trigData[1] || "click";
+			if(selector){
+				document.querySelectorAll(selector).forEach((el, i) => {
+					el.addEventListener(eventName, e => obj.stop());
+				});
+			}
+		});
+
 	}
 
 	get variables(){
