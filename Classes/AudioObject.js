@@ -2,6 +2,7 @@
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
 var Watcher = require('./Watcher.js');
+var VariableContainer = require('./VariableContainer.js');
 var Variable = require('./Variable.js');
 var Mapper = require('./Mapper.js');
 
@@ -15,7 +16,7 @@ class AudioObject{
 	  	let _ctx = this.waxml._ctx;
 
 	  	this._params = params;
-      this.variables = {};
+      this.variables = new VariableContainer();
 	  	this._xml = xmlNode;
 	  	let timeUnit = this.getParameter("timeunit");
 
@@ -280,7 +281,8 @@ class AudioObject{
 
 
 
-		  	// parameters for
+		  	// audio parameters
+        // these should really be separate classes!
 		  	default:
 		  	this.mapper = new Mapper(this._params);
 
@@ -316,8 +318,11 @@ class AudioObject{
 				  	this._node.value = this._params.value;
             parentAudioObj._params[nodeType] = this._params.value;
 				  }
-          if(this._params.follow){ // && !isPartOfASynth){
+          if(this._params.follow && this._params.follow.length){ // && !isPartOfASynth){
             let isPartOfASynth = xmlNode.closest("Synth");
+
+            // this needs to be reworked. It's now optimized to respond to MIDI key numbers
+            // But not to MIDI control change values
             let controlledByMIDI = isPartOfASynth && this._params.follow.join("").includes("MIDI");
     				if(!controlledByMIDI){
               this.watcher = new Watcher(xmlNode, this._params.follow, {
@@ -368,15 +373,53 @@ class AudioObject{
 
 	  	//console.log(nodeType, this._node.__resource_id__);
 
+
 	  	// set parameters
 	  	if(this._params){
-		  	Object.keys(this._params).forEach(key => {
+        Object.entries(this._params).forEach(entry => {
+          const [key, value] = entry;
           if(typeof this[key] !== "function"){
+
+            if(WebAudioUtils.nrOfVariableNames(value)){
+              new Watcher(xmlNode, value, {
+                waxml: this.waxml,
+                containsVariableNames: true,
+                callBack: val => {
+                  let time = 0;
+                  switch(key){
+                    case "delayTime":
+                    val *= this._params.timescale;
+                    break;
+
+                    case "frequency":
+                    if(this.parent){
+                      if(this.parent._nodeType.toLowerCase() == "oscillatornode"){
+                        time = this.getParameter("portamento") || 0;
+                        time = this.getParameter("transitionTime") || time;
+                        time *= this._params.timescale;
+                      }
+                    }
+                    break;
+
+                    case "playbackRate":
+                    parentAudioObj.playbackRate = val;
+                    break;
+
+                    default:
+                    break;
+                  }
+
+                  this.setTargetAtTime(key, val, 0, time, true);
+                 }
+               });
+            }
+
             // varning!! Super dangerous feature. Must be changed
             // so that attributes don't overwrite any class functions
-            // typeof this[key] == "undefined" was added to save from
+            // typeof this[key] !== "function" was added to save from
             // a disaster
-            this[key] = this._params[key];
+            let v = this._params[key].valueOf();
+            if(typeof v !== "undefined")this[key] = v;
           }
 
   			});

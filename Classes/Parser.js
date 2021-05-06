@@ -117,6 +117,59 @@ class Parser {
 			// if this node is internal
 			let parentNode = xmlNode.parentNode;
 			let params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+
+			// check if any parameter needs to be replaced with a Variable object
+
+			let variableObj;
+
+			Object.keys(params).forEach(key => {
+				let param = params[key];
+				if(typeof param == "string"){
+					if(WebAudioUtils.nrOfVariableNames(param)){
+						//variableObj = new Variable({waxml: this.waxml});
+						params[key] = new Watcher(xmlNode, param, {
+							waxml: this.waxml,
+							callBack: val => {
+								if(xmlNode.obj)xmlNode.obj[key] = val;
+							}
+						});
+						//params[key] = variableObj;
+					}
+				} else if(param instanceof Array){
+					// clumpsy structure to support multi-dimensional arrays, I know...
+					param.forEach((value, i) => {
+						if(typeof value == "string"){
+							if(WebAudioUtils.nrOfVariableNames(value)){
+								//variableObj = new Variable({waxml: this.waxml});
+								params[key][i] = new Watcher(xmlNode, value, {
+									waxml: this.waxml,
+									callBack: val => {
+										if(xmlNode.obj)xmlNode.obj[key] = param;
+									}
+								});
+								//params[key][i] = variableObj;
+							}
+						} else if(value instanceof Array){
+							value.forEach((item, j) => {
+								if(typeof item == "string"){
+									if(WebAudioUtils.nrOfVariableNames(item)){
+										//variableObj = new Variable({waxml: this.waxml});
+										params[key][i][j] = new Watcher(xmlNode, item, {
+											waxml: this.waxml,
+											callBack: val => {
+												if(xmlNode.obj)xmlNode.obj[key] = param;
+											}
+										});
+										//params[key][i][j] = variableObj;
+									}
+								}
+							});
+						}
+					});
+				}
+			});
+
+
 			params.waxml = this.waxml;
 
 			switch(nodeName){
@@ -146,12 +199,21 @@ class Parser {
 				break;
 
 				case "var":
-				let variableObj = new Variable(params);
+				variableObj = new Variable(params);
 				if(params.follow){
 
-					new Watcher(xmlNode, params.follow, {
+					this.watcher = new Watcher(xmlNode, params.follow, {
+						waxml: this.waxml,
+						callBack: val => {
+							variableObj.value = val;
+						}
+					});
+				} else if (WebAudioUtils.nrOfVariableNames(params.value)) {
+
+					this.watcher = new Watcher(xmlNode, params.value, {
 						waxml: this.waxml,
 						variableObj: variableObj,
+						containsVariableNames: true,
 						callBack: val => {
 							variableObj.value = val;
 						}

@@ -2,11 +2,14 @@
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
-
+var XY_area = require('./XY_area.js');
+var XY_handle = require('./XY_handle.js');
 
 class InteractionManager {
 
 	constructor(waxml){
+		this.defineCustomElements();
+
 		this.eventTracker = new EventTracker();
 		this.waxml = waxml;
 		this.inited = false;
@@ -46,6 +49,10 @@ class InteractionManager {
 
 	}
 
+	defineCustomElements(){
+		customElements.define('waxml-xy-area', XY_area);
+		customElements.define('waxml-xy-handle', XY_handle);
+	}
 
 
 	init(){

@@ -97,6 +97,7 @@ class WebAudio {
 
 
 					this.dispatchEvent(new CustomEvent("inited"));
+					this.dispatchEvent(new CustomEvent("init"));
 
 
 				});

@@ -47,18 +47,8 @@
 
 			#touchArea {
 
-				position: relative;
-			  border: 1px solid black;
 			  flex: 1 auto;
 			  margin-bottom: 2em;
-			  background: purple;
-				background-image: linear-gradient(white 1px, transparent 0),
-			                  linear-gradient(90deg, white 1px, transparent 0);
-
-			  background-size: 6.6667% 100%;
-			  touch-action: none;
-
-				background-color: purple;
 			}
 		</style>
 	</head>
@@ -81,11 +71,17 @@
 -->
 				<button onclick="webAudioXML.lastGesture.play()">REPEAT LAST GESTURE</button>
 			</div>
-			<div id="touchArea"></div>
+			<waxml-xy-area id="touchArea" background-color="#696" grid-color="#9C9" columns="29" rows="1">
+
+				<waxml-xy-handle id="handle1" background-color="#999" width="50px" height="30px"  x="50" y="50">Bandpass</waxml-xy-handle>
+				<!--waxml-xy-handle id="handle2" background-color="red" width="50px" height="30px" x="25" y="50">Pan</waxml-xy-handle-->
+
+			</waxml-xy-area>
 		</div>
 
 		<script src="WebAudioXML.js" data-source="audio.xml"></script>
 		<script src="eventData.js"></script>
+
 
 	</body>
 </html>

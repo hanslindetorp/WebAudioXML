@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-10dB">
 
-		<AudioBufferSourceNode class="gamelan" id="SDPL1" src="audio/SDPL1.mp3"></AudioBufferSourceNode>
-		<AudioBufferSourceNode class="gamelan" id="SDPL2" src="audio/SDPL2.mp3"></AudioBufferSourceNode>
-		<AudioBufferSourceNode class="gamelan" id="SDPL3" src="audio/SDPL3.mp3"></AudioBufferSourceNode>
-		<AudioBufferSourceNode class="gamelan" id="SDPL4" src="audio/SDPL4.mp3"></AudioBufferSourceNode>
-		<AudioBufferSourceNode class="gamelan" id="SDPL5" src="audio/SDPL5.mp3"></AudioBufferSourceNode>
-		<AudioBufferSourceNode class="gamelan" id="SDPL6" src="audio/SDPL6.mp3"></AudioBufferSourceNode>
-		<AudioBufferSourceNode class="gamelan" id="SDPL7" src="audio/SDPL7.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL1" src="audio/SDPL1.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL2" src="audio/SDPL2.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL3" src="audio/SDPL3.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL4" src="audio/SDPL4.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL5" src="audio/SDPL5.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL6" src="audio/SDPL6.mp3"></AudioBufferSourceNode>
+		<AudioBufferSourceNode class="gamelan" start="#SDPL7" src="audio/SDPL7.mp3"></AudioBufferSourceNode>
 
 </Audio>

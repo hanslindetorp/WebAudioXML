@@ -9,8 +9,23 @@ class Watcher {
 		// allow for different ways of specifying target, event, variable and delay
 		// possible structures:
 		// variable
-		// targetStr, variable
-		// targetStr, event, variable
+		// variable.property
+		// XMLelement
+		// XMLelement, variable
+		// XMLelement, variable.property
+		// HTMLelement
+		// HTMLelement, variable
+		// HTMLelement, event, variable
+
+		this._variables = this.strToVariables(arr, xmlNode, Variable, params);
+		if(Object.keys(this._variables).length > 0){
+			this.callBack = params.callBack;
+			this.value = WebAudioUtils.replaceVariableNames(arr);
+			this.update(this.value);
+			return;
+		}
+
+
 		let target, variable, targetStr, event;
 		if(arr.length){
 			variable = arr.pop().trim();
@@ -126,7 +141,7 @@ class Watcher {
 
 	}
 
-	addVariableWatcher(obj, variable, params){
+	addVariableWatcher(obj, variable, params = {}){
 
 		let oNv = this.varablePathToObject(obj, variable);
 		if(!oNv){return}
@@ -147,7 +162,8 @@ class Watcher {
 		}
 
 		if(!(variableObj instanceof Variable)){
-			variableObj = params.variableObj || new Variable(params);
+			variableObj = new Variable(params);
+			//variableObj = params.variableObj || new Variable(params);
 
 
 			Object.defineProperty(obj, variable, {
@@ -157,6 +173,7 @@ class Watcher {
 				},
 				set(val) {
 					variableObj.value = val;
+					// this has been moved to the Variable object
 					return;
 					if(this._props[variable].value != val){
 						this._props[variable].value = val;
@@ -178,18 +195,53 @@ class Watcher {
 					}, params.delay);
 				};
 			}
-			variableObj.addCallBack(callBack);
+			variableObj.addCallBack(callBack, oNv.prop);
 		}
 
 		//obj._props[variable].callBackList.push(callBack);
 
 	}
 
+	variablePathToProp(str){
+		let prop = str.split(".").pop();
+
+		switch (prop) {
+			case "derivative":
+			case "derivative2":
+			case "acceleration":
+				break;
+			default:
+				prop = "value";
+		}
+		return prop;
+	}
+
+	variablePathToName(str){
+		return str.split(".").shift();
+	}
 
 	varablePathToObject(obj = window, variable = ""){
 
 		let varArray = variable.split(".");
-		let v = varArray.pop();
+		let prop = varArray.pop();
+		let v;
+
+		switch (prop) {
+			case "derivative":
+			case "derivative2":
+			case "acceleration":
+				v = varArray.pop();
+				break;
+			default:
+				v = prop;
+				prop = "value";
+		}
+
+		// this supports hierarchical objects in the target object
+		// e.g. client[0].touch[0] It's probably not a good idea
+		// I'd rather prefer a flat naming structure where the dot
+		// syntax is used to separate the variable from "derivative"
+		// or similar.
 		let varPath = varArray.length ? "." + varArray.join(".") : "";
 		let o;
 
@@ -209,7 +261,78 @@ class Watcher {
 			}
 		});
 		*/
-		return {object: o, variable: v};
+		return {object: o, variable: v, prop: prop};
+	}
+
+
+	// consider if this is the correct place for this conversion
+	// of stored _variables
+	// It's ment as a short for e.g. frequency="relX*100" like formulas
+	// in a spread sheet
+	getVariable(varName){
+
+		return this._variables[varName].valueOf();
+
+	}
+
+	replaceVariableNames(str) {
+		// regExp
+		// ${x} || var(x) -> this.getVariable(x)
+		if(typeof str != "string"){return 0};
+
+		let rxp = WebAudioUtils.rxp;
+		return str.replaceAll(rxp, (a, b, c) => b ? `this.getVariable('${b}')` : `this.getVariable('${c}')`);
+
+	}
+
+	strToVariables(str = "", xmlNode, variableType, params){
+		// regExp
+		if(typeof str != "string"){return 0};
+		// ${x} || var(x) -> this.getVariable(x)
+		let rxp = WebAudioUtils.rxp;
+		let variables = {};
+
+		[...str.matchAll(rxp)].forEach(match => {
+			let varName = match[1] || match[2] || match[3];
+			let parentObj = WebAudioUtils.getVariableContainer(varName, xmlNode, variableType);
+			let prop = this.variablePathToProp(varName);
+
+			let props;
+			if(parentObj){
+				props = parentObj.variables;
+			} else {
+				props = params.waxml.variables._props;
+				this.addVariableWatcher(params.waxml.variables, varName);
+			}
+			let varObj = props[varName];
+			varObj.addCallBack(v => this.update(v), prop);
+			variables[varName] = varObj;
+
+		});
+
+		return variables;
+	}
+
+	update(val){
+
+		if(this.callBack){
+			val = this.valueOf(val);
+			if(typeof val !== "undefined")this.callBack(val);
+		}
+
+	}
+
+	valueOf(val){
+		if(typeof this.value == "string"){
+			try {
+				let v = eval(this.value);
+				val = Number.isNaN(v) ? val : v;
+				//console.log(`Watcher.update(${this.value})`);
+			} catch {
+
+			}
+		}
+		return val;
 	}
 
 }

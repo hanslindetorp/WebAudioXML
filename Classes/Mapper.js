@@ -81,6 +81,9 @@ class Mapper{
 	getValue(x){
 
 		// truncate x if needed
+		if(typeof x == "undefined")return x;
+		
+		x = x.valueOf();
 		x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
 		x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
 
@@ -111,13 +114,17 @@ class Mapper{
 		// each region between the mapout values. It can be a javascript expression
 		// using "x" as the processed value or a preset (like "midi->frequency")
 
-		let e = this.mapin.filter(entry => entry <= x).pop();
-		let i = this.mapin.indexOf(e);
+		let i = 0;
+		if(this.mapin){
+			let e = this.mapin.filter(entry => entry <= x).pop();
+			i = this.mapin.indexOf(e);
 
-		x = this.in2Rel(x, i);
-		x = this.applyCurve(x, i);
-		x = this.rel2Out(x, i);
-		x = this.offset(x, i);
+			x = this.in2Rel(x, i);
+			x = this.applyCurve(x, i);
+			x = this.rel2Out(x, i);
+			x = this.offset(x, i);
+		}
+
 		x = this.convert(x, i);
 
 		return x;
@@ -173,8 +180,8 @@ class Mapper{
 			let patternWidth = steps[patternCnt];
 			while(v < range){
 				c = Math.floor(n / patternCnt);
-				v = c * patternWidth + steps[n % patternCnt];
-				values.push(v);
+				v = c * patternWidth + steps[n % patternCnt].valueOf();
+				values.push(v.valueOf());
 				n++;
 			}
 			if(out2 >= out1){

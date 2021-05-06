@@ -1,30 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
 
-	<var name="x" follow="relX"></var>
+	<var name="third" value="$relY" mapin="40, 60" mapout="3, 4"></var>
+	<var name="x" value="$relX" mapin="3, 25, 75, 97" mapout="24, 36, 60, 72" steps="[false, [0, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></var>
+	<var name="f" value="$relX" mapin="3, 25, 75, 97" mapout="24, 36, 60, 72" steps="[false, [0, 2, $third, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></var>
+	<var name="cutoff" value="$relY" mapin="25, 75" mapout="10000, 150" curve="easeOut"></var>
+	<!--var name="handleX" follow="#handle1, input, e.target.x" mapin="0, 100" mapout="300, 1000" curve="2"></var>
+	<var name="handleY" follow="#handle1, input, e.target.y" mapin="0, 100" mapout="10, 0"></var-->
+
+
+
 	<Chain portamento="10">
-		<var name="y" follow="x"></var>
-		<var name="c" value="0"></var>
 
-		<OscillatorNode type="sawtooth">
-			<frequency follow="y" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [0, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency>
-		</OscillatorNode>
 
-		<BiquadFilterNode type="lowpass">
-			<frequency value="1000" map="0 100 2000 20" curve="easeOut"></frequency>
-		</BiquadFilterNode>
+		<Mixer>
+			<OscillatorNode type="sawtooth" frequency="$f"></OscillatorNode>
+			<!--OscillatorNode type="sawtooth" frequency="$f*2"></OscillatorNode>
+			<OscillatorNode type="sawtooth" frequency="$f*3"></OscillatorNode>
+			<OscillatorNode type="sine" frequency="var(f)*5"></OscillatorNode>
+			<OscillatorNode type="sine" frequency="var(f)*7"></OscillatorNode-->
+		</Mixer>
+		<!--var name="third" value="3"></var-->
+
+
+			<!--frequency follow="f"></frequency-->
+			<!--frequency follow="relX" mapin="10, 25, 75, 90" mapout="24, 36, 60, 72" steps="[false, [0, 2, 3, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></frequency-->
+
+
+		<BiquadFilterNode type="lowpass" frequency="$cutoff"></BiquadFilterNode>
+
+		<!--BiquadFilterNode type="bandpass" frequency="var(handleX)" Q="var(handleY)"></BiquadFilterNode-->
 
 		<GainNode>
 			<gain>
-				<Envelope adsr="100 10 50 20" trig="mouse" max="1"></Envelope>
+				<Envelope adsr="10 10 50 20" trig="pointer" max="1"></Envelope>
 			</gain>
 		</GainNode>
 
-		<PannerNode panningModel="HRTF" rotationZ="-1" coneInnerAngle="0" coneOuterAngle="360" coneOuterGain="1" positionZ="1">
-			<positionX follow="relX" map="0 100 -5 5"></positionX>
+		<!--PannerNode panningModel="HRTF" rotationZ="-1" coneInnerAngle="0" coneOuterAngle="360" coneOuterGain="1" positionZ="1">
+			<positionX follow="relX" map="0 200 -5 5"></positionX>
 			<positionY follow="relY" map="100 0 -5 5"></positionY>
 			<positionZ follow="relY" map="100 0 -5 5"></positionZ>
-		</PannerNode>
+		</PannerNode-->
 
 	</Chain>
 

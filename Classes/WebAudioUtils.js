@@ -1,17 +1,34 @@
 
+
 class WebAudioUtils {
 
 
 
 }
 
-
+var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_]*)|var[(]([a-z0-9_]+)[)]/gi;
+WebAudioUtils.rxp = rxp;
 
 WebAudioUtils.typeFixParam = (param, value) => {
 
 	//param = param.toLowerCase();
 	let arr;
 	let floatVal;
+	if(WebAudioUtils.nrOfVariableNames(value)){
+		let firstChar = value.charAt(0);
+		if(firstChar == "[" || firstChar == "{"){
+			// JSON array or object
+			//value = WebAudioUtils.replaceVariableNames(value, '"');
+			value = WebAudioUtils.wrapVariableNames(value, '"');
+			try {
+				// multi dimensional array
+				value = JSON.parse(value);
+			} catch {
+
+			}
+		}
+		return value;
+	}
 
 	switch(param){
 
@@ -50,8 +67,6 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "portamento":
 		case "max":
 		case "delay":
-
-
 
 		// AudioNodes
 
@@ -436,10 +451,54 @@ WebAudioUtils.convertUsingMath = (x, conv) => {
 }
 
 
+WebAudioUtils.nrOfVariableNames = (str = "") => {
+	// regExp
+	if(typeof str != "string"){return 0};
+
+	// ${x} || $x || var(x) -> this.getVariable(x)
+	return [...str.matchAll(rxp)].length;
+}
+
+WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
+	if(typeof str != "string"){return 0};
+	// regExp
+	return str.replaceAll(rxp, (a, b, c, d) => {
+		let v = b || c || d;
+		return `${q}this.getVariable('${v}')${q}`;
+	});
+}
+
+WebAudioUtils.wrapVariableNames = (str = "", q = "") => {
+	if(typeof str != "string"){return 0};
+	// regExp
+	return str.replaceAll(rxp, (a, b, c, d) => {
+		let v = b || c || d;
+		return q + a + q;
+	});
+}
+
+WebAudioUtils.strToVariables = (str = "", callerNode, variableType) => {
+	// regExp
+	// ${x} || var(x) -> this.getVariable(x)
+	if(typeof str != "string"){return {}};
+	let variables = {};
+
+	[...str.matchAll(rxp)].forEach(match => {
+		let variable = match[1] || match[2] || match[3];
+		let parentObj = WebAudioUtils.getVariableContainer(variable, callerNode, variableType);
+		variables[variable] = parentObj[variable];
+	});
+
+	return variables;
+}
+
+
+
 WebAudioUtils.getVariableContainer = (variable, callerNode, variableType) => {
 	let target;
 	let curNode = callerNode;
 	let rootNode = curNode.getRootNode();
+	variable = variable.split(".").shift();
 	while(!target && curNode != rootNode){
 		if(curNode.obj && curNode.obj.getVariable(variable) instanceof variableType){
 			// if target is the name of a variable that is specified

@@ -14,6 +14,10 @@ class VariableContainer {
 		return this[key];
 	}
 
+	getVariableObject(key){
+		return this._props[key];
+	}
+
 }
 
 
