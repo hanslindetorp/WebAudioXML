@@ -7,7 +7,9 @@ class WebAudioUtils {
 }
 
 var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_]*)|var[(]([a-z0-9_]+)[)]/gi;
+var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
 WebAudioUtils.rxp = rxp;
+WebAudioUtils.rxpVal = rxpVal;
 
 WebAudioUtils.typeFixParam = (param, value) => {
 
@@ -19,7 +21,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		if(firstChar == "[" || firstChar == "{"){
 			// JSON array or object
 			//value = WebAudioUtils.replaceVariableNames(value, '"');
-			value = WebAudioUtils.wrapVariableNames(value, '"');
+			value = WebAudioUtils.wrapExpression(value, '"');
 			try {
 				// multi dimensional array
 				value = JSON.parse(value);
@@ -468,13 +470,10 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	});
 }
 
-WebAudioUtils.wrapVariableNames = (str = "", q = "") => {
-	if(typeof str != "string"){return 0};
-	// regExp
-	return str.replaceAll(rxp, (a, b, c, d) => {
-		let v = b || c || d;
-		return q + a + q;
-	});
+WebAudioUtils.wrapExpression = (str = "", q = "") => {
+	if(typeof str != "string"){return 0};	
+
+	return str.replaceAll(rxpVal, a => parseFloat(a) == a ? a : q + a + q);
 }
 
 WebAudioUtils.strToVariables = (str = "", callerNode, variableType) => {
