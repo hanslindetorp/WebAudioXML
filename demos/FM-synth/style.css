@@ -6,6 +6,10 @@ html, body {
 	background-color: black;
 }
 
+a {
+	color: #ebab34;
+}
+
 * {
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webk	it-user-select: none; /* Safari */

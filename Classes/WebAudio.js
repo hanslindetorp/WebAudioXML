@@ -99,6 +99,11 @@ class WebAudio {
 					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
 
+					// ugly workaround to make it make sure the variables are initing depending audio parameters
+					this.setVariable("pointerdown", 0);
+					this.setVariable("mousedown", 0);
+					this.setVariable("touchdown", 0);
+
 
 				});
 			});

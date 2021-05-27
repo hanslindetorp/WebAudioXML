@@ -1716,6 +1716,7 @@ class InteractionManager {
 		}
 		this._variables.touch = touches;
 		this.touchIDs = [];
+		this._variables.pointerdown = 0;
 
 		this._variables.client = [];
 
@@ -3725,6 +3726,10 @@ class Watcher {
 		// HTMLelement
 		// HTMLelement, variable
 		// HTMLelement, event, variable
+
+		if(arr == "$pointerdown"){
+			console.log(0);
+		}
 
 		this._variables = this.strToVariables(arr, xmlNode, Variable, params);
 		if(Object.keys(this._variables).length > 0){

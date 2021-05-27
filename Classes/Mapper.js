@@ -153,7 +153,7 @@ class Mapper{
 
 			if(this.steps){
 				let curSteps = this.steps[i % this.steps.length];
-				if(curSteps){
+				if(curSteps instanceof Array){
 					return this.applySteps(x, i, curSteps);
 				}
 			}
@@ -176,7 +176,7 @@ class Mapper{
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
 
-		if(steps){
+		if(steps instanceof Array){
 			let out1 = this.mapout[i % this.mapout.length];
 			let out2 = this.mapout[(i+1) % this.mapout.length];
 			let range = Math.abs(out2 - out1);

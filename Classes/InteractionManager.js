@@ -24,6 +24,7 @@ class InteractionManager {
 		}
 		this._variables.touch = touches;
 		this.touchIDs = [];
+		this._variables.pointerdown = 0;
 
 		this._variables.client = [];
 

@@ -3,7 +3,7 @@
 	<Chain>
 
 		<AudioBufferSourceNode loop="true" src="audio/dr1.mp3" trig="pointer" loopStart="0" loopEnd="5050">
-			<playbackRate value="1" follow="relX" map="0, 100, -2, 2"></playbackRate>
+			<playbackRate follow="relX" map="0, 100, 0, 2"></playbackRate>
 		</AudioBufferSourceNode>
 
 	</Chain>
