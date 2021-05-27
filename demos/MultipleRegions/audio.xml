@@ -4,10 +4,7 @@
 	<var name="third" value="$dir" mapin="90, 270, 360" mapout="4, 3, 4"></var>
 	<var name="f" value="$relX" mapin="3, 25, 75, 97" mapout="24, 36, 60, 72" steps="[false, [0, 2, $third, 5, 7, 8, 10, 12], false]" convert="MIDI->frequency"></var>
 	<var name="cutoff" value="$relY" mapin="25, 75" mapout="10000, 150" curve="easeOut"></var>
-	<!--var name="handleX" follow="#handle1, input, e.target.x" mapin="0, 100" mapout="300, 1000" curve="2"></var>
-	<var name="handleY" follow="#handle1, input, e.target.y" mapin="0, 100" mapout="10, 0"></var-->
-
-
+	
 
 	<Chain portamento="10">
 
