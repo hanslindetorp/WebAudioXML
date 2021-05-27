@@ -34,7 +34,7 @@ Hans
 
 ### DEMOs
 Basic example with a touch controlled synth:
-https://hanslindetorp.github.io/WebAudioXML/DEMOs
+https://hanslindetorp.github.io/WebAudioXML/demos
 
 Interactive examples on CodePen:
 https://codepen.io/collection/DjaYkE
