@@ -1,22 +1,6 @@
 <!doctype html>
 
 
-<!--
-
-<h2>Click and slide to play</h2>
-<ul>
-	<li>Pointer relative X position controls pitch</li>
-	<li>Pointer relative Y position controls cutoff frequency of biquad filter</li>
-</ul>
-<p>WebAudioXML is a javascript library that makes it possible to create
-	Web Audio applications using XML syntax. It is a PhD research project by
-	Hans Lindetorp. Please follow me on
-	<a href="https://hans.arapoviclindetorp.se">https://hans.arapoviclindetorp.se</a> and
-	<a href="https://www.facebook.com/hanslindetorpresearch/">https://www.facebook.com/hanslindetorpresearch/</a>
-</p>
-
--->
-
 <html>
 	<head>
 		<meta charset="UTF-8" />
@@ -67,17 +51,20 @@
 	<body>
 		<div id="container">
 			<div id="instructions">
-				<h3>Periodic Wavetable with WebAudioXML</h3>
-				<p>Use Periodic Wavetables to generate and control a sound with WebAudioXML</p>
+				<h3>WebAudioXML - Touch Synth DEMO</h3>
+				<p>WebAudioXML makes it possible to build a WebAudio application with HTML and XML without writing a single line of javascript. 
+				It aims at making it easy to get started with WebAudio and also contributes with a syntax that gives a clear overview of the 
+				audio connections and configurations.</p>
+				<p>For detailed information, please read the comments in the code: <a href="audio.xml">audio.xml</a></p>
+				<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation 
+				and download links, please visit https://github.com/hanslindetorp/WebAudioXML</p>
+				<button onclick="webAudioXML.lastGesture.play()">REPEAT LAST GESTURE</button>
 			</div>
 			<div id="touchArea"></div>
-
-			<p>For detailed information, please read the comments in the code: <a href="audio.xml">audio.xml</a></p>
-			<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation 
-			and download links, please visit https://github.com/hanslindetorp/WebAudioXML</p>
 		</div>
 
 		<script src="WebAudioXML.js" data-source="audio.xml"></script>
+		<script src="eventData.js"></script>
 
 	</body>
 </html>

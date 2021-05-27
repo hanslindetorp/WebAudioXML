@@ -67,25 +67,16 @@
 	<body>
 		<div id="container">
 			<div id="instructions">
-				<h3>WebAudioXML - Touch Synth DEMO</h3>
-				<p>WebAudioXML makes it possible to build a WebAudio application with HTML and XML without writing a single line of javascript. 
-				It aims at making it easy to get started with WebAudio and also contributes with a syntax that gives a clear overview of the 
-				audio connections and configurations.</p>
-				<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation 
-				and download links, please visit https://github.com/hanslindetorp/WebAudioXML</p>
-				<!--
-				<button onclick="console.log(webAudioXML.lastGesture)">OUTPUT LAST GESTURE IN CONSOLE</button>
-				<button onclick="console.log(webAudioXML.getSequence('_storedGesture'))">OUTPUT STORED GESTURE IN CONSOLE</button>
-				<button onclick="webAudioXML.copyLastGestureToClipboard()">COPY LAST GESTURE TO CLIPBOARD</button>
-				<button onclick="webAudioXML.playSequence('_storedGesture')">PLAY STORED GESTURE</button>
--->
-				<button onclick="webAudioXML.lastGesture.play()">REPEAT LAST GESTURE</button>
+				<h3>WebAudioXML</h3>
+				<p>Control the playback of an audiofile by sliding left and right</p>
 			</div>
 			<div id="touchArea"></div>
-		</div>
 
+			<p>For detailed information, please read the comments in the code: <a href="audio.xml">audio.xml</a></p>
+				<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation 
+				and download links, please visit https://github.com/hanslindetorp/WebAudioXML</p>
+		</div>
 		<script src="WebAudioXML.js" data-source="audio.xml"></script>
-		<script src="eventData.js"></script>
 
 	</body>
 </html>

@@ -1,22 +1,6 @@
 <!doctype html>
 
 
-<!--
-
-<h2>Click and slide to play</h2>
-<ul>
-	<li>Pointer relative X position controls pitch</li>
-	<li>Pointer relative Y position controls cutoff frequency of biquad filter</li>
-</ul>
-<p>WebAudioXML is a javascript library that makes it possible to create
-	Web Audio applications using XML syntax. It is a PhD research project by
-	Hans Lindetorp. Please follow me on
-	<a href="https://hans.arapoviclindetorp.se">https://hans.arapoviclindetorp.se</a> and
-	<a href="https://www.facebook.com/hanslindetorpresearch/">https://www.facebook.com/hanslindetorpresearch/</a>
-</p>
-
--->
-
 <html>
 	<head>
 		<meta charset="UTF-8" />
@@ -67,13 +51,19 @@
 	<body>
 		<div id="container">
 			<div id="instructions">
-				<h3>WebAudioXML</h3>
-				<p>Control the playback of an audiofile by sliding left and right</p>
+				<h3>WebAudioXML - Multiple Regions DEMO</h3>
+				<p>This DEMO shows how to configure complex mappings between an incoming variable and the frequency output. 
+					In this example different regions on the X-axis map to either sliding pitches or musical scales. 
+				</p>
+				<p>For detailed information, please read the comments in the code: <a href="audio.xml">audio.xml</a></p>
+				<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation 
+				and download links, please visit https://github.com/hanslindetorp/WebAudioXML</p>
 			</div>
 			<div id="touchArea"></div>
 		</div>
 
-		<script src="../../WebAudioXML.js" data-source="audio.xml"></script>
+		<script src="WebAudioXML.js" data-source="audio.xml"></script>
+		<script src="eventData.js"></script>
 
 	</body>
 </html>
