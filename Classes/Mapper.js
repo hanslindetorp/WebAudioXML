@@ -22,7 +22,15 @@ class Mapper{
 		this.sourceValues = [];
 
 
-		this.steps = params.steps;
+		let steps = params.steps;
+		// wrap single step array in container if needed
+		if(steps instanceof Array){
+			if(!steps.find(el => el instanceof Array)){
+				steps = [steps];
+			}
+		}
+		this.steps = steps;
+
 		this.curve = params.curve;
 		this.value = params.value;
 		this.conv = params.convert;

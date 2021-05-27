@@ -32,7 +32,7 @@
 
 			* {
 			  -webkit-touch-callout: none; /* iOS Safari */
-			  -webkit-user-select: none; /* Safari */
+			  -webk	it-user-select: none; /* Safari */
 			  -khtml-user-select: none; /* Konqueror HTML */
 			  -moz-user-select: none; /* Old versions of Firefox */
 			  -ms-user-select: none; /* Internet Explorer/Edge */
@@ -57,30 +57,20 @@
 	<body>
 		<div id="container">
 			<div id="instructions">
-				<h3>WebAudioXML - Touch Synth DEMO</h3>
-				<p>WebAudioXML makes it possible to build a WebAudio application with HTML and XML without writing a single line of javascript.
-				It aims at making it easy to get started with WebAudio and also contributes with a syntax that gives a clear overview of the
-				audio connections and configurations.</p>
+				<h3>WebAudioXML - Flexible scale DEMO</h3>
+				<p>This DEMO exemplifies how WebAudioXML can be used to define a flexible scale. When you slide to the right on the touch-area,
+					the pitches snap to a major scale and when you slide to the left, they snap to a minor scale. It's done using two variable 
+					objects - one to follow the position on the X-axis and one to follow the direction on the X-axis. Please read the comments
+					<a href="audio.xml">audio.xml</a> for more details.
+				</p>
 				<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation
 				and download links, please visit https://github.com/hanslindetorp/WebAudioXML</p>
-				<!--
-				<button onclick="console.log(webAudioXML.lastGesture)">OUTPUT LAST GESTURE IN CONSOLE</button>
-				<button onclick="console.log(webAudioXML.getSequence('_storedGesture'))">OUTPUT STORED GESTURE IN CONSOLE</button>
-				<button onclick="webAudioXML.copyLastGestureToClipboard()">COPY LAST GESTURE TO CLIPBOARD</button>
-				<button onclick="webAudioXML.playSequence('_storedGesture')">PLAY STORED GESTURE</button>
--->
-				<button onclick="webAudioXML.lastGesture.play()">REPEAT LAST GESTURE</button>
 			</div>
-			<waxml-xy-area id="touchArea" background-color="#696" grid-color="#9C9" columns="29" rows="1">
 
-				<waxml-xy-handle id="handle1" background-color="#999" width="50px" height="30px"  x="50" y="50">Bandpass</waxml-xy-handle>
-				<waxml-xy-handle id="handle2" background-color="red" width="50px" height="30px" x="25" y="50">Pan</waxml-xy-handle>
-
-			</waxml-xy-area>
+			<waxml-xy-area id="touchArea" background-color="#696" grid-color="#9C9" columns="8" rows="1"></waxml-xy-area>
 		</div>
 
 		<script src="WebAudioXML.js" data-source="audio.xml"></script>
-		<script src="eventData.js"></script>
 
 	</body>
 </html>

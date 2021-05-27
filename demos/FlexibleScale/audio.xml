@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
+
+	<!-- This variable 'up' reads the global variable 'dirX' (the current direction on the X-axis) which either
+		is -1 (left) or 1 (right). It is mapped to 0 and 1 respectively. -->
+	<var name="up" value="$dirX" mapin="-1, 1" mapout="0, 1"></var>
+
+	<!-- This variable 'pitch' reads the global variable 'relX' (the current position of the pointer on the touch are) which 
+		is a value between 0 and 100 (%). It is mapped to a value between 60 and 72. These values are typical MIDI note values
+		that will be snapped to steps. The 'steps' attribute is an array of values indicating the scale pattern used for snapping
+		the value to a pattern of integers between 60 and 72. The pattern refers to the variable '$up' which increases those step
+		values when the pointer is moving to the right.
+		Finally the value is converted from the range of MIDI notes (60-72) to the range of frequencies for those pitches. -->
+
+	<var name="pitch" value="$relX" mapin="0, 100" mapout="60, 72" steps="[0, 2, 3+$up/2, 5, 7, 8+$up*0.75, 10+$up*0.6, 12]" convert="MIDI->frequency"></var>
+
+
+	<Chain portamento="10">
+
+
+		<Mixer>
+			<OscillatorNode type="sine" frequency="$pitch"></OscillatorNode>
+		</Mixer>
+
+
+		<GainNode>
+			<gain>
+				<Envelope adsr="10 10 50 20" trig="pointer" max="1"></Envelope>
+			</gain>
+		</GainNode>
+
+	</Chain>
+
+</Audio>

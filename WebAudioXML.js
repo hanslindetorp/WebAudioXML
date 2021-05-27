@@ -1898,6 +1898,7 @@ class InteractionManager {
 	}
 
 	copyTouchProperties(source, target){
+
 		target.identifier  = source.identifier;
 		target.screenX = source.screenX;
 		target.screenY = source.screenY;
@@ -1914,8 +1915,10 @@ class InteractionManager {
 
 	setRelativePos(obj, event){
 		if(event.target){
-			obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
-			obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+			let newX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
+			let newY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+			obj.relX = newX;
+			obj.relY = newY;
 		}
 	}
 
@@ -1930,6 +1933,7 @@ class InteractionManager {
 			obj.relMoveY = 0;
 		} else {
 			// update
+
 			obj.initX = typeof obj.initX === "undefined" ? obj.clientX : obj.initX;
 			obj.initY = typeof obj.initY === "undefined" ? obj.clientY : obj.initY;
 			obj.moveX = x - obj.initX;
@@ -2098,6 +2102,23 @@ class InteractionManager {
 
 		this._variables.pointerX = e.clientX;
 		this._variables.pointerY = e.clientY;
+
+		let oldX = this._variables.relX || e.relX;
+		let oldY = this._variables.relY || e.relY;
+		let diffX = e.relX - oldX;
+		let diffY = e.relY - oldY;
+
+		let dirX = diffX ? (diffX > 0 ? 1 : -1) : 0;
+		let dirY = diffY ? (diffY > 0 ? 1 : -1) : 0;
+
+		this._variables.dirX = dirX;
+		this._variables.dirY = dirY;
+
+		if(diffX && diffY){
+
+			let dir = (Math.atan2(diffY,diffX) / Math.PI * 180 + 360 + 90) % 360;
+			this._variables.dir = dir;
+		}
 
 		this._variables.relX = e.relX;
 		this._variables.relY = e.relY;
@@ -2330,7 +2351,15 @@ class Mapper{
 		this.sourceValues = [];
 
 
-		this.steps = params.steps;
+		let steps = params.steps;
+		// wrap single step array in container if needed
+		if(steps instanceof Array){
+			if(!steps.find(el => el instanceof Array)){
+				steps = [steps];
+			}
+		}
+		this.steps = steps;
+
 		this.curve = params.curve;
 		this.value = params.value;
 		this.conv = params.convert;
@@ -4044,7 +4073,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.3";
+var version = "1.0.4";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -4462,7 +4491,9 @@ class WebAudioUtils {
 }
 
 var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_]*)|var[(]([a-z0-9_]+)[)]/gi;
+var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
 WebAudioUtils.rxp = rxp;
+WebAudioUtils.rxpVal = rxpVal;
 
 WebAudioUtils.typeFixParam = (param, value) => {
 
@@ -4474,7 +4505,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		if(firstChar == "[" || firstChar == "{"){
 			// JSON array or object
 			//value = WebAudioUtils.replaceVariableNames(value, '"');
-			value = WebAudioUtils.wrapVariableNames(value, '"');
+			value = WebAudioUtils.wrapExpression(value, '"');
 			try {
 				// multi dimensional array
 				value = JSON.parse(value);
@@ -4923,13 +4954,10 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	});
 }
 
-WebAudioUtils.wrapVariableNames = (str = "", q = "") => {
-	if(typeof str != "string"){return 0};
-	// regExp
-	return str.replaceAll(rxp, (a, b, c, d) => {
-		let v = b || c || d;
-		return q + a + q;
-	});
+WebAudioUtils.wrapExpression = (str = "", q = "") => {
+	if(typeof str != "string"){return 0};	
+
+	return str.replaceAll(rxpVal, a => parseFloat(a) == a ? a : q + a + q);
 }
 
 WebAudioUtils.strToVariables = (str = "", callerNode, variableType) => {

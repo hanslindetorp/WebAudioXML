@@ -206,6 +206,7 @@ class InteractionManager {
 	}
 
 	copyTouchProperties(source, target){
+
 		target.identifier  = source.identifier;
 		target.screenX = source.screenX;
 		target.screenY = source.screenY;
@@ -222,8 +223,10 @@ class InteractionManager {
 
 	setRelativePos(obj, event){
 		if(event.target){
-			obj.relX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
-			obj.relY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+			let newX = (event.clientX-event.target.offsetLeft) / event.target.offsetWidth * 100;
+			let newY = (event.clientY-event.target.offsetTop) / event.target.offsetHeight * 100;
+			obj.relX = newX;
+			obj.relY = newY;
 		}
 	}
 
@@ -238,6 +241,7 @@ class InteractionManager {
 			obj.relMoveY = 0;
 		} else {
 			// update
+
 			obj.initX = typeof obj.initX === "undefined" ? obj.clientX : obj.initX;
 			obj.initY = typeof obj.initY === "undefined" ? obj.clientY : obj.initY;
 			obj.moveX = x - obj.initX;
@@ -406,6 +410,23 @@ class InteractionManager {
 
 		this._variables.pointerX = e.clientX;
 		this._variables.pointerY = e.clientY;
+
+		let oldX = this._variables.relX || e.relX;
+		let oldY = this._variables.relY || e.relY;
+		let diffX = e.relX - oldX;
+		let diffY = e.relY - oldY;
+
+		let dirX = diffX ? (diffX > 0 ? 1 : -1) : 0;
+		let dirY = diffY ? (diffY > 0 ? 1 : -1) : 0;
+
+		this._variables.dirX = dirX;
+		this._variables.dirY = dirY;
+
+		if(diffX && diffY){
+
+			let dir = (Math.atan2(diffY,diffX) / Math.PI * 180 + 360 + 90) % 360;
+			this._variables.dir = dir;
+		}
 
 		this._variables.relX = e.relX;
 		this._variables.relY = e.relY;
