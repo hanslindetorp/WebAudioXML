@@ -1,0 +1,18 @@
+
+html, body {
+  font-family: sans-serif;
+}
+
+
+input#slider1, img{
+  width: 100%;
+  display: block;
+}
+
+table {
+  width: 100%;
+}
+
+table td {
+  text-align: center;
+}
