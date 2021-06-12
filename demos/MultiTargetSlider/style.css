@@ -5,14 +5,7 @@ html, body {
 
 
 input#slider1, img{
+  margin-top: 1em;
   width: 100%;
   display: block;
-}
-
-table {
-  width: 100%;
-}
-
-table td {
-  text-align: center;
 }
