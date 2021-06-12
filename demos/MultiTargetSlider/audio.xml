@@ -56,8 +56,11 @@ The clavinet starts on level "0.5" and fades out towards 10. Later it comes back
 				<gain value="0" follow="#slider1 input value" mapin="20,30" mapout="0,1"></gain>
 			</GainNode>
 
-			<GainNode id="drums">
-				<gain value="0" follow="#slider1 input value" mapin="50,60" mapout="0,1"></gain>
+			<GainNode id="drums1">
+				<gain value="0" follow="#slider1 input value" mapin="30,40,60,61" mapout="0,1,1,0"></gain>
+			</GainNode>
+			<GainNode id="drums2">
+				<gain value="0" follow="#slider1 input value" mapin="60,61" mapout="0,1"></gain>
 			</GainNode>
 		</Mixer>
 

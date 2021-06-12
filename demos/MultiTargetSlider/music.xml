@@ -9,7 +9,8 @@
     <track src="organ" output="#organ"></track>
     <track src="bass1" output="#bass1"></track>
     <track src="bass2" output="#bass2"></track>
-    <track src="drums" output="#drums"></track>
+    <track src="drums1" output="#drums1"></track>
+    <track src="drums2" output="#drums2"></track>
     <track src="shaker" output="#shaker"></track>
   </arrangement>
 </imusic>
