@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="0dB">
 
+	<var name="slider1" follow="#slider1 input value"></var>
+
 	<Chain>
 <!-- 
 All loops are controlled by imusic (https://github.com/hanslindetorp/imusic) and are specified in the file "music.xml"
@@ -9,13 +11,13 @@ The range of the slider is specified in "index.html" and is set to 0 - 100.
 -->
 		<Mixer>
 
-			<Chain id="pad">
 <!-- 
 The pad is routed through a "chain" that acts similar to a channel strip in a mixing console. This setup lets the
 slider control both the gain level and the cutoff frequency for the high-pass filter. The mapping makes the pad 
 play at full volume from start and fade out when the slider moves towards 60. The Highpass-filer lower the 
 cutoff frequency and the Q-value when the slider moves from 0 to 10.
 -->
+			<Chain id="pad">
 				<GainNode>
 					<gain follow="#slider1 input value" mapin="30,60" mapout="1,0"></gain>
 				</GainNode>
@@ -44,16 +46,20 @@ The clavinet starts on level "0.5" and fades out towards 10. Later it comes back
 				<gain value="0" follow="#slider1 input value" mapin="70,80" mapout="0,1"></gain>
 			</GainNode>
 
+			<GainNode id="shaker">
+				<gain value="0" follow="#slider1 input value" mapin="20,30" mapout="0,1"></gain>
+			</GainNode>
+			
+<!-- There are two different drum loops and bass loops whose gain levels go together. This results in both
+instruments changing from a soft style to a busy when the slider moves from 60 to 61.
+-->
+
 			<GainNode id="bass1">
 				<gain value="0" follow="#slider1 input value" mapin="30,40,60,61" mapout="0,4,4,0"></gain>
 			</GainNode>
 
 			<GainNode id="bass2">
 				<gain value="0" follow="#slider1 input value" mapin="60,61" mapout="0,1"></gain>
-			</GainNode>
-
-			<GainNode id="shaker">
-				<gain value="0" follow="#slider1 input value" mapin="20,30" mapout="0,1"></gain>
 			</GainNode>
 
 			<GainNode id="drums1">

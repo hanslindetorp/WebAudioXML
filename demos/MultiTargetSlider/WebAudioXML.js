@@ -1716,6 +1716,7 @@ class InteractionManager {
 		}
 		this._variables.touch = touches;
 		this.touchIDs = [];
+		this._variables.pointerdown = 0;
 
 		this._variables.client = [];
 
@@ -2482,7 +2483,7 @@ class Mapper{
 
 			if(this.steps){
 				let curSteps = this.steps[i % this.steps.length];
-				if(curSteps){
+				if(curSteps instanceof Array){
 					return this.applySteps(x, i, curSteps);
 				}
 			}
@@ -2505,7 +2506,7 @@ class Mapper{
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
 
-		if(steps){
+		if(steps instanceof Array){
 			let out1 = this.mapout[i % this.mapout.length];
 			let out2 = this.mapout[(i+1) % this.mapout.length];
 			let range = Math.abs(out2 - out1);
@@ -4150,6 +4151,11 @@ class WebAudio {
 					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
 
+					// ugly workaround to make it make sure the variables are initing depending audio parameters
+					this.setVariable("pointerdown", 0);
+					this.setVariable("mousedown", 0);
+					this.setVariable("touchdown", 0);
+
 
 				});
 			});
@@ -4505,7 +4511,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		if(firstChar == "[" || firstChar == "{"){
 			// JSON array or object
 			//value = WebAudioUtils.replaceVariableNames(value, '"');
-			value = WebAudioUtils.wrapExpression(value, '"');
+			value = WebAudioUtils.wrapExpression(value);
 			try {
 				// multi dimensional array
 				value = JSON.parse(value);
@@ -4954,10 +4960,10 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	});
 }
 
-WebAudioUtils.wrapExpression = (str = "", q = "") => {
+WebAudioUtils.wrapExpression = (str = "", q = '"') => {
 	if(typeof str != "string"){return 0};	
 
-	return str.replaceAll(rxpVal, a => parseFloat(a) == a ? a : q + a + q);
+	return str.replaceAll(rxpVal, a => parseFloat(a) == a ? a : a == " " ? "" : q + a + q);
 }
 
 WebAudioUtils.strToVariables = (str = "", callerNode, variableType) => {
