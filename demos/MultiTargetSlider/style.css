@@ -9,3 +9,10 @@ input#slider1, img{
   width: 100%;
   display: block;
 }
+
+#marker {
+  width: 2px;
+  background-color: black;
+  display: block;
+  position: absolute;
+}
