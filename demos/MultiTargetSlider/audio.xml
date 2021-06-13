@@ -55,7 +55,7 @@ instruments changing from a soft style to a busy when the slider moves from 60 t
 -->
 
 			<GainNode id="bass1">
-				<gain value="0" follow="#slider1 input value" mapin="30,40,60,61" mapout="0,4,4,0"></gain>
+				<gain value="0" follow="#slider1 input value" mapin="30,40,60,61" mapout="0,2,2,0"></gain>
 			</GainNode>
 
 			<GainNode id="bass2">
