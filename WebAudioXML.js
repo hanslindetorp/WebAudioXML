@@ -4919,15 +4919,36 @@ WebAudioUtils.paramNameToRange = name => {
 	  	break;
 
 		case "gain":
-			range.default = 1;
+		range.default = 1;
 	  	range.min = 0;
 	  	range.max = 4;
 	  	range.conv = 2;
-			break;
+		break;
+
+		case "positionX":
+		case "positionY":
+		case "positionZ":
+		range.default = 0;
+		range.min = -10;
+		range.max = 10;
+		range.conv = 1;
+		break;
+
+		case "coneInnerAngle":
+		case "coneOuterAngle":
+		case "orientationX":
+		case "orientationY":
+		case "orientationZ":
+		range.default = 360;
+		range.min = 0;
+		range.max = 360;
+		range.conv = 1;
+		break;
+
 
 
 		default:
-			range.default = 1;
+		range.default = 1;
 	  	range.min = 0;
 	  	range.max = 1;
 	  	range.conv = 1;
