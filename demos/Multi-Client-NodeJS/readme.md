@@ -40,3 +40,11 @@ There are many ways to change the content completely.
 
 
 
+Have fun and please follow my research on https://hans.arapoviclindetorp.se and https://www.facebook.com/hanslindetorpresearch/.
+ 
+### Academic publications:
+* [WebAudioXML: Proposing a new standard for structuring web audio (SMC2020)](https://zenodo.org/record/3898655#.X3HgbC0zLa4)
+* [Audio Parameter Mapping Made Explicit Using WebAudioXML (SMC2021)](https://www.smc2020torino.it/SMC2021_papers/SMC_2021_paper_14.pdf)
+* [Putting Web Audio API To The Test: Introducing WebAudioXML As A Pedagogical Platform (WAC2021)](https://webaudioconf2021.com/paper-b-1/)
+* [Sonification for everyone everywhere – Evaluating the WebAudioXML Sonification Toolkit for browsers (ICAD2021)](https://icad2021.icad.org/wp-content/uploads/2021/06/ICAD_2021_9.pdf)
+
