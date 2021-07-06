@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>iMusic - WebAudioXML - NodeJS - Socket.io</title>
+		<link href="mystyle.css" rel="stylesheet" type="text/css" />
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<!--script src="script/socket.io-1.4.5.js"></script-->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js" integrity="sha256-bQmrZe4yPnQrLTY+1gYylfNMBuGfnT/HKsCGX+9Xuqo=" crossorigin="anonymous"></script>
+		<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+		<script src="https://momdev.se/max.size.js"></script>
+
+	</head>
+
+
+	<body>
+	<div id="container">
+			<span>
+				<button onclick="iMusic.play()">PLAY</button>
+				<button onclick="iMusic.stop()">STOP</button>
+				<button onclick="window.history.back()">Back</button>
+			</span>
+
+			<h3>Client 0 - touch 0 (Drum Loop):</h3>
+			<p>relY - lowpass Filter Cutoff, relX - lowpass Filter Q, deviceOrientation.gamma - Reverb send level</p>
+
+			<h3>Client 1 - touch 0 (Bass Sawtooth Synth):</h3>
+			<p>relX - frequency (MIDI notes) on oscillator, deviceOrientation.gamma - detune on lowpass filter cutoff, touch start/end - trig envelopes (filter + gain)</p>
+
+			<h3>Client 2 - touch 0 (Lead Square Synth):</h3>
+			<p>relX - frequency (MIDI notes) on oscillator, force - detune on lowpass filter cutoff, relY - reverb send, touch start/end - trig envelopes (filter + gain)</p>
+
+			<div id="touchArea"></div>
+		</div>
+		<script src="https://hans.arapoviclindetorp.se/projects/web-audio-xml/WebAudioXML.js" data-source="mixer.xml"></script>
+		<!--script src="WebAudioXML.js" data-source="mixer.xml"></script-->
+
+		<script src="https://momdev.se/interactivemusic/interactivemusic_0899.js" data-music-structure="imusic.xml"></script>
+		<script src="myscript.js"></script>
+	</body>
+</html>

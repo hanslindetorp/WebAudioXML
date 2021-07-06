@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<imusic version="1.0"
+	tempo="95"
+	timeSign="4/4"
+	audioPath="audio"
+	loopLength="2"
+	fadeTime="0"
+	quantize="1/8">
+
+
+	<arrangement>
+		<!-- five tracks responding to the variable client0_touch0_relX in webAudioXML
+		please note that "fadeTime" is controlling the behaviour. If set to "0", the
+		files will continue playing until finished and then be exchange.  If set to any value
+		above "0" the change will occur on the next position specified by "changeOnNext"
+
+		Please also note that this -->
+		<track select-variable="client0_touch0_relX" select-value="0...19" selected="true">
+			<region>
+				<source src="dr1.mp3"></source>
+			</region>
+		</track>
+
+		<track select-variable="client0_touch0_relX" select-value="20...39">
+			<region>
+				<source src="dr2.mp3"></source>
+			</region>
+		</track>
+
+		<track select-variable="client0_touch0_relX" select-value="40...59">
+			<region>
+				<source src="dr3.mp3"></source>
+			</region>
+		</track>
+
+		<track select-variable="client0_touch0_relX" select-value="60...79">
+			<region>
+				<source src="dr4.mp3"></source>
+			</region>
+		</track>
+
+		<track select-variable="client0_touch0_relX" select-value="80...100">
+			<region>
+				<source src="dr5.mp3"></source>
+			</region>
+		</track>
+
+
+		<!-- Motifs are non-looped audio files. Specify "tags" to respond to an event
+		They can be selected in the same manner as tracks using select-variable
+	 	They are synchronized with the background music according to the quantize attribute -->
+		<motif tags="client1_touch0" select-variable="client0_touch0_relX" select-value="0...33" src="boing.mp3"></motif>
+		<motif tags="client1_touch0" select-variable="client0_touch0_relX" select-value="34...66" src="piano.mp3"></motif>
+		<motif tags="client1_touch0" select-variable="client0_touch0_relX" select-value="67...100" src="partyhorn.mp3"></motif>
+	</arrangement>
+
+
+
+</imusic>
