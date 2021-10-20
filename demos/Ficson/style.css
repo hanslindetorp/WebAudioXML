@@ -40,37 +40,6 @@ section:target {
 	z-index: 0;
 }
 
-.generator {
-	background-color: rgb(177, 218, 237);
-	border: 2px solid #444;
-	border-radius: 5px;
-	width: 200px;
-	display: inline-block;
-	padding: 10px;
-	margin: 5px;
-}
-.generator h2 {
-	font-size: 100%;
-	margin: 0px;
-}
-
-.generator label {
-	display: grid;
-	font-size: 60%;
-	height: 3.5em;
-	border-bottom: 1px dotted #333;
-	margin-top: 5px;
-}
-
-.generator input {
-	
-}
-
-.button {
-	border-radius: 2px;
-	border: 1px solid #333;
-	padding: 3px;
-	margin: 5px;
-	display: inline-block;
-	text-decoration: none;
+h1 {
+	margin-top: 1em;
 }
