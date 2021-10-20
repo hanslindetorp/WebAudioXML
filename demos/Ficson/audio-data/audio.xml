@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" controls="true" timeUnit="ms" gain="0dB" xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <!-- <var name="test"></var> -->
+    
+<!--     
+    <Chain id="Chain1" controls="true">
+        <var name="filter" mapin="0,100" mapout="20,10000"></var>
+        <xi:include href="audio-data/include.xml" />
+    </Chain> -->
+    
+
+    <xi:include href="hang-flyer/main.xml" />
+    <xi:include href="generator1/main.xml" />
+
+    <Chain>
+        <xi:include href="generator2/main.xml" />
+        <send output=".filter3"></send>
+    </Chain>
+
+    <xi:include href="generator3/main.xml" />
+    
+
+
+</Audio>

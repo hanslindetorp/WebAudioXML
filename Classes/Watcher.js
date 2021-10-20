@@ -17,11 +17,13 @@ class Watcher {
 		// HTMLelement, variable
 		// HTMLelement, event, variable
 
+		this.type = "watcher";
+
 		this._variables = this.strToVariables(arr, xmlNode, Variable, params);
 		if(Object.keys(this._variables).length > 0){
 			this.callBack = params.callBack;
 			this.value = WebAudioUtils.replaceVariableNames(arr);
-			this.update(this.value);
+			this.update(this.value, 0.001);
 			return;
 		}
 
@@ -174,11 +176,11 @@ class Watcher {
 				set(val) {
 					variableObj.value = val;
 					// this has been moved to the Variable object
-					return;
-					if(this._props[variable].value != val){
-						this._props[variable].value = val;
-						this._props[variable].callBackList.forEach(callBack => callBack(val));
-					}
+					// return;
+					// if(this._props[variable].value != val){
+					// 	this._props[variable].value = val;
+					// 	this._props[variable].callBackList.forEach(callBack => callBack(val));
+					// }
 				}
 			});
 		}
@@ -285,6 +287,9 @@ class Watcher {
 
 	}
 
+	// Den här funktionen borde delas. Den gör för mycket. Den inte bara
+	// regExpar strängen, den letar också efter Variable-object
+	// och skapar nya med relationer till dem.
 	strToVariables(str = "", xmlNode, variableType, params){
 		// regExp
 		if(typeof str != "string"){return 0};
@@ -305,7 +310,7 @@ class Watcher {
 				this.addVariableWatcher(params.waxml.variables, varName);
 			}
 			let varObj = props[varName];
-			varObj.addCallBack(v => this.update(v), prop);
+			varObj.addCallBack((v,t) => this.update(v,t), prop);
 			variables[varName] = varObj;
 
 		});
@@ -313,26 +318,38 @@ class Watcher {
 		return variables;
 	}
 
-	update(val){
+	update(val, time){
 
 		if(this.callBack){
 			val = this.valueOf(val);
-			if(typeof val !== "undefined")this.callBack(val);
+			if(typeof val !== "undefined")this.callBack(val, time);
 		}
 
 	}
 
 	valueOf(val){
 		if(typeof this.value == "string"){
+			let values = [];
 			try {
-				let v = eval(this.value);
-				val = Number.isNaN(v) ? val : v;
-				//console.log(`Watcher.update(${this.value})`);
+
+				// support comma separated array
+				this.value.split(",").forEach(v => {
+					let v1 = eval(v);
+					v1 = (Number.isNaN(v1) ? val : v1) || 0;
+					values.push(v1);
+				});
+
 			} catch {
 
 			}
+			val = values.length == 1 ? values.pop() : values;
 		}
-		return val;
+		// single value or array
+
+		// Fundera på denna. Farligt att returnera 0! Men om det är undefined 
+		// behöver detta också stoppas från att försöka sätta parameter till 
+		// undefined.
+		return val; // || 0;
 	}
 
 }

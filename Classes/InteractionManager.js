@@ -4,11 +4,18 @@ var VariableContainer = require('./VariableContainer.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
+var Variable = require("./Variable.js");
 
 class InteractionManager {
 
 	constructor(waxml){
 		this.defineCustomElements();
+
+		let initCall = e => {
+			this.waxml.init();
+			window.removeEventListener("pointerdown", initCall);
+		}
+		window.addEventListener("pointerdown", initCall);
 
 		this.eventTracker = new EventTracker();
 		this.waxml = waxml;
@@ -103,6 +110,7 @@ class InteractionManager {
 		}
 	}
 
+
 	connectToHTMLelements(){
 		this.waxml.querySelectorAll("[start]:not([start=''])").forEach((obj, i) => {
 			let trigData = WebAudioUtils.split(obj.parameters.start);
@@ -136,6 +144,72 @@ class InteractionManager {
 					el.addEventListener(eventName, e => obj.stop());
 				});
 			}
+		});
+
+
+		// add waxml commands to HTML link elements
+		[...document.querySelectorAll("*")].forEach( el => {
+
+			[...el.attributes].forEach( attr => {
+				if(attr.localName.startsWith("data-waxml-")){
+
+					// Create empty link for <a> elements
+					if(el.localName == "a"){
+						var deadLink = "javascript:void(0)";
+						if(!el.attributes.href){
+							el.setAttribute("href", deadLink);
+						} else if(el.attributes.href.nodeValue == "#"){
+							el.attributes.href.nodeValue = deadLink;
+						}
+					}
+					
+					let val = attr.nodeValue;
+					let floatVal = parseFloat(val);
+					if(!Number.isNaN(floatVal)){
+						val = floatVal;
+					}
+
+					let fn;
+					let attrNameArr = attr.localName.split("-");
+					if(attrNameArr.length == 3){
+						// insert default click event
+						attrNameArr.splice(2, 0, "click");
+					}
+
+					let eventName = attrNameArr[2];
+					let commandName = attrNameArr[3];
+
+					switch(commandName){
+						case "start":
+						case "play":
+							fn = e => this.waxml.start(val);
+							break;
+
+						case "stop":
+							fn = e => this.waxml.stop(val);
+							break;
+
+						default:
+							fn = e => {
+								this.waxml.setVariable(commandName, val);
+							}
+							break;
+					}
+					el.addEventListener(eventName, fn);
+				}
+			});
+
+		});
+
+
+		// add waxml commands to HTML input elements
+		[...document.querySelectorAll("input[data-waxml-target]:not([data-waxml-target=''])")].forEach( el => {
+			let target = el.dataset.waxmlTarget;
+			// remove dollar sign from variables
+			target = target.split("$").join("");
+			el.addEventListener("input", e => {
+				this.waxml.setVariable(target, e.target.value, 0.001);
+			});
 		});
 
 	}
@@ -544,8 +618,19 @@ class InteractionManager {
 		this._variables = this._variables || val;
 	}
 
-	setVariable(key, val){
-		this._variables[key] = val;
+	setVariable(key, val, transistionTime){
+		if(this._variables[key] instanceof Variable){
+			if(transistionTime){
+				// override transitionTime if specified
+				this._variables[key].setValue(val, transistionTime);
+			} else {
+				this._variables[key].value = val;
+			}
+			
+		} else {
+			this._variables[key] = val;
+		}
+		
 	}
 	getVariable(key, val){
 		return this._variables[key];

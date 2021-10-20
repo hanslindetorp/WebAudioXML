@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" transitionTime="1000" interactionArea="#touchArea" gain="+6dB">
+<!-- 		
+	<var name="playbackRate" value="$relX" mapin="0, 100" mapout="0, 2"></var>
+	<var name="reverbLevel" value="$relY" mapin="0, 100" mapout="6, -30" convert="db->power"></var>
+	<var name="posX" value="$relX" mapin="0, 100" mapout="-100, 100"></var>
+	<var name="posZ" value="$relY" mapin="0, 100" mapout="100, -100"></var> -->
+
+	<ObjectBasedAudio 
+		src="audio/simon.mp3"
+		loop="true" 
+		start="auto"
+
+		convolution="audio/convolution-foaje.wav"
+		convolutionGain="0dB"
+		
+		positionY="0"
+		positionX="$posx"
+		positionZ="10"
+		gain="0dB"
+	></ObjectBasedAudio>
+
+	<AmbientAudio
+		id="foajen"
+		src="audio/noise-foaje.mp3"
+		loop="true"
+		start="auto"
+		gain="0dB"
+	></AmbientAudio>
+
+	<AmbientAudio
+		id="valhallavagen"
+		src="audio/noise-valhallavagen.mp3"
+		loop="true"
+		start="auto"
+		gain="0dB"
+	></AmbientAudio>
+
+	<!-- 
+		
+	-->
+
+</Audio>

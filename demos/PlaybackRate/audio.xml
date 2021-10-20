@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="-10dB">
-	<Chain>
+<Audio version="1.0" timeUnit="ms" interactionArea="#touchArea" gain="0dB">
 
 		<AudioBufferSourceNode loop="true" src="audio/dr1.mp3" trig="pointer" loopStart="0" loopEnd="5050">
 			<playbackRate follow="relX" map="0, 100, 0, 2"></playbackRate>
 		</AudioBufferSourceNode>
 
-	</Chain>
 </Audio>

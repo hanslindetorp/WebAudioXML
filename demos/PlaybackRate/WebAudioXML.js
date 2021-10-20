@@ -6,6 +6,9 @@ var Watcher = require('./Watcher.js');
 var VariableContainer = require('./VariableContainer.js');
 var Variable = require('./Variable.js');
 var Mapper = require('./Mapper.js');
+var BufferSourceObject = require('./BufferSourceObject.js');
+var ConvolverNodeObject = require('./ConvolverNodeObject.js');
+
 
 
 
@@ -59,8 +62,10 @@ class AudioObject{
 
 
 		  	case "audiobuffersourcenode":
-		  	// just a temporary node
-		  	this._node = this._ctx.createBufferSource();
+        this._node = new BufferSourceObject(this._ctx, params);
+        // this.bufferSource = new BufferSourceObject(this._ctx, params);
+        // creates a living connection with the current active buffernode
+		  	// this._node = this.bufferSource._node;
 		  	break;
 
 
@@ -86,61 +91,8 @@ class AudioObject{
 		  	src = this._params.src;
 
 		  	if(src){
-
-
-
-			  	src = Loader.getPath(src, this._localPath);
-			  	var node = this._ctx.createConvolver();
-			  	this._node = node;
-
-
-
-			  	/*
-			  	let request = new XMLHttpRequest();
-				request.open('GET', src, true);
-				request.responseType = 'arraybuffer';
-
-
-				request.onload = function() {
-			        // decode the buffer into an audio source
-			        _ctx.decodeAudioData(request.response, function(audioBuffer) {
-			          if (buffer) {
-			          	// store all buffers in buffers
-			            //buffers[obj.url] = buffer;
-			            //returnObj.duration = buffer.duration;
-			            // store reference in this object
-			            // obj.buffer = buffer;
-			            node.buffer = audioBuffer
-			            //console.log(obj.url + " loaded. offset: " + obj.offset);
-			            //callBack(returnObj);
-
-			          }
-			        }, function(){
-			        	console.error('File "' + src + '" could not be decoded');
-			        	//buffers[obj.url] = -1;
-			        	//callBack();
-			        });
-			     };
-			     request.onerror = function() {
-			          console.error('File "' + src + '" could not be loaded');
-			          //buffers[obj.url] = -1;
-			          //callBack();
-			     };
-
-				request.send();
-
-
-			  	*/
-
-
-
-			  	fetch(src) // "https://cors-anywhere.herokuapp.com/" + src
-			        .then(response => response.arrayBuffer())
-			        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer,
-			        	audioBuffer => this._node.buffer = audioBuffer,
-			        	e => console.error("WebAudioXML error. File not found: " + src)
-			        ));
-
+          src = Loader.getPath(src, this._localPath);
+          this._node = new ConvolverNode(this._ctx, src);
 		  	}
 
 		  	break;
@@ -169,7 +121,7 @@ class AudioObject{
         break;
 
         case "pannernode":
-        this._node = this._ctx.createPanner();
+        this._node = new PannerNode(this._ctx, params);
         break;
 
 
@@ -240,8 +192,10 @@ class AudioObject{
         case "gainnode":
         case "mixer":
         case "voice":
+        case "objectbasedaudio":
 		  	this._node = this._ctx.createGain();
 		  	break;
+
 
         case "send":
 		  	//this.input = this._ctx.createGain();
@@ -553,22 +507,6 @@ class AudioObject{
 
 
 		  	case "audiobuffersourcenode":
-		  	this._node = this._ctx.createBufferSource();
-		  	this._node.buffer = this._buffer;
-
-        this.loop = this._params.loop;
-        if(this.loop){
-          if(typeof this._params.loopEnd != "undefined"){
-            this.loopEnd = this._params.loopEnd;
-          }
-          if(typeof this._params.loopStart != "undefined"){
-            this.loopStart = this._params.loopStart;
-          }
-        }
-        if(typeof this._params.playbackRate != "undefined"){
-          this.playbackRate = this._params.playbackRate;
-        }
-		  	this._node.connect(this._destination);
 		  	this._node.start();
 		  	break;
 
@@ -639,7 +577,7 @@ class AudioObject{
 
         case "audiobuffersourcenode":
         //if(this._node.stop){this._node.stop()}
-        this._node.disconnect();
+        this._node.stop();
         break;
 	  	}
   	}
@@ -755,7 +693,7 @@ class AudioObject{
 
 
   	set src(path){
-	  	this._src = path;
+	  	this._src = Loader.getPath(path, this._localPath);
 
 	  	switch(this._nodeType){
 
@@ -763,18 +701,7 @@ class AudioObject{
 		  	break;
 
 		  	case "audiobuffersourcenode":
-		  	let src = Loader.getPath(path, this._localPath);
-
-		  	fetch(src)
-		        .then(response => response.arrayBuffer())
-		        .then(arrayBuffer => this._ctx.decodeAudioData(arrayBuffer,
-		        	audioBuffer => {
-			        	this._buffer = audioBuffer;
-			        },
-		        	e => console.error("WebAudioXML error. File not found: " + src)
-		        ));
-
-
+        this._node.src = this._src;
 		  	break;
 
 		  	default:
@@ -823,7 +750,7 @@ class AudioObject{
 
     set loopEnd(val){
       if(val){
-        this._node.loopEnd = val * this._params.timescale;
+        this._node.loopEnd = val;// * this._params.timescale;
       } else {
         if(this._buffer){
           this._node.loopEnd = this._buffer.duration;
@@ -838,13 +765,14 @@ class AudioObject{
     set playbackRate(val){
       if(typeof val != "undefined"){
         this._params.playbackRate = val;
-        this.setTargetAtTime("playbackRate", val);
+        this._node.playbackRate = val;
+        //this.setTargetAtTime("playbackRate", val);
       }
     }
 
     get playbackRate(){
       if(typeof this._params.playbackRate == "undefined"){
-        this._params.playbackRate = his._node.playbackRate.value;
+        this._params.playbackRate = this._node.playbackRate.value;
       }
       return this._params.playbackRate;
     }
@@ -1271,7 +1199,107 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./Loader.js":6,"./Mapper.js":7,"./Variable.js":13,"./VariableContainer.js":14,"./Watcher.js":15,"./WebAudioUtils.js":17}],2:[function(require,module,exports){
+},{"./BufferSourceObject.js":2,"./ConvolverNodeObject.js":4,"./Loader.js":8,"./Mapper.js":9,"./Variable.js":15,"./VariableContainer.js":16,"./Watcher.js":17,"./WebAudioUtils.js":19}],2:[function(require,module,exports){
+var Loader = require('./Loader.js');
+
+
+class BufferSourceObject {
+
+	constructor(ctx, params){
+		this._ctx = ctx;
+		this._node = new AudioBufferSourceNode(ctx);
+		this._params = params;
+	}
+
+	connect(destination){
+		this.destination = destination;
+		this._node.connect(destination);
+		return destination;
+	}
+	
+	start(){
+		let params = {
+			loop: this._params.loop,
+			loopStart: this._params.loopStart * this._params.timescale,
+			loopEnd: this._params.loopEnd * this._params.timescale,
+			playBackRate: (typeof this._params.playBackRate == "undefined") ? 1 : this._params.playBackRate
+		}
+		this._node.disconnect();
+		this._node = new AudioBufferSourceNode(this._ctx, params);
+		this._node.buffer = this._buffer;
+
+		// this.loop = this._params.loop;
+		// if(this.loop){
+		// 	if(typeof this._params.loopEnd != "undefined"){
+		// 	this.loopEnd = this._params.loopEnd;
+		// 	}
+		// 	if(typeof this._params.loopStart != "undefined"){
+		// 	this.loopStart = this._params.loopStart;
+		// 	}
+		// }
+		// if(typeof this._params.playbackRate != "undefined"){
+		// 	this.playbackRate = this._params.playbackRate;
+		// }
+		this._node.connect(this.destination);	
+		this._node.start();
+
+	}
+
+	stop(){
+		this._node.disconnect();
+	}
+
+	get output(){
+		return this._node;
+	}
+
+	get _node(){
+		return this.node;
+	}
+
+	set _node(obj){
+		this.node = obj;
+	}
+
+	set src(src){
+		Loader.loadAudio(src, this._ctx).then(audioBuffer => this._buffer = audioBuffer);
+	}
+
+	get loopEnd(){
+		return this._params.loopEnd;
+	}
+
+	set loopEnd(val){
+		this._params.loopEnd = val;
+		this._node.loopEnd = val;
+	}
+
+	get loopStart(){
+		return this._params.loopStart;
+	}
+
+	set loopStart(val){
+		this._params.loopStart = val;
+		this._node.loopStart = val;
+	}
+
+	set playbackRate(val){
+		if(!isFinite(val)){
+			console.log("non-finite");
+			return;
+		  }
+		this._params.playbackRate = val;
+		//this._node.setTargetAtTime("playbackRate", val, 0);
+		this._node.playbackRate.setTargetAtTime(val, 0, 0.001);
+
+	}
+
+	    
+}
+
+module.exports = BufferSourceObject;
+
+},{"./Loader.js":8}],3:[function(require,module,exports){
 
 
 class Connector {
@@ -1449,7 +1477,39 @@ class Connector {
 
 module.exports = Connector;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
+var Loader = require('./Loader.js');
+
+
+// Skriv en Loader.fetch som funkar med "then"
+
+class ConvolverNodeObject {
+
+	constructor(ctx, params){
+        this._ctx = ctx;
+        this.src = src;
+        this._node = this._ctx.createConvolver();
+        Loader.loadAudio(src, this._ctx).then(audioBuffer => this._node.buffer = audioBuffer);
+	}
+	
+	get _node(){
+        return this.node;
+    }
+
+    set _node(n){
+        this.node = n;
+    }
+
+    connect(destination){
+        this._node.connect(destination);
+        return destination;
+    }
+	    
+}
+
+module.exports = ConvolverNodeObject;
+
+},{"./Loader.js":8}],5:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -1597,7 +1657,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":10}],4:[function(require,module,exports){
+},{"./Sequence.js":12}],6:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -1689,7 +1749,7 @@ class GUI {
 
 module.exports = GUI;
 
-},{"./Mapper.js":7,"./WebAudioUtils.js":17}],5:[function(require,module,exports){
+},{"./Mapper.js":9,"./WebAudioUtils.js":19}],7:[function(require,module,exports){
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
@@ -1716,6 +1776,7 @@ class InteractionManager {
 		}
 		this._variables.touch = touches;
 		this.touchIDs = [];
+		this._variables.pointerdown = 0;
 
 		this._variables.client = [];
 
@@ -2263,7 +2324,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":3,"./VariableContainer.js":14,"./WebAudioUtils.js":17,"./XY_area.js":18,"./XY_handle.js":19}],6:[function(require,module,exports){
+},{"./EventTracker.js":5,"./VariableContainer.js":16,"./WebAudioUtils.js":19,"./XY_area.js":20,"./XY_handle.js":21}],8:[function(require,module,exports){
 
 
 
@@ -2324,9 +2385,23 @@ Loader.getFolder = path => {
 }
 
 
+Loader.loadAudio = (path, ctx) => {
+	return myPromise = new Promise((resolve, reject) => {
+		fetch(path)
+			.then(response => response.arrayBuffer())
+			.then(arrayBuffer => ctx.decodeAudioData(arrayBuffer,
+				audioBuffer => {
+					resolve(audioBuffer);
+				},
+				e => console.error("WebAudioXML error. File not found: " + path)
+			));
+	  });
+}
+
+
 module.exports = Loader;
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
@@ -2482,7 +2557,7 @@ class Mapper{
 
 			if(this.steps){
 				let curSteps = this.steps[i % this.steps.length];
-				if(curSteps){
+				if(curSteps instanceof Array){
 					return this.applySteps(x, i, curSteps);
 				}
 			}
@@ -2505,7 +2580,7 @@ class Mapper{
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
 
-		if(steps){
+		if(steps instanceof Array){
 			let out1 = this.mapout[i % this.mapout.length];
 			let out2 = this.mapout[(i+1) % this.mapout.length];
 			let range = Math.abs(out2 - out1);
@@ -2712,7 +2787,7 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":9,"./WebAudioUtils.js":17}],8:[function(require,module,exports){
+},{"./Range.js":11,"./WebAudioUtils.js":19}],10:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -2961,7 +3036,7 @@ class Parser {
 
 module.exports = Parser;
 
-},{"./AudioObject.js":1,"./Loader.js":6,"./Synth.js":11,"./Variable.js":13,"./Watcher.js":15,"./WebAudioUtils.js":17}],9:[function(require,module,exports){
+},{"./AudioObject.js":1,"./Loader.js":8,"./Synth.js":13,"./Variable.js":15,"./Watcher.js":17,"./WebAudioUtils.js":19}],11:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -3095,7 +3170,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":17}],10:[function(require,module,exports){
+},{"./WebAudioUtils.js":19}],12:[function(require,module,exports){
 
 
 
@@ -3222,7 +3297,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -3463,7 +3538,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":12,"./Watcher.js":15,"./WebAudioUtils.js":17}],12:[function(require,module,exports){
+},{"./Trigger.js":14,"./Watcher.js":17,"./WebAudioUtils.js":19}],14:[function(require,module,exports){
 
 
 
@@ -3563,9 +3638,10 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class Variable {
@@ -3579,6 +3655,7 @@ class Variable {
 		this.name = params.name;
 
 		this._mapper = new Mapper(params);
+		this.scheduledEvents = [];
 
 		// it seems hard to add a watcher from here
 		// when Watcher is calling this contructor
@@ -3629,6 +3706,21 @@ class Variable {
 		}
 	}
 
+	setTargetAtTime(param, val=0, delay=0, time=0){
+		switch(param){
+			case "value":
+			// transition time is not implemented
+			// value is set after defined delay + time
+			this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
+			break;
+		}
+	}
+
+	cancelScheduledValues(){
+		this.scheduledEvents.forEach(id => clearTimeout(id));
+	}
+
+
 	get derivative(){
 		return this._derivative || 0;
 	}
@@ -3675,12 +3767,19 @@ class Variable {
 		return this[key];
 	}
 
+	getWAXMLparameters(){
+		let obj = WebAudioUtils.paramNameToRange("var");
+		obj.name = "value";
+		obj.target = this;
+		obj.path = e => this.path;
+		return [obj];
+	}
 
 }
 
 module.exports = Variable;
 
-},{"./Mapper.js":7}],14:[function(require,module,exports){
+},{"./Mapper.js":9,"./WebAudioUtils.js":19}],16:[function(require,module,exports){
 
 
 
@@ -3706,7 +3805,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -4048,7 +4147,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":13,"./WebAudioUtils.js":17}],16:[function(require,module,exports){
+},{"./Variable.js":15,"./WebAudioUtils.js":19}],18:[function(require,module,exports){
 /*
 MIT License
 
@@ -4081,6 +4180,8 @@ var Parser = require('./Parser.js');
 var Connector = require('./Connector.js');
 var GUI = require('./GUI.js');
 var InteractionManager = require('./InteractionManager.js');
+var ConvolverNodeObject = require('./ConvolverNodeObject.js');
+const Variable = require('./Variable.js');
 
 
 
@@ -4122,6 +4223,7 @@ class WebAudio {
 		this._ctx = _ctx;
 		this._listeners = [];
 		this.audioInited = false;
+		this.convolvers = [];
 
 		if(source){
 			window.addEventListener("load", () => {
@@ -4149,6 +4251,15 @@ class WebAudio {
 
 					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
+
+					// ugly workaround to make it make sure the variables are initing depending audio parameters
+					this.setVariable("pointerdown", 0);
+					this.setVariable("mousedown", 0);
+					this.setVariable("touchdown", 0);
+
+					this.convolvers.forEach(entry => {
+						entry.obj.connect(this.master.output);
+					});
 
 
 				});
@@ -4245,20 +4356,20 @@ class WebAudio {
 
 		var retrieveObjects = (el, parentObj = {}) => {
 			let obj = {};
-			if(el.audioObject){
+			if(el.obj){
 				obj.name = el.id || [...el.classList].join(".") || el.nodeName;
 				obj.children = [];
 				obj.type = el.nodeName;
 				obj.level = (parentObj.level || 0) + 1;
 				obj.id = counter++;
-				obj.target = el.audioObject;
+				obj.target = el.obj;
 				obj.parent = parentObj;
-				obj.path = el.audioObject.path;
+				obj.path = el.obj.path;
 
 				audioObjects.push(obj);
 
 				// add webAudioXML parameters
-				el.audioObject.getWAXMLparameters().forEach(paramObj => {
+				el.obj.getWAXMLparameters().forEach(paramObj => {
 					paramObj.id = counter++;
 					// add to tree
 					obj.children.push(paramObj);
@@ -4271,9 +4382,9 @@ class WebAudio {
 
 
 				// add parameters for audioNode
-				if(el.audioObject._node){
-					for(let key in el.audioObject._node){
-						let param = el.audioObject._node[key];
+				if(el.obj._node){
+					for(let key in el.obj._node){
+						let param = el.obj._node[key];
 						if(param instanceof AudioParam){
 							let range = WebAudioUtils.paramNameToRange(key);
 							let paramObj = {
@@ -4376,6 +4487,15 @@ class WebAudio {
 			return xml.audioObject || xml.obj;
 		}
 		return -1;
+	}
+
+	getConvolver(path){
+		let convolverNode = this.convolvers.find(entry => entry.path == path);
+		if(!convolverNode){
+			convolverNode = new ConvolverNodeObject(path, this._ctx);
+			this.convolvers.push({path: path, obj: convolverNode});
+		}
+		return convolverNode;
 	}
 
 }
@@ -4481,7 +4601,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":2,"./GUI.js":4,"./InteractionManager.js":5,"./Parser.js":8,"./WebAudioUtils.js":17}],17:[function(require,module,exports){
+},{"./Connector.js":3,"./ConvolverNodeObject.js":4,"./GUI.js":6,"./InteractionManager.js":7,"./Parser.js":10,"./Variable.js":15,"./WebAudioUtils.js":19}],19:[function(require,module,exports){
 
 
 class WebAudioUtils {
@@ -4505,7 +4625,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		if(firstChar == "[" || firstChar == "{"){
 			// JSON array or object
 			//value = WebAudioUtils.replaceVariableNames(value, '"');
-			value = WebAudioUtils.wrapExpression(value, '"');
+			value = WebAudioUtils.wrapExpression(value);
 			try {
 				// multi dimensional array
 				value = JSON.parse(value);
@@ -4913,15 +5033,43 @@ WebAudioUtils.paramNameToRange = name => {
 	  	break;
 
 		case "gain":
-			range.default = 1;
+		range.default = 1;
 	  	range.min = 0;
 	  	range.max = 4;
 	  	range.conv = 2;
-			break;
+		break;
+
+		case "positionX":
+		case "positionY":
+		case "positionZ":
+		range.default = 0;
+		range.min = -10;
+		range.max = 10;
+		range.conv = 1;
+		break;
+
+		case "coneInnerAngle":
+		case "coneOuterAngle":
+		case "orientationX":
+		case "orientationY":
+		case "orientationZ":
+		range.default = 360;
+		range.min = 0;
+		range.max = 360;
+		range.conv = 1;
+		break;
+
+		case "var":
+		range.default = 50;
+		range.min = 0;
+		range.max = 100;
+		range.conv = 1;
+		break;
+		
 
 
 		default:
-			range.default = 1;
+		range.default = 1;
 	  	range.min = 0;
 	  	range.max = 1;
 	  	range.conv = 1;
@@ -4954,10 +5102,10 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	});
 }
 
-WebAudioUtils.wrapExpression = (str = "", q = "") => {
+WebAudioUtils.wrapExpression = (str = "", q = '"') => {
 	if(typeof str != "string"){return 0};	
 
-	return str.replaceAll(rxpVal, a => parseFloat(a) == a ? a : q + a + q);
+	return str.replaceAll(rxpVal, a => parseFloat(a) == a ? a : a == " " ? "" : q + a + q);
 }
 
 WebAudioUtils.strToVariables = (str = "", callerNode, variableType) => {
@@ -4996,7 +5144,7 @@ WebAudioUtils.getVariableContainer = (variable, callerNode, variableType) => {
 
 module.exports = WebAudioUtils;
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
@@ -5027,7 +5175,7 @@ class XY_area extends HTMLElement {
 
 module.exports = XY_area;
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 
 
 
@@ -5113,4 +5261,4 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{}]},{},[16]);
+},{}]},{},[18]);

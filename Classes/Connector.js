@@ -6,7 +6,12 @@ class Connector {
 
 		this._xml = xml;
 		this._ctx = _ctx;
+
+
+		// terrible...
+		xml.obj._node.gain.value = 0;
 		this.connect(xml);
+		setTimeout(() => xml.obj.fadeIn(1), 1000);
 	}
 
 
@@ -104,6 +109,7 @@ class Connector {
 					case "audio":
 					case "voice":
 					case "synth":
+					case "xi:include":
 					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 					break;
 

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.4";
+var version = "1.0.6";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -30,10 +30,13 @@ var Parser = require('./Parser.js');
 var Connector = require('./Connector.js');
 var GUI = require('./GUI.js');
 var InteractionManager = require('./InteractionManager.js');
+var ConvolverNodeObject = require('./ConvolverNodeObject.js');
+var Variable = require('./Variable.js');
+var HL2 = require("./HL2.js");
 
 
 
-var source = document.currentScript.dataset.source;
+var source = document.currentScript.dataset.src || document.currentScript.dataset.source;
 
 navigator.getUserMedia = (
 	navigator.getUserMedia ||
@@ -47,6 +50,7 @@ navigator.getUserMedia = (
 class WebAudio {
 
 	constructor(_ctx, src){
+		
 
 		if(!_ctx){
 
@@ -61,6 +65,8 @@ class WebAudio {
 
 		}
 
+		this.HL = new HL2(_ctx);
+
 		source = source || src;
 		if(!source){
 			console.error("No WebAudioXML configuration file specified");
@@ -71,19 +77,29 @@ class WebAudio {
 		this._ctx = _ctx;
 		this._listeners = [];
 		this.audioInited = false;
+		this.convolvers = [];
 
 		if(source){
 			window.addEventListener("load", () => {
 
-				this.parser = new Parser(source, this, xmlDoc => {
+				this.parser = new Parser(this);
+				this.parser.init(source)
+				.then(xmlDoc => {
 					this._xml = xmlDoc;
 					let interactionArea = this._xml.getAttribute("interactionArea");
 					if(interactionArea){
 						this.ui.registerEvents(interactionArea);
+					} else {
+						document.querySelectorAll("*[data-waxml-pointer]").forEach(el => {
+							if(el.dataset.waxmlPointer == "true"){
+								this.ui.registerEvents(el);
+							}
+						});
 					}
 
+					new GUI(xmlDoc.parentNode, this);
+
 					this.master = this._xml.audioObject;
-					//this.master.fadeOut();
 
 					//webAudioXML = xmlDoc.audioObject;
 					//webAudioXML.touch = touches;
@@ -91,9 +107,11 @@ class WebAudio {
 					this.plugins.forEach(plugin => {
 						plugin.init();
 					});
-					if(this._xml.getAttribute("controls") == "true"){
-						new GUI(xmlDoc, document.body);
-					}
+
+					// make all variable elements broadcast their init values
+					this.querySelectorAll("var").forEach(el => {
+						el.update();
+					});
 
 
 					this.dispatchEvent(new CustomEvent("inited"));
@@ -103,6 +121,10 @@ class WebAudio {
 					this.setVariable("pointerdown", 0);
 					this.setVariable("mousedown", 0);
 					this.setVariable("touchdown", 0);
+
+					this.convolvers.forEach(entry => {
+						entry.obj.connect(this.master.output);
+					});
 
 
 				});
@@ -125,7 +147,7 @@ class WebAudio {
 		if(!this.audioInited){
 			this.audioInited = true;
 			this._ctx.resume();
-			//this.master.fadeIn(0.01);
+			this.start("*[trig='auto'], *[start='auto']");
 		}
 	}
 
@@ -135,26 +157,26 @@ class WebAudio {
 		}
 
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.audioObject && XMLnode.audioObject.start){
-				XMLnode.audioObject.start();
+			if(XMLnode.obj && XMLnode.obj.start){
+				XMLnode.obj.start();
 			}
 		});
 	}
 
 	trig(selector = "*"){
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.audioObject.start){
-				XMLnode.audioObject.start();
-			} else if(XMLnode.audioObject.noteOn){
-				XMLnode.audioObject.noteOn();
+			if(XMLnode.obj.start){
+				XMLnode.obj.start();
+			} else if(XMLnode.obj.noteOn){
+				XMLnode.obj.noteOn();
 			}
 		});
 	}
 
 	stop(selector = "*"){
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.audioObject && XMLnode.audioObject.stop){
-				XMLnode.audioObject.stop();
+			if(XMLnode.obj && XMLnode.obj.stop){
+				XMLnode.obj.stop();
 			}
 		});
 	}
@@ -199,20 +221,20 @@ class WebAudio {
 
 		var retrieveObjects = (el, parentObj = {}) => {
 			let obj = {};
-			if(el.audioObject){
+			if(el.obj){
 				obj.name = el.id || [...el.classList].join(".") || el.nodeName;
 				obj.children = [];
 				obj.type = el.nodeName;
 				obj.level = (parentObj.level || 0) + 1;
 				obj.id = counter++;
-				obj.target = el.audioObject;
+				obj.target = el.obj;
 				obj.parent = parentObj;
-				obj.path = el.audioObject.path;
+				obj.path = el.obj.path;
 
 				audioObjects.push(obj);
 
 				// add webAudioXML parameters
-				el.audioObject.getWAXMLparameters().forEach(paramObj => {
+				el.obj.getWAXMLparameters().forEach(paramObj => {
 					paramObj.id = counter++;
 					// add to tree
 					obj.children.push(paramObj);
@@ -225,9 +247,9 @@ class WebAudio {
 
 
 				// add parameters for audioNode
-				if(el.audioObject._node){
-					for(let key in el.audioObject._node){
-						let param = el.audioObject._node[key];
+				if(el.obj._node){
+					for(let key in el.obj._node){
+						let param = el.obj._node[key];
 						if(param instanceof AudioParam){
 							let range = WebAudioUtils.paramNameToRange(key);
 							let paramObj = {
@@ -284,8 +306,53 @@ class WebAudio {
 		this.ui.variables = val;
 	}
 
-	setVariable(key, val){
-		this.ui.setVariable(key, val);
+	setVariable(key, val, transitionTime){
+
+		// move to a separate object
+		// read transitionTime
+		if(this._xml){
+			transitionTime = transitionTime || this._xml.obj.getParameter("transitionTime");
+		}
+		transitionTime = transitionTime || 0.001;
+
+		let floatVal = parseFloat(val);
+		if(typeof floatVal == "number"){
+			let listener = this._ctx.listener;
+			switch(key){
+				case "positionx":
+				listener.positionX.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+				case "positiony":
+				listener.positionY.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+				case "positionz":
+				listener.positionZ.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+	
+				case "forwardx":
+				listener.forwardX.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+				case "forwardy":
+				listener.forwardY.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+				case "forwardz":
+				listener.forwardZ.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+	
+				case "upx":
+				listener.upX.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+				case "upy":
+				listener.upY.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+				case "upz":
+				listener.upZ.setTargetAtTime(floatVal, 0, transitionTime);
+				break;
+			}
+			if(val == floatVal){val = floatVal}
+		}
+		
+		this.ui.setVariable(key, val, transitionTime);
 	}
 	getVariable(key){
 		return this.ui.getVariable(key);
@@ -319,17 +386,29 @@ class WebAudio {
 	querySelectorAll(selector){
 		let arr = [];
 		this._xml.querySelectorAll(selector).forEach(xml => {
-			let audioObject = xml.audioObject;
-			arr.push(xml.audioObject);
+			let audioObject = xml.obj;
+			arr.push(xml.obj);
 		});
 		return arr;
 	}
 	querySelector(selector){
 		let xml = this._xml.querySelector(selector);
 		if(xml){
-			return xml.audioObject || xml.obj;
+			return xml.obj;
 		}
 		return -1;
+	}
+
+	getConvolver(path){
+		let targetEntry = this.convolvers.find(entry => entry.path == path);
+		let convolverNodeObject;
+		if(!targetEntry){
+			convolverNodeObject = new ConvolverNodeObject(this, path);
+			this.convolvers.push({path: path, obj: convolverNodeObject});
+		} else {
+			convolverNodeObject = targetEntry.obj;
+		}
+		return convolverNodeObject;
 	}
 
 }

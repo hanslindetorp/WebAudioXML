@@ -1,0 +1,76 @@
+
+/* Detta sätter alla grundmarginaler till 0 och ser till att sidan fyller hela webbläsaren */
+html, body {
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: sans-serif;
+}
+
+
+/*
+Detta här måtten sätter formatet för den aktiva ytan "main"
+till 16:9 med bredden 1000 pixlar */
+main {
+}
+
+
+/* Det här är ett sätt att skapa olika sidor/sections som är gömda från början (opacity: 0)
+	och ligger underst (z-index: -1)
+	Toningnen sker på en halv sekund (transition: 0.5s)
+*/
+
+section{
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	z-index: -1;
+	padding: 20px;
+	box-sizing: border-box;
+	background-size: cover;
+	transition: 500ms;
+}
+
+/* När en section är "target" (d.v.s. man har klickat på en länk som pekar på det id:t blir den synlig - opacity: 1
+	och ligger längst fram - z-index: 1 */
+section:target {
+	opacity: 1;
+	z-index: 0;
+}
+
+.generator {
+	background-color: rgb(177, 218, 237);
+	border: 2px solid #444;
+	border-radius: 5px;
+	width: 200px;
+	display: inline-block;
+	padding: 10px;
+	margin: 5px;
+}
+.generator h2 {
+	font-size: 100%;
+	margin: 0px;
+}
+
+.generator label {
+	display: grid;
+	font-size: 60%;
+	height: 3.5em;
+	border-bottom: 1px dotted #333;
+	margin-top: 5px;
+}
+
+.generator input {
+	
+}
+
+.button {
+	border-radius: 2px;
+	border: 1px solid #333;
+	padding: 3px;
+	margin: 5px;
+	display: inline-block;
+	text-decoration: none;
+}

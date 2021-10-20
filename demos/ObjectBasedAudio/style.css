@@ -1,0 +1,18 @@
+
+
+.waxml-loading a {
+	display: none;
+}
+
+a {
+	display: inline-block;
+	text-decoration: none;
+	padding: 0.2em 0.5em;
+	margin: 0.2em;
+	border: 1px solid #333;
+	border-radius: 0.5em;
+}
+
+a:active {
+	background-color: #ccc;
+}

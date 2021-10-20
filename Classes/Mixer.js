@@ -37,6 +37,7 @@
 			  	case "send":
 			  	this.output.connect(audioNode.node);
 			  	if(params.output){
+					// vad i hela friden är detta? iMus??
 			  		let destination = iMus.objects[params.output];
 			  		audioNode.connect(destination.input);
 			  	}

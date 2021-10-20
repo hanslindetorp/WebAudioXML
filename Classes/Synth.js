@@ -161,42 +161,48 @@ class Synth{
 	}
 
 	getParameter(paramName){
-  	if(typeof this._params[paramName] === "undefined"){
-	  	if(this._xml.parentNode){
-		  	return this._xml.parentNode.audioObject.getParameter(paramName);
-	  	} else {
-		  	return 0;
-	  	}
+		if(typeof this._params[paramName] === "undefined"){
+			if(this._xml.parentNode){
+				return this._xml.parentNode.audioObject.getParameter(paramName);
+			} else {
+				return 0;
+			}
 
-  	} else {
-	  	return this._params[paramName];
-  	}
+		} else {
+			return this._params[paramName];
+		}
 	}
 
 
 	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
 
-  	let startTime = this._ctx.currentTime + (delay || 0);
-  	//transitionTime = transitionTime || 0.001;
-  	//console.log(value, delay, transitionTime, cancelPrevious);
+		let startTime = this._ctx.currentTime + (delay || 0);
+		//transitionTime = transitionTime || 0.001;
+		//console.log(value, delay, transitionTime, cancelPrevious);
 
-  	if(!this._node){
-	  	console.error("Node error:", this);
-  	}
-  	if(typeof param == "string"){
-			let targetParam = this._node[param];
-			if(!targetParam){targetParam = this[param]}
-			param = targetParam;
+		if(!this._node){
+			console.error("Node error:", this);
+		}
+		if(typeof param == "string"){
+				let targetParam = this._node[param];
+				if(!targetParam){targetParam = this[param]}
+				param = targetParam;
+			}
+
+		if(cancelPrevious && param.cancelScheduledValues){
+			param.cancelScheduledValues(this._ctx.currentTime);
 		}
 
-  	if(cancelPrevious){
-	  	param.cancelScheduledValues(this._ctx.currentTime);
-  	}
-  	if(transitionTime){
-	  	param.setTargetAtTime(value, startTime, transitionTime);
-  	} else {
-	  	param.setValueAtTime(value, startTime);
-  	}
+		value = Math.min(value, param.maxValue);
+		value = Math.max(value, param.minValue);
+
+		transitionTime =  transitionTime || this.getParameter("transitionTime") || 0.001;
+
+		if(transitionTime){
+			param.setTargetAtTime(value, startTime, transitionTime);
+		} else {
+			param.setValueAtTime(value, startTime);
+		}
 
 	}
 

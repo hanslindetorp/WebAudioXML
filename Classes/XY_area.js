@@ -20,6 +20,7 @@ class XY_area extends HTMLElement {
 		this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
 
 		this.style.touchAction = "none";
+		this.style.display = "block";
 
 	}
 	connectedCallback() {

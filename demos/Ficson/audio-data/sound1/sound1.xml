@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+    <AudioBufferSourceNode id="sound1" class="bang1" src="sound1.mp3"></AudioBufferSourceNode>
+</Audio>

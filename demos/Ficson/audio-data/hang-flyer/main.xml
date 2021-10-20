@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+
+    <var name="gainHF" default="0.1"></var>
+    <var name="LFO" mapin="1,25" mapout="1,25" default="10"></var>
+    <var name="LFO_gain"></var>
+    <var name="filter" mapin="20,500" mapout="20,500"></var>
+    <var name="Q" mapin="0,50" mapout="0,50"></var>
+
+    <Chain class="noise" gain="$gainHF">
+        <Chain output="#gyro-modulator">
+            <OscillatorNode type="sine" frequency="$LFO"></OscillatorNode>
+            <GainNode gain="$LFO_gain"></GainNode>
+        </Chain>   
+
+        <AudioWorkletNode src="audio-data/white-noise-processor.js"></AudioWorkletNode>
+        <GainNode>
+            <gain id="gyro-modulator"></gain>
+        </GainNode>
+        
+        <BiquadFilterNode type="bandpass" frequency="$filter" Q="$Q"></BiquadFilterNode>
+    </Chain>
+
+</Audio>

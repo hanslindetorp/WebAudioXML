@@ -1,0 +1,60 @@
+<!doctype html>
+
+
+<!--
+
+<h2>Click and slide to play</h2>
+<ul>
+	<li>Pointer relative X position controls pitch</li>
+	<li>Pointer relative Y position controls cutoff frequency of biquad filter</li>
+</ul>
+<p>WebAudioXML is a javascript library that makes it possible to create
+	Web Audio applications using XML syntax. It is a PhD research project by
+	Hans Lindetorp. Please follow me on
+	<a href="https://hans.arapoviclindetorp.se">https://hans.arapoviclindetorp.se</a> and
+	<a href="https://www.facebook.com/hanslindetorpresearch/">https://www.facebook.com/hanslindetorpresearch/</a>
+</p>
+
+-->
+
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, user-scalable=no" />
+		<title>WebAudioXML - by Hans Lindetorp</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+
+
+	<body>
+		<div id="container">
+			<div id="instructions">
+				<h3>Object Based Audio</h3>
+				<a data-waxml-start="auto">Init Audio</a><br />
+
+				<a data-waxml-positionX="-10">positionX = -10</a>
+				<a data-waxml-positionX="0">positionX = 0</a>
+				<a data-waxml-positionX="10">positionX = 10</a><br />
+
+				<a data-waxml-positionZ="-10">positionZ = -10</a>
+				<a data-waxml-positionZ="0">positionZ = 0</a>
+				<a data-waxml-positionZ="10">positionZ = 10</a><br />
+
+				<a data-waxml-forwardX="0" data-waxml-forwardZ="10">Forward X=0, Z=10</a>				
+				<a data-waxml-forwardX="10" data-waxml-forwardZ="0">Forward X=10, Z=0</a>				
+				<a data-waxml-forwardX="0" data-waxml-forwardZ="-10">Forward X=0, Z=-10</a>				
+				<a data-waxml-forwardX="-10" data-waxml-forwardZ="0">Forward X=-10, Z=0</a>
+				
+				<a data-waxml-start="#foajen" data-waxml-stop="#valhallavagen">Foajen</a>				
+				<a data-waxml-start="valhallavagen" data-waxml-stop="#foajen">Valhallavägen</a>				
+				
+			</div>
+
+			<p>For detailed information, please read the comments in the code: <a href="audio.xml">audio.xml</a></p>
+				<p>WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. For more info, turorials, documentation 
+				and download links, please visit <a href="https://github.com/hanslindetorp/WebAudioXML">https://github.com/hanslindetorp/WebAudioXML</a></p>
+		</div>
+		<script src="WebAudioXML.js" data-source="audio.xml"></script>
+
+	</body>
+</html>

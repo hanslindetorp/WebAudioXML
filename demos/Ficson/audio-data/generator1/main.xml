@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-10dB">
+
+    <var name="gain1" default="0.1"></var>
+    <var name="chunklength" mapin="0,5000" default="300"></var>
+    <var name="chunkvariation" mapin="0,5000" default="1000"></var>
+    <var name="minfrequency" mapin="50,1000" default="200"></var>
+    <var name="maxfrequency" mapin="100,5000" default="800"></var>
+    <var name="bandpass_frequency" mapin="100,2000" default="400"></var>
+    <var name="bandpass_Q" mapin="0,100" default="30"></var>
+
+    <Chain class="gen1" gain="$gain1">
+        <AudioWorkletNode 
+            chunkvariation="$chunkvariation" 
+            chunklength="$chunklength" 
+            minfrequency="$minfrequency"
+            maxfrequency="$maxfrequency"
+            src="audio-data/texture-processor.js"
+        ></AudioWorkletNode>
+        <BiquadFilterNode 
+            type="bandpass" 
+            frequency="$bandpass_frequency" 
+            Q="$bandpass_Q"
+        ></BiquadFilterNode>
+    </Chain>
+    
+    
+</Audio>

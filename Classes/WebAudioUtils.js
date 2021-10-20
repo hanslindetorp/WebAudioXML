@@ -1,5 +1,4 @@
 
-
 class WebAudioUtils {
 
 
@@ -16,6 +15,15 @@ WebAudioUtils.typeFixParam = (param, value) => {
 	//param = param.toLowerCase();
 	let arr;
 	let floatVal;
+
+	// Irriterande koll för att se om value redan är konverterad till en 
+	// Watcher. Det går inte att skriva if(value instanceof Watcher)
+	// för det blir en rundgång i dependencies om jag importerar klassen
+	// Watcher här. Tänk istället igenom ordningen för hur hela XML-trädet
+	// ska parsas så att allt sker i rätt ordning.
+	if(typeof value == "object" && value.type == "watcher"){
+		return value;
+	}
 	if(WebAudioUtils.nrOfVariableNames(value)){
 		let firstChar = value.charAt(0);
 		if(firstChar == "[" || firstChar == "{"){
@@ -36,9 +44,10 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		case "volume":
 		case "gain":
+		case "convolutionGain":
 		if(typeof value == "string"){
 			if(value.includes("dB") || value.includes("db")){
-				value = Math.pow(2, parseFloat(value) / 3);
+				value = WebAudioUtils.dbToPower(value);
 			} else {
 				value = parseFloat(value);
 			}
@@ -92,6 +101,11 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "playbackRate":
 		case "loopStart":
 		case "loopEnd":
+
+		// waxml
+		case "transitionTime":
+			
+		
 		value = parseFloat(value);
 		break;
 
@@ -116,10 +130,10 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		// potentially also a fifth value indicating Math.power
 		arr = WebAudioUtils.split(value);
 		value = {};
-  	value.minIn = parseFloat(arr.shift());
-  	value.maxIn = parseFloat(arr.shift());
-  	value.minOut = parseFloat(arr.shift());
-  	value.maxOut = parseFloat(arr.shift());
+		value.minIn = parseFloat(arr.shift());
+		value.maxIn = parseFloat(arr.shift());
+		value.minOut = parseFloat(arr.shift());
+		value.maxOut = parseFloat(arr.shift());
 
 		value.minIn = typeof value.minIn == "number" ? value.minIn : 0;
 		value.maxIn = typeof value.maxIn == "number" ? value.maxIn : 1;
@@ -142,6 +156,8 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "follow":
 		case "mapin":
 		case "mapout":
+		case "times":
+		case "values":
 		value = WebAudioUtils.split(value);
 		break;
 
@@ -226,85 +242,101 @@ WebAudioUtils.caseFixParameter = param => {
 
 
 	switch(param){
-	  	 case "q":
-	  	 param = "Q";
-	  	 break;
+		case "q":
+		param = "Q";
+		break;
 
-	  	 case "delaytime":
-	  	 param = "delayTime";
-	  	 break;
+		case "delaytime":
+		param = "delayTime";
+		break;
 
-			 case "loopend":
-			 param = "loopEnd";
-			 break;
+		case "loopend":
+		param = "loopEnd";
+		break;
 
-			 case "loopstart":
-			 param = "loopStart";
-			 break;
+		case "loopstart":
+		param = "loopStart";
+		break;
 
-			 case "playbackrate":
-			 param = "playbackRate";
-			 break;
+		case "playbackrate":
+		param = "playbackRate";
+		break;
 
-	  	 case "maxdelaytime":
-	  	 param = "maxDelayTime";
-	  	 break;
+		case "maxdelaytime":
+		param = "maxDelayTime";
+		break;
 
-	  	 case "coneinnerangle":
-	  	 param = "coneInnerAngle";
-	  	 break;
+		case "coneinnerangle":
+		param = "coneInnerAngle";
+		break;
 
-	  	 case "coneouterangle":
-	  	 param = "coneOuterAngle";
-	  	 break;
+		case "coneouterangle":
+		param = "coneOuterAngle";
+		break;
 
-	  	 case "coneoutergain":
-	  	 param = "coneOuterGain";
-	  	 break;
+		case "coneoutergain":
+		param = "coneOuterGain";
+		break;
 
-	  	 case "distancemodel":
-	  	 param = "distanceModel";
-	  	 break;
+		case "distancemodel":
+		param = "distanceModel";
+		break;
 
-	  	 case "maxdistance":
-	  	 param = "maxDistance";
-	  	 break;
+		case "maxdistance":
+		param = "maxDistance";
+		break;
 
-	  	 case "orientationx":
-	  	 param = "orientationX";
-	  	 break;
+		case "orientationx":
+		param = "orientationX";
+		break;
 
-	  	 case "orientationy":
-	  	 param = "orientationY";
-	  	 break;
+		case "orientationy":
+		param = "orientationY";
+		break;
 
-	  	 case "orientationz":
-	  	 param = "orientationZ";
-	  	 break;
+		case "orientationz":
+		param = "orientationZ";
+		break;
 
-	  	 case "panningmodel":
-	  	 param = "panningModel";
-	  	 break;
+		case "panningmodel":
+		param = "panningModel";
+		break;
 
-	  	 case "positionx":
-	  	 param = "positionX";
-	  	 break;
+		case "positionx":
+		param = "positionX";
+		break;
 
-	  	 case "positiony":
-	  	 param = "positionY";
-	  	 break;
+		case "positiony":
+		param = "positionY";
+		break;
 
-	  	 case "positionz":
-	  	 param = "positionZ";
-	  	 break;
+		case "positionz":
+		param = "positionZ";
+		break;
 
-	  	 case "refdistance":
-	  	 param = "refDistance";
-	  	 break;
+		case "refdistance":
+		param = "refDistance";
+		break;
 
-	  	 case "rollofffactor":
-	  	 param = "rolloffFactor";
-	  	 break;
+		case "rollofffactor":
+		param = "rolloffFactor";
+		break;
+
+		case "convolutiongain":
+		param = "convolutionGain";
+		break;
+
+		case "transitiontime":
+		param = "transitionTime";
+		break;
+
+		case "timeunit":
+		param = "timeUnit";
+		break;
+
+		case "crossfade":
+		param = "crossFade";
+		break;
 
   	}
 
@@ -327,6 +359,10 @@ WebAudioUtils.widthEndingSlash = (str) => {
 
 WebAudioUtils.MIDInoteToFrequency = note => {
 	return 440 * Math.pow(2, (note - 69) / 12);
+}
+
+WebAudioUtils.dbToPower = value => {
+	return Math.pow(2, parseFloat(value) / 3);
 }
 WebAudioUtils.split = (str, separator) => {
 	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : " ";
@@ -455,6 +491,13 @@ WebAudioUtils.paramNameToRange = name => {
 		range.conv = 1;
 		break;
 
+		case "var":
+		range.default = 50;
+		range.min = 0;
+		range.max = 100;
+		range.conv = 1;
+		break;
+		
 
 
 		default:
@@ -473,6 +516,13 @@ WebAudioUtils.convertUsingMath = (x, conv) => {
 
 }
 
+WebAudioUtils.getVariableNames = (str = "") => {
+	if(typeof str != "string"){
+		return [];
+	} else {
+		return [...str.matchAll(rxp)].map(match => match[1] || match[2] || match[3]);
+	}
+}
 
 WebAudioUtils.nrOfVariableNames = (str = "") => {
 	// regExp

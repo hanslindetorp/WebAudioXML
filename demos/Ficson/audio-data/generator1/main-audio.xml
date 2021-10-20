@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+    <Chain class="gen1" gain="$gen1_gain">
+        <AudioBufferSourceNode start="auto" src="audio/1.wav" loop="true"></AudioBufferSourceNode>
+        <BiquadFilterNode type="bandpass" frequency="$gen1_bandpass_frequency" Q="$gen1_bandpass_Q"></BiquadFilterNode>
+    </Chain>
+</Audio>

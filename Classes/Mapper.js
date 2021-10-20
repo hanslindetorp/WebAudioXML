@@ -224,6 +224,11 @@ class Mapper{
 				return WebAudioUtils.MIDInoteToFrequency(x);
 				break;
 
+				case "db->power":
+				case "dB->power":
+				return WebAudioUtils.dbToPower(x);
+				break;	
+
 
 				default:
 				if(typeof convert == "string" && convert.includes("x"));
