@@ -9,13 +9,6 @@ html, body {
 }
 
 
-/*
-Detta här måtten sätter formatet för den aktiva ytan "main"
-till 16:9 med bredden 1000 pixlar */
-main {
-}
-
-
 /* Det här är ett sätt att skapa olika sidor/sections som är gömda från början (opacity: 0)
 	och ligger underst (z-index: -1)
 	Toningnen sker på en halv sekund (transition: 0.5s)
