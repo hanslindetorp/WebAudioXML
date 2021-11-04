@@ -9,4 +9,11 @@ body {
 waxml-xy-area {
 	width: 300px;
 	height: 300px;
+	display: inline-block !important;
+}
+
+iframe {
+	display: inline-block;
+	width: 533px;
+	height: 300px;
 }
