@@ -19,13 +19,13 @@ class Parser {
 		this.waxml = waxml;
 		this._ctx = this.waxml._ctx;
 
-		Loader.callBack = () => {
-			// snyggare att lyfta ut till en egen class 
-			if(this.allElements.mediastreamaudiosourcenode){
-				navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
-			}
-			//callBack(this._xml);
-		}
+		// Loader.callBack = () => {
+		// 	// snyggare att lyfta ut till en egen class 
+		// 	if(this.allElements.mediastreamaudiosourcenode){
+		// 		navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+		// 	}
+		// 	//callBack(this._xml);
+		// }
 		
 	}
 
@@ -73,6 +73,11 @@ class Parser {
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
 					.then(xmlNode => {
+						// snyggare att lyfta ut audio-in till en egen class 
+						if(this.allElements.mediastreamaudiosourcenode){
+							navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+						}
+						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
 				}
@@ -248,6 +253,12 @@ class Parser {
 									break;
 
 									default:
+									// Det är ganska dumt att den här kopplingen 
+									// är skriven i parsern
+									// Det borde ligga i object-klassen
+									if(typeof time == "undefined"){
+										time = xmlNode.obj.getParameter("transitionTime");
+									}
 									xmlNode.obj.setTargetAtTime(key, val, 0, time);
 									break;
 								}
@@ -350,12 +361,13 @@ class Parser {
 			}
 			xmlNode.obj = variableObj;
 			let target;
-			if(parentNode.nodeName.toLowerCase() == "audio"){
-				// top level - should be properly merged with this.waxml
-				target = this.waxml;
-			} else {
-				target = parentNode.obj;
-			}
+			// if(parentNode.nodeName.toLowerCase() == "audio"){
+			// 	// top level - should be properly merged with this.waxml
+			// 	target = this.waxml;
+			// } else {
+			// 	target = parentNode.obj;
+			// }
+			target = parentNode.obj;
 			target.setVariable(params.name, variableObj);
 			break;
 

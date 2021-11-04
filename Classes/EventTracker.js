@@ -55,7 +55,7 @@ class EventTracker {
 		}
 
 		let ev = this.getEventObject(name, execute, process, target);
-		if(target.addEventListener){
+		if(target && target.addEventListener){
 			target.addEventListener(eventName, (e => ev.send(e)));
 		} else {
 			console.error("EventTracker error: " +  target + " does not support addEventListener()");

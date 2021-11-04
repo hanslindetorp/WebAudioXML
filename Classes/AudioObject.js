@@ -95,7 +95,7 @@ class AudioObject{
 		  	src = this._params.src;
 
 		  	if(src){
-          src = Loader.getPath(src, this._localPath);
+          src = Loader.getPath(src, this.getParameter("localpath") || "");
           this._node = new ConvolverNodeObject(this, src);
 		  	}
 
@@ -161,11 +161,13 @@ class AudioObject{
 		  	break;
 
         case "audioworkletnode":
+        let localPath = this.getParameter("localpath") || "";
         src = this._params.src;
         if(src){
           let processorName = src.split(".").shift().split("/").pop();
           if(this._ctx.audioWorklet){
-            this._ctx.audioWorklet.addModule(src)
+            console.log("addModule", localPath + src);
+            this._ctx.audioWorklet.addModule(localPath + src)
             .then(e =>{
               this._node = new AudioWorkletNode(this._ctx, processorName);
               setTimeout(e => this._node.connect(this._destination), 1000);
@@ -431,7 +433,7 @@ class AudioObject{
           }
           return val;
       }
-  }
+    }
 
 
   	get connection(){

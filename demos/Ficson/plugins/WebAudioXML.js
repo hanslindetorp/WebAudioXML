@@ -304,7 +304,7 @@ class AudioObject{
 		  	src = this._params.src;
 
 		  	if(src){
-          src = Loader.getPath(src, this._localPath);
+          src = Loader.getPath(src, this.getParameter("localpath") || "");
           this._node = new ConvolverNodeObject(this, src);
 		  	}
 
@@ -370,11 +370,13 @@ class AudioObject{
 		  	break;
 
         case "audioworkletnode":
+        let localPath = this.getParameter("localpath") || "";
         src = this._params.src;
         if(src){
           let processorName = src.split(".").shift().split("/").pop();
           if(this._ctx.audioWorklet){
-            this._ctx.audioWorklet.addModule(src)
+            console.log("addModule", localPath + src);
+            this._ctx.audioWorklet.addModule(localPath + src)
             .then(e =>{
               this._node = new AudioWorkletNode(this._ctx, processorName);
               setTimeout(e => this._node.connect(this._destination), 1000);
@@ -640,7 +642,7 @@ class AudioObject{
           }
           return val;
       }
-  }
+    }
 
 
   	get connection(){
@@ -1739,12 +1741,21 @@ class Connector {
 
 
 		let output = xmlNode.getAttribute("output");
+		let done = false;
+
 		if(output){
 
 			// connect to specified node within the scope of this (external) document
-			let topElement = xmlNode.closest("[href$='.xml]") || this._xml;
-			topElement.querySelectorAll(output).forEach(target => {
-				xmlNode.audioObject.connect(target.audioObject.input);
+			// let topElement = xmlNode.closest("[href$='.xml]") || this._xml;
+			let curNode = xmlNode;
+			let targetElements = [];
+			while(!targetElements.length && curNode != this._xml.parentNode){
+				targetElements = curNode.querySelectorAll(output);
+				curNode = curNode.parentNode;
+			}
+
+			targetElements.forEach(target => {
+				xmlNode.obj.connect(target.obj.input);
 			});
 
 		} else {
@@ -1777,7 +1788,7 @@ class Connector {
 					// run through following nodes to connect all
 					// sends
 					let targetNode = xmlNode;
-					let done = false;
+					done = false;
 
 					while(!done){
 
@@ -1936,7 +1947,7 @@ class EventTracker {
 		}
 
 		let ev = this.getEventObject(name, execute, process, target);
-		if(target.addEventListener){
+		if(target && target.addEventListener){
 			target.addEventListener(eventName, (e => ev.send(e)));
 		} else {
 			console.error("EventTracker error: " +  target + " does not support addEventListener()");
@@ -2066,6 +2077,9 @@ class GUI {
 				min-width: 40px;
 				font-weight: bold;
 				background-color: red;
+				position: absolute;
+				top: 2px;
+				right: 30px;
 			}
 
 			#waxml-GUI .waxml-object {
@@ -2157,6 +2171,9 @@ class GUI {
 		shadowContainer.style.display = "none";
 		shadowContainer.style.overflow = "visible";
 		shadowContainer.style.position = "absolute";
+		shadowContainer.style.zIndex = "1";
+		shadowContainer.style.backgroundColor = "white";
+
 		document.body.prepend(shadowContainer);
 
 
@@ -2172,7 +2189,9 @@ class GUI {
 		let openbtn = document.createElement("button");
 		openbtn.innerHTML = "WebAudioXML GUI";
 		openbtn.style.position = "absolute";
-		document.body.prepend(openbtn);
+		openbtn.style.right = "2px";
+		openbtn.style.top = "2px";
+		document.body.appendChild(openbtn);
 		openbtn.addEventListener("click", e => {
 			e.target.style.display = "none";
 			shadowContainer.style.width = "100%";
@@ -2221,7 +2240,10 @@ class GUI {
 		specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
 		specifiedContainer.classList.add("container");
 		container.appendChild(specifiedContainer);
-		xmlNode.querySelectorAll("*[controls='true']").forEach(xmlNode => {
+		let allNodes = xmlNode.querySelectorAll("*[controls='true']");
+		openbtn.style.display = allNodes.length ? "block": "none";
+
+		allNodes.forEach(xmlNode => {
 			this.XMLtoSliders(xmlNode, specifiedContainer, true);
 		});
 
@@ -2654,13 +2676,21 @@ class InteractionManager {
 		});
 
 
-		// add waxml commands to HTML input elements
-		[...document.querySelectorAll("input[data-waxml-target]:not([data-waxml-target=''])")].forEach( el => {
-			let target = el.dataset.waxmlTarget;
+		// add waxml commands to HTML input and waxml-xy-handle elements
+		let filter = "[data-waxml-target]:not([data-waxml-target=''])";
+		[...document.querySelectorAll(`input${filter}, waxml-xy-handle${filter}`)].forEach( el => {
+			let targets = el.dataset.waxmlTarget.split(",");
 			// remove dollar sign from variables
-			target = target.split("$").join("");
+			
 			el.addEventListener("input", e => {
-				this.waxml.setVariable(target, e.target.value, 0.001);
+				// double parenthesis allows for single values (sliders)
+				// and double values (XY-handles)
+				let values = [...[e.target.value]];
+				targets.forEach((target, i) => {
+					target = target.split("$").join("").trim();
+					this.waxml.setVariable(target, values[i % values.length], 0.001);
+				});
+				
 			});
 		});
 
@@ -3140,12 +3170,17 @@ class Loader {
 
 
 
-Loader.getPath = (url, localPath = "") => {
+Loader.getPath = (url, localPath) => {
 	
 	let slash = "/";
-	if(!localPath.endsWith(slash)){
-		localPath += slash;
+	if(localPath){
+		if(!localPath.endsWith(slash)){
+			localPath += slash;
+		}
+	} else {
+		localPath = "";
 	}
+	
 	if(!url.includes(slash + slash)){
 		// add local path (relative to linking document
 		// to URL so relative links are relative to the current XML scope and 
@@ -4002,13 +4037,13 @@ class Parser {
 		this.waxml = waxml;
 		this._ctx = this.waxml._ctx;
 
-		Loader.callBack = () => {
-			// snyggare att lyfta ut till en egen class 
-			if(this.allElements.mediastreamaudiosourcenode){
-				navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
-			}
-			//callBack(this._xml);
-		}
+		// Loader.callBack = () => {
+		// 	// snyggare att lyfta ut till en egen class 
+		// 	if(this.allElements.mediastreamaudiosourcenode){
+		// 		navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+		// 	}
+		// 	//callBack(this._xml);
+		// }
 		
 	}
 
@@ -4056,6 +4091,11 @@ class Parser {
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
 					.then(xmlNode => {
+						// snyggare att lyfta ut audio-in till en egen class 
+						if(this.allElements.mediastreamaudiosourcenode){
+							navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+						}
+						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
 				}
@@ -4231,6 +4271,12 @@ class Parser {
 									break;
 
 									default:
+									// Det är ganska dumt att den här kopplingen 
+									// är skriven i parsern
+									// Det borde ligga i object-klassen
+									if(typeof time == "undefined"){
+										time = xmlNode.obj.getParameter("transitionTime");
+									}
 									xmlNode.obj.setTargetAtTime(key, val, 0, time);
 									break;
 								}
@@ -4333,12 +4379,13 @@ class Parser {
 			}
 			xmlNode.obj = variableObj;
 			let target;
-			if(parentNode.nodeName.toLowerCase() == "audio"){
-				// top level - should be properly merged with this.waxml
-				target = this.waxml;
-			} else {
-				target = parentNode.obj;
-			}
+			// if(parentNode.nodeName.toLowerCase() == "audio"){
+			// 	// top level - should be properly merged with this.waxml
+			// 	target = this.waxml;
+			// } else {
+			// 	target = parentNode.obj;
+			// }
+			target = parentNode.obj;
 			target.setVariable(params.name, variableObj);
 			break;
 
@@ -5135,6 +5182,32 @@ class Variable {
 		this.doCallBacks(0.001);
 	}
 
+	getParameter(paramName){
+		if(typeof this._params[paramName] === "undefined"){
+			
+			if(this._parentAudioObj){
+				return this._parentAudioObj.getParameter(paramName);
+			} else {
+				return 0;
+			}
+  
+		} else {
+			let val = this._params[paramName];
+  
+			switch(paramName){
+				case "transitionTime":
+				case "loopEnd":
+				case "loopStart":
+				case "delay":
+				let timescale = this.getParameter("timescale") || 1;
+				val *= timescale;
+				break;
+  
+			}
+			return val;
+		}
+	  }
+
 }
 
 module.exports = Variable;
@@ -5613,9 +5686,15 @@ class WebAudio {
 				this.parser.init(source)
 				.then(xmlDoc => {
 					this._xml = xmlDoc;
+
+					// skriv om hela denna del så att kopplingen sker från HTML istället
 					let interactionArea = this._xml.getAttribute("interactionArea");
 					if(interactionArea){
-						this.ui.registerEvents(interactionArea);
+						let el = document.querySelector(interactionArea);
+						if(el){
+							this.ui.registerEvents(interactionArea);
+						}
+						
 					} else {
 						document.querySelectorAll("*[data-waxml-pointer]").forEach(el => {
 							if(el.dataset.waxmlPointer == "true"){
@@ -5837,43 +5916,44 @@ class WebAudio {
 
 		// move to a separate object
 		// read transitionTime
+		let xTime = transitionTime
 		if(this._xml){
-			transitionTime = transitionTime || this._xml.obj.getParameter("transitionTime");
+			xTime = xTime || this._xml.obj.getParameter("transitionTime");
 		}
-		transitionTime = transitionTime || 0.001;
+		xTime = xTime || 0.001;
 
 		let floatVal = parseFloat(val);
 		if(typeof floatVal == "number"){
 			let listener = this._ctx.listener;
 			switch(key){
 				case "positionx":
-				listener.positionX.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.positionX.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "positiony":
-				listener.positionY.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.positionY.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "positionz":
-				listener.positionZ.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.positionZ.setTargetAtTime(floatVal, 0, xTime);
 				break;
 	
 				case "forwardx":
-				listener.forwardX.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.forwardX.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "forwardy":
-				listener.forwardY.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.forwardY.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "forwardz":
-				listener.forwardZ.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.forwardZ.setTargetAtTime(floatVal, 0, xTime);
 				break;
 	
 				case "upx":
-				listener.upX.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.upX.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "upy":
-				listener.upY.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.upY.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "upz":
-				listener.upZ.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.upZ.setTargetAtTime(floatVal, 0, xTime);
 				break;
 			}
 			if(val == floatVal){val = floatVal}
@@ -6692,7 +6772,7 @@ class XY_handle extends HTMLElement {
 		this.direction = this.getAttribute("direction") || "xy";
 
 		let x =  this.getAttribute("x") || 0;
-		let y = this.getAttribute("x") || 0;
+		let y = this.getAttribute("y") || 0;
 
 		this.x = parseFloat(x);
 		this.y = parseFloat(y);
@@ -6718,14 +6798,14 @@ class XY_handle extends HTMLElement {
 				if(this.direction.includes("x")){
 					let x = e.clientX-this.clickOffset.x-this.boundRect.left;
 					x = Math.max(0, Math.min(x, this.boundRect.width));
-					this.x = x / this.boundRect.width * 100;
+					this.x = x / this.boundRect.width;
 					this.style.left = `${x}px`;
 				}
 
 				if(this.direction.includes("y")){
 					let y = e.clientY-this.clickOffset.y-this.boundRect.top;
 					y = Math.max(0, Math.min(y, this.boundRect.height));
-					this.y = y / this.boundRect.height * 100;
+					this.y = y / this.boundRect.height;
 					this.style.top = `${y}px`;
 				}
 				this.dispatchEvent(new CustomEvent("input"));
@@ -6734,9 +6814,13 @@ class XY_handle extends HTMLElement {
 
 	}
 
+	get value(){
+		return [this.x, this.y];
+	}
+
 	move(x, y){
-		this.style.left = x / 100 * this.boundRect.width + "px";
-		this.style.top = y / 100 * this.boundRect.height + "px";
+		this.style.left = x * this.boundRect.width + "px";
+		this.style.top = y * this.boundRect.height + "px";
 	}
 	connectedCallback() {
 

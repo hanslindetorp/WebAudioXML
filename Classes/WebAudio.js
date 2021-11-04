@@ -86,9 +86,15 @@ class WebAudio {
 				this.parser.init(source)
 				.then(xmlDoc => {
 					this._xml = xmlDoc;
+
+					// skriv om hela denna del så att kopplingen sker från HTML istället
 					let interactionArea = this._xml.getAttribute("interactionArea");
 					if(interactionArea){
-						this.ui.registerEvents(interactionArea);
+						let el = document.querySelector(interactionArea);
+						if(el){
+							this.ui.registerEvents(interactionArea);
+						}
+						
 					} else {
 						document.querySelectorAll("*[data-waxml-pointer]").forEach(el => {
 							if(el.dataset.waxmlPointer == "true"){
@@ -310,43 +316,44 @@ class WebAudio {
 
 		// move to a separate object
 		// read transitionTime
+		let xTime = transitionTime
 		if(this._xml){
-			transitionTime = transitionTime || this._xml.obj.getParameter("transitionTime");
+			xTime = xTime || this._xml.obj.getParameter("transitionTime");
 		}
-		transitionTime = transitionTime || 0.001;
+		xTime = xTime || 0.001;
 
 		let floatVal = parseFloat(val);
 		if(typeof floatVal == "number"){
 			let listener = this._ctx.listener;
 			switch(key){
 				case "positionx":
-				listener.positionX.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.positionX.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "positiony":
-				listener.positionY.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.positionY.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "positionz":
-				listener.positionZ.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.positionZ.setTargetAtTime(floatVal, 0, xTime);
 				break;
 	
 				case "forwardx":
-				listener.forwardX.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.forwardX.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "forwardy":
-				listener.forwardY.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.forwardY.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "forwardz":
-				listener.forwardZ.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.forwardZ.setTargetAtTime(floatVal, 0, xTime);
 				break;
 	
 				case "upx":
-				listener.upX.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.upX.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "upy":
-				listener.upY.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.upY.setTargetAtTime(floatVal, 0, xTime);
 				break;
 				case "upz":
-				listener.upZ.setTargetAtTime(floatVal, 0, transitionTime);
+				listener.upZ.setTargetAtTime(floatVal, 0, xTime);
 				break;
 			}
 			if(val == floatVal){val = floatVal}

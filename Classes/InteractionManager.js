@@ -202,13 +202,21 @@ class InteractionManager {
 		});
 
 
-		// add waxml commands to HTML input elements
-		[...document.querySelectorAll("input[data-waxml-target]:not([data-waxml-target=''])")].forEach( el => {
-			let target = el.dataset.waxmlTarget;
+		// add waxml commands to HTML input and waxml-xy-handle elements
+		let filter = "[data-waxml-target]:not([data-waxml-target=''])";
+		[...document.querySelectorAll(`input${filter}, waxml-xy-handle${filter}`)].forEach( el => {
+			let targets = el.dataset.waxmlTarget.split(",");
 			// remove dollar sign from variables
-			target = target.split("$").join("");
+			
 			el.addEventListener("input", e => {
-				this.waxml.setVariable(target, e.target.value, 0.001);
+				// double parenthesis allows for single values (sliders)
+				// and double values (XY-handles)
+				let values = [...[e.target.value]];
+				targets.forEach((target, i) => {
+					target = target.split("$").join("").trim();
+					this.waxml.setVariable(target, values[i % values.length], 0.001);
+				});
+				
 			});
 		});
 

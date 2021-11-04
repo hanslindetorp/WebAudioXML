@@ -44,6 +44,9 @@ class GUI {
 				min-width: 40px;
 				font-weight: bold;
 				background-color: red;
+				position: absolute;
+				top: 2px;
+				right: 30px;
 			}
 
 			#waxml-GUI .waxml-object {
@@ -135,6 +138,9 @@ class GUI {
 		shadowContainer.style.display = "none";
 		shadowContainer.style.overflow = "visible";
 		shadowContainer.style.position = "absolute";
+		shadowContainer.style.zIndex = "1";
+		shadowContainer.style.backgroundColor = "white";
+
 		document.body.prepend(shadowContainer);
 
 
@@ -150,7 +156,9 @@ class GUI {
 		let openbtn = document.createElement("button");
 		openbtn.innerHTML = "WebAudioXML GUI";
 		openbtn.style.position = "absolute";
-		document.body.prepend(openbtn);
+		openbtn.style.right = "2px";
+		openbtn.style.top = "2px";
+		document.body.appendChild(openbtn);
 		openbtn.addEventListener("click", e => {
 			e.target.style.display = "none";
 			shadowContainer.style.width = "100%";
@@ -199,7 +207,10 @@ class GUI {
 		specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
 		specifiedContainer.classList.add("container");
 		container.appendChild(specifiedContainer);
-		xmlNode.querySelectorAll("*[controls='true']").forEach(xmlNode => {
+		let allNodes = xmlNode.querySelectorAll("*[controls='true']");
+		openbtn.style.display = allNodes.length ? "block": "none";
+
+		allNodes.forEach(xmlNode => {
 			this.XMLtoSliders(xmlNode, specifiedContainer, true);
 		});
 

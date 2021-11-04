@@ -28,12 +28,17 @@ class Loader {
 
 
 
-Loader.getPath = (url, localPath = "") => {
+Loader.getPath = (url, localPath) => {
 	
 	let slash = "/";
-	if(!localPath.endsWith(slash)){
-		localPath += slash;
+	if(localPath){
+		if(!localPath.endsWith(slash)){
+			localPath += slash;
+		}
+	} else {
+		localPath = "";
 	}
+	
 	if(!url.includes(slash + slash)){
 		// add local path (relative to linking document
 		// to URL so relative links are relative to the current XML scope and 

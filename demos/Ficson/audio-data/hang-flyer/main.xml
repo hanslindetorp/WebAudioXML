@@ -7,13 +7,13 @@
     <var name="filter" mapin="20,500" mapout="20,500"></var>
     <var name="Q" mapin="0,50" mapout="0,50"></var>
 
-    <Chain class="noise" gain="$gainHF">
+    <Chain class="noise" gain="1">
         <Chain output="#gyro-modulator">
             <OscillatorNode type="sine" frequency="$LFO"></OscillatorNode>
             <GainNode gain="$LFO_gain"></GainNode>
         </Chain>   
 
-        <AudioWorkletNode src="audio-data/white-noise-processor.js"></AudioWorkletNode>
+        <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
         <GainNode>
             <gain id="gyro-modulator"></gain>
         </GainNode>

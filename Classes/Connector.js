@@ -80,12 +80,21 @@ class Connector {
 
 
 		let output = xmlNode.getAttribute("output");
+		let done = false;
+
 		if(output){
 
 			// connect to specified node within the scope of this (external) document
-			let topElement = xmlNode.closest("[href$='.xml]") || this._xml;
-			topElement.querySelectorAll(output).forEach(target => {
-				xmlNode.audioObject.connect(target.audioObject.input);
+			// let topElement = xmlNode.closest("[href$='.xml]") || this._xml;
+			let curNode = xmlNode;
+			let targetElements = [];
+			while(!targetElements.length && curNode != this._xml.parentNode){
+				targetElements = curNode.querySelectorAll(output);
+				curNode = curNode.parentNode;
+			}
+
+			targetElements.forEach(target => {
+				xmlNode.obj.connect(target.obj.input);
 			});
 
 		} else {
@@ -118,7 +127,7 @@ class Connector {
 					// run through following nodes to connect all
 					// sends
 					let targetNode = xmlNode;
-					let done = false;
+					done = false;
 
 					while(!done){
 

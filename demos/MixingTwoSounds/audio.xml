@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+
+    <!-- The HTML slider sets the value of $mix when the attribute data-waxml-target="mix".
+        The gain for the Mixer elements containing the audio files is calculated accordingly
+        to set a value between 0 and 1 (opposite for the two audio files).
+        The files are started and stopped by using the HTML attribute data-waxml-click-start=".loop"
+        for the START button and data-waxml-click-stop respectively. The target is defined using
+        standard CSS selector syntax and refers to the id and/or class names set for the the WebAudioXML
+        element (class="loop") in this case.
+    -->
+
+    <Mixer gain="1-$mix/100">
+        <AudioBufferSourceNode class="loop" src="audio/loopA.mp3" loop="true"></AudioBufferSourceNode>
+    </Mixer>
+
+    <Mixer gain="$mix/100">
+        <AudioBufferSourceNode class="loop" src="audio/loopB.mp3" loop="true"></AudioBufferSourceNode>
+    </Mixer>
+
+
+    <!-- This is a more flexible solution where the slider sets the variable $mix and the
+        the two <var> elements sets is values and maps them using mapin and mapout.
+        attributes. A <var> element also have possibilities to define default values, 
+        complex expressions for the value attribute, multiple mapin, and mapout values
+        conversions from MIDI notes to frequencies, interpolation curves and more. See
+        https://github.com/hanslindetorp/WebAudioXML/wiki/Parameter-Mapping for more 
+        details. -->
+
+    <!-- If you would like to experiment with this configuration, please remove the 
+        class="loop" for the AudioBufferSourceNodes above and add it to the once below -->
+    <var name="mix_a" value="$mix" default="1" mapin="0,100" mapout="1,0" curve="2"></var>
+    <var name="mix_b" value="$mix" default="0" mapin="0,100" mapout="0,1" curve="0.5"></var>
+
+    <Mixer gain="$mix_a">
+        <AudioBufferSourceNode src="audio/loopA.mp3" loop="true"></AudioBufferSourceNode>
+    </Mixer>
+
+    <Mixer gain="$mix_b">
+        <AudioBufferSourceNode src="audio/loopB.mp3" loop="true"></AudioBufferSourceNode>
+    </Mixer>
+
+
+</Audio>

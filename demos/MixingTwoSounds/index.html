@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Template</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+		<script>
+			// Här bestäms vilken sida som visas först
+			window.addEventListener("load", () => location.href = "#page1");
+		</script>
+	</head>
+
+
+	<body>
+		<h1>Mixing Two Sounds</h1>
+		<p>This demo illustrates how to play two looped sounds and mix between them using 
+			<a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a> - an XML based language to implement interactive audio 
+		into a web page.</p>
+		<p>Open the <a href="audio.xml">audio.xml</a> file to se the audio configuration.</p>
+		<p>The connections from HTML to let the buttons and slider control WebAudioXML is using
+			the data-waxml attributes:
+		</p>
+		<img src="images/code.png" />
+
+		<button data-waxml-click-start=".loop">START</button>
+		<button data-waxml-click-stop=".loop">STOP</button>
+		A<input type="range" min="0" max="100" value="0" data-waxml-target="$mix" />B
+		
+		
+		<script src="plugins/WebAudioXML.js" data-source="audio.xml"></script>
+
+	</body>
+</html>

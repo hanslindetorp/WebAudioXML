@@ -30,7 +30,7 @@ class XY_handle extends HTMLElement {
 		this.direction = this.getAttribute("direction") || "xy";
 
 		let x =  this.getAttribute("x") || 0;
-		let y = this.getAttribute("x") || 0;
+		let y = this.getAttribute("y") || 0;
 
 		this.x = parseFloat(x);
 		this.y = parseFloat(y);
@@ -56,14 +56,14 @@ class XY_handle extends HTMLElement {
 				if(this.direction.includes("x")){
 					let x = e.clientX-this.clickOffset.x-this.boundRect.left;
 					x = Math.max(0, Math.min(x, this.boundRect.width));
-					this.x = x / this.boundRect.width * 100;
+					this.x = x / this.boundRect.width;
 					this.style.left = `${x}px`;
 				}
 
 				if(this.direction.includes("y")){
 					let y = e.clientY-this.clickOffset.y-this.boundRect.top;
 					y = Math.max(0, Math.min(y, this.boundRect.height));
-					this.y = y / this.boundRect.height * 100;
+					this.y = y / this.boundRect.height;
 					this.style.top = `${y}px`;
 				}
 				this.dispatchEvent(new CustomEvent("input"));
@@ -72,9 +72,13 @@ class XY_handle extends HTMLElement {
 
 	}
 
+	get value(){
+		return [this.x, this.y];
+	}
+
 	move(x, y){
-		this.style.left = x / 100 * this.boundRect.width + "px";
-		this.style.top = y / 100 * this.boundRect.height + "px";
+		this.style.left = x * this.boundRect.width + "px";
+		this.style.top = y * this.boundRect.height + "px";
 	}
 	connectedCallback() {
 

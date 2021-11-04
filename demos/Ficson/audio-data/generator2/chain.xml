@@ -7,7 +7,7 @@
         
         <GainNode>
             <gain>
-                <Envelope class="env" start="auto" times="$attack,$decay" values="100,0" loopEnd="$loopLength" loop="true"></Envelope>
+                <Envelope class="env" start="auto" times="$delay,$attack,$decay" values="0,100,0" loopEnd="$loopLength" loop="true"></Envelope>
             </gain>
         </GainNode>
     </Chain>

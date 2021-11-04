@@ -1,90 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" xmlns:xi="http://www.w3.org/2001/XInclude" gain="-10dB">
 
-    <var name="gain2" default="0.1"></var>
-
-    <Chain class="gen2" gain="$gain2">
+    <Chain gain="$gain">
         
-        <var name="bandpass_frequency" mapin="100,2000"></var>
-        <var name="bandpass_Q" mapin="0,50"></var>
-        <var name="root" mapin="48, 72" steps="0,1" default="60" convert="MIDI->frequency"></var>
-
         <var name="attack" mapin="1,100" default="10"></var>
         <var name="decay" mapin="1,200" default="100"></var>
-        <var name="repeat" mapin="10,1000" default="500"></var>
+        <var name="delay" mapin="1,200" default="100"></var>
+        <var name="loopLength" mapin="10,1000" default="500"></var>
 
         <var name="lowpass" mapin="100,5000" default="500"></var>
 
 
         <Mixer>
             <Mixer>
-                <var name="frequency" value="$root*1"></var>
-                <var name="loopLength" value="$repeat*1"></var>
+                <var name="frequency" value="$root+0" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*0"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*2"></var>
-                <var name="loopLength" value="$repeat/2"></var>
+                <var name="frequency" value="$root+(5*1)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*1"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*3"></var>
-                <var name="loopLength" value="$repeat/3"></var>
+                <var name="frequency" value="$root+(5*2)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*2"></var>
+                <xi:include href="chain.xml" />
+            </Mixer>
+
+
+
+            <Mixer>
+                <var name="frequency" value="$root+(5*3)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*3"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*4"></var>
-                <var name="loopLength" value="$repeat/4"></var>
+                <var name="frequency" value="$root+(5*4)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*4"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*5"></var>
-                <var name="loopLength" value="$repeat/5"></var>
+                <var name="frequency" value="$root+(5*5)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*5"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*6"></var>
-                <var name="loopLength" value="$repeat/6"></var>
+                <var name="frequency" value="$root+(5*6)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*6"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*7"></var>
-                <var name="loopLength" value="$repeat/7"></var>
+                <var name="frequency" value="$root+(5*7)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*7"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*8"></var>
-                <var name="loopLength" value="$repeat/8"></var>
+                <var name="frequency" value="$root+(5*8)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*8"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*9"></var>
-                <var name="loopLength" value="$repeat/9"></var>
+                <var name="frequency" value="$root+(5*9)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*9"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*10"></var>
-                <var name="loopLength" value="$repeat/10"></var>
+                <var name="frequency" value="$root+(5*10)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*10"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
             <Mixer>
-                <var name="frequency" value="$root*11"></var>
-                <var name="loopLength" value="$repeat/11"></var>
-                <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
-                <var name="frequency" value="$root*12"></var>
-                <var name="loopLength" value="$repeat/12"></var>
-                <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
-                <var name="frequency" value="$root*13"></var>
-                <var name="loopLength" value="$repeat/13"></var>
-                <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
-                <var name="frequency" value="$root*14"></var>
-                <var name="loopLength" value="$repeat/14"></var>
+                <var name="frequency" value="$root+(5*11)" convert="MIDI->frequency"></var>
+                <var name="delay" value="$delay*11"></var>
                 <xi:include href="chain.xml" />
             </Mixer>
         </Mixer>

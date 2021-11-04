@@ -160,6 +160,32 @@ class Variable {
 		this.doCallBacks(0.001);
 	}
 
+	getParameter(paramName){
+		if(typeof this._params[paramName] === "undefined"){
+			
+			if(this._parentAudioObj){
+				return this._parentAudioObj.getParameter(paramName);
+			} else {
+				return 0;
+			}
+  
+		} else {
+			let val = this._params[paramName];
+  
+			switch(paramName){
+				case "transitionTime":
+				case "loopEnd":
+				case "loopStart":
+				case "delay":
+				let timescale = this.getParameter("timescale") || 1;
+				val *= timescale;
+				break;
+  
+			}
+			return val;
+		}
+	  }
+
 }
 
 module.exports = Variable;
