@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" xmlns:xi="http://www.w3.org/2001/XInclude" gain="0dB">
+<Audio version="1.0" timeUnit="ms" xmlns:xi="http://www.w3.org/2001/XInclude" gain="-3dB">
 
     <Chain gain="$gain">
         

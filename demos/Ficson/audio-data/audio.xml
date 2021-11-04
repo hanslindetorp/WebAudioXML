@@ -6,8 +6,10 @@
         
     <Mixer id="vehicle1">
 
-        <var name="bandpass_frequency" mapin="100,2000"></var>
-        <var name="bandpass_Q" mapin="0,50" default="0"></var>
+        <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="100,2000"></var>
+        <var name="bandpass_Q" mapin="0,50" default="20"></var>
+
+
         <var name="root" mapin="48, 72" steps="0,1" default="60"></var>
 
         <xi:include href="hang-flyer/main.xml" />

@@ -13,6 +13,7 @@
 		<h1>Ficson - Audio Prototype</h1>
 		<p>Open the control panel and edit the sounds.</p>
 
+		<h3>Added sounds 1-4 (clockwise)</h3>
 		<waxml-xy-area 
 			background-color="#696" 
 			grid-color="#9C9" 
@@ -22,6 +23,12 @@
 				data-waxml-target="x, y"
 			></waxml-xy-handle>
 		</waxml-xy-area>
+
+		<h3>Engine 1 - gain:</h3>
+		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$engine1_gain" />
+
+		<h3>Vehicle Speed:</h3>
+		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed" />
 
 		<script src="plugins/WebAudioXML.js" data-source="audio-data/audio.xml"></script>
 		<!-- <script src="plugins/imusic_091.js" data-music-structure="music.xml"></script> -->

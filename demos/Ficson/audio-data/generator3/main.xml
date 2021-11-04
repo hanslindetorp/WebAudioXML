@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms">
+<Audio version="1.0" timeUnit="ms" gain="-6dB">
     <var name="root" default="200" mapin="20,2000"></var>
     <var name="Q" mapin="0,100" default="10"></var>
 

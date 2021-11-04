@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="-10dB" id="gen1">
+<Audio version="1.0" timeUnit="ms" gain="-3dB" id="gen1">
 
     <var name="chunklength" mapin="0,5000" default="300"></var>
     <var name="chunkvariation" mapin="0,5000" default="1000"></var>
