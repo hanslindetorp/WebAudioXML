@@ -18,6 +18,7 @@
                     <var name="gain" value="(1-$y)*$onY" curve="EaseOut"></var>
                     <xi:include href="generator1/main.xml" />
                     <Send output=".filter3" gain="+12dB"></Send>
+                    <GainNode gain="$gain"></GainNode>
                 </Chain>
 
                 <Chain>

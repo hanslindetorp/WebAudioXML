@@ -5,10 +5,8 @@
     <var name="chunkvariation" mapin="0,5000" default="1000"></var>
     <var name="min_pitch" mapin="36,72" default="48" convert="MIDI->frequency"></var>
     <var name="max_pitch" mapin="48,128" default="72" convert="MIDI->frequency"></var>
-    <var name="bandpass_frequency" mapin="100,2000" default="400"></var>
-    <var name="bandpass_Q" mapin="0,100" default="30"></var>
 
-    <Chain gain="$gain">
+    <Chain>
         <AudioWorkletNode 
             chunkvariation="$chunkvariation" 
             chunklength="$chunklength" 

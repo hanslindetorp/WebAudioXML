@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms">
-    <var name="f" default="200" mapin="20,2000"></var>
-    <var name="q" mapin="0,100" default="10"></var>
+    <var name="root" default="200" mapin="20,2000"></var>
+    <var name="Q" mapin="0,100" default="10"></var>
 
     <Chain gain="$gain">
         <Mixer>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*1" Q="$q*1"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*2" Q="$q*2"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*3" Q="$q*3"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*4" Q="$q*4"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*5" Q="$q*5"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*6" Q="$q*6"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*7" Q="$q*7"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*8" Q="$q*8"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*9" Q="$q*9"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*10" Q="$q*10"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*11" Q="$q*11"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*12" Q="$q*12"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*13" Q="$q*13"></BiquadFilterNode>
-            <BiquadFilterNode class="filter3" type="bandpass" frequency="$f*14" Q="$q*14"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*1" Q="$Q*1"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*2" Q="$Q*2"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*3" Q="$Q*3"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*4" Q="$Q*4"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*5" Q="$Q*5"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*6" Q="$Q*6"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*7" Q="$Q*7"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*8" Q="$Q*8"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*9" Q="$Q*9"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*10" Q="$Q*10"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*11" Q="$Q*11"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*12" Q="$Q*12"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*13" Q="$Q*13"></BiquadFilterNode>
+            <BiquadFilterNode class="filter3" type="bandpass" frequency="$root*14" Q="$Q*14"></BiquadFilterNode>
         </Mixer>
     </Chain>
 </Audio>

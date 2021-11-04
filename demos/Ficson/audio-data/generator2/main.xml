@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" xmlns:xi="http://www.w3.org/2001/XInclude" gain="-10dB">
+<Audio version="1.0" timeUnit="ms" xmlns:xi="http://www.w3.org/2001/XInclude" gain="0dB">
 
     <Chain gain="$gain">
         
@@ -8,7 +8,7 @@
         <var name="delay" mapin="1,200" default="100"></var>
         <var name="loopLength" mapin="10,1000" default="500"></var>
 
-        <var name="lowpass" mapin="100,5000" default="500"></var>
+        <!-- <var name="lowpass" mapin="100,5000" default="500"></var> -->
 
 
         <Mixer>
@@ -76,8 +76,8 @@
                 <xi:include href="chain.xml" />
             </Mixer>
         </Mixer>
-        <BiquadFilterNode type="bandpass" frequency="$bandpass_frequency" Q="$bandpass_Q"></BiquadFilterNode>
-        <BiquadFilterNode type="lowpass" frequency="$lowpass"></BiquadFilterNode>
+        <!-- <BiquadFilterNode type="bandpass" frequency="$bandpass_frequency" Q="$bandpass_Q"></BiquadFilterNode>
+        <BiquadFilterNode type="lowpass" frequency="$lowpass"></BiquadFilterNode> -->
 
     </Chain>
 </Audio>

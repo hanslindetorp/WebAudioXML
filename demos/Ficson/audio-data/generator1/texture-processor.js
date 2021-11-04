@@ -13,7 +13,7 @@ class TextureProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors () {
     return [{
       name: 'chunklength',
-      defaultValue: 1,
+      defaultValue: 100,
       minValue: 1,
       maxValue: 1000000,
       automationRate: 'k-rate'

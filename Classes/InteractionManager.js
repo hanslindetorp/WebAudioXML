@@ -211,7 +211,8 @@ class InteractionManager {
 			el.addEventListener("input", e => {
 				// double parenthesis allows for single values (sliders)
 				// and double values (XY-handles)
-				let values = [...[e.target.value]];
+				let values = e.target.value;
+				values = values instanceof Array ? values : [values];
 				targets.forEach((target, i) => {
 					target = target.split("$").join("").trim();
 					this.waxml.setVariable(target, values[i % values.length], 0.001);
