@@ -15,7 +15,7 @@
 
     <Mixer id="vehicle1" output=".channel">
 
-        <var name="root" mapin="48, 72" steps="0,1" default="60"></var>
+        <var name="root" mapin="48, 72" steps="0,1" default="70"></var>
 
         <xi:include href="engine1-hang-flyer/main.xml" />
         
@@ -26,6 +26,7 @@
                 <Chain class="generator1">
                     <var name="chunklength" mapin="0,5000" default="735"></var>
                     <var name="chunkvariation" mapin="0,5000" default="1555"></var>
+                    <var name="transition" mapin="0,5000" default="100"></var>
                     <var name="min_pitch" mapin="36,128" default="90" convert="MIDI->frequency" step="0,2, 4, 5, 7, 9, 11, 12"></var>
                     <var name="max_pitch" mapin="48,128" default="114" convert="MIDI->frequency" step="0,2, 4, 5, 7, 9, 11, 12"></var>
 

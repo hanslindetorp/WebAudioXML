@@ -5,6 +5,7 @@
         <AudioWorkletNode 
             chunkvariation="$chunkvariation" 
             chunklength="$chunklength" 
+            transition="$transition"
             minfrequency="$min_pitch"
             maxfrequency="$max_pitch"
             src="texture-processor.js"

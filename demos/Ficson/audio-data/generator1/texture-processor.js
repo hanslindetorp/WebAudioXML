@@ -9,7 +9,9 @@ class TextureProcessor extends AudioWorkletProcessor {
     this.sampleRate = 44100;
     this.chunkLength = 0;
     this.smoothCounter = 0;
-    this.smoothLength = 100;
+    this.smoothLength = 3000;
+
+    this.phaseIndex = 0;
   }
 
   static get parameterDescriptors () {
@@ -23,6 +25,12 @@ class TextureProcessor extends AudioWorkletProcessor {
       name: 'chunkvariation',
       defaultValue: 0,
       minValue: 0,
+      maxValue: 1000000,
+      automationRate: 'k-rate'
+    },{
+      name: 'transition',
+      defaultValue: 100,
+      minValue: 1,
       maxValue: 1000000,
       automationRate: 'k-rate'
     },{
@@ -59,32 +67,34 @@ class TextureProcessor extends AudioWorkletProcessor {
       if(!posInChunck){ // generate a new nextVal for each chunk
         this.frequency = this.newFrequency;
         this.newFrequency = this.getRandomFrequency(parameters);
+        
+        // needed first time
+        this.frequency = this.frequency || this.newFrequency;
+        
         this.chunkLength = this.getChunkLength(parameters);
         this.smoothCounter = 0;
+        this.transitionTime = this.getValue(parameters['transition']);
+      
       }
 
 
       
-      // let frequency = this.frequency + diff * posInChunck / chunkLength;
 
-      let sine1 = Math.sin(this.frequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
-      let sine2 = Math.sin(this.newFrequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
-      let diff = sine2 - sine1;
-      // let factor = Math.min(1, posInChunck / this.chunkLength * 4);
-      let factor = Math.min(1, this.smoothCounter / this.smoothLength);
+      // let sine1 = Math.sin(this.frequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
+      // let sine2 = Math.sin(this.newFrequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
+      // let diff = sine2 - sine1;
+      let factor = Math.min(1, this.smoothCounter / this.transitionTime);
       let smooth = Math.sin(factor / 2 * Math.PI);
-      // let targetFrequency = this.frequency + (this.newFrequency - this.frequency) * factor;
-      // let sine3 = Math.sin(targetFrequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
-      
+      let targetFrequency = this.frequency + (this.newFrequency - this.frequency) * smooth;
+      let y = Math.sin(this.phaseIndex * 2 * Math.PI);
 
       output.forEach(channel => { 
-        // channel[i] = (sine1 + diff * Math.min(1, factor * 1)) * sine3;
-        // channel[i] = sine1 + diff * factor;
-        channel[i] = (sine1 * (1-smooth) + sine2 * smooth) * 0.5;
-        // channel[i] = sine3;
+        channel[i] = y;
       });
       this.sampleIndex++;
       this.smoothCounter++;
+      let phaseIncrement = 1/(this.sampleRate / targetFrequency);
+      this.phaseIndex += phaseIncrement;
     }
     
     return true;

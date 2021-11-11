@@ -29,6 +29,7 @@
                 <Chain class="generator1">
                     <var name="chunklength" mapin="0,5000" default="280"></var>
                     <var name="chunkvariation" mapin="0,5000" default="100"></var>
+                    <var name="transition" mapin="0,5000" default="100"></var>
                     <var name="min_pitch" mapin="36,72" default="64" convert="MIDI->frequency" step="0,2, 4, 5, 7, 9, 11, 12"></var>
                     <var name="max_pitch" mapin="48,128" default="88" convert="MIDI->frequency" step="0,2, 4, 5, 7, 9, 11, 12"></var>
 
