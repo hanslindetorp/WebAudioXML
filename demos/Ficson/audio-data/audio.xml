@@ -5,8 +5,8 @@
         <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
     </Mixer>
     
-    <xi:include href="_vehicle-1.xml" />
-    <xi:include href="_vehicle-2.xml" />
-    <xi:include href="_vehicle-3.xml" />
+    <xi:include href="vehicle-1.xml" />
+    <xi:include href="vehicle-2.xml" />
+    <xi:include href="vehicle-3.xml" />
 
 </Audio>
