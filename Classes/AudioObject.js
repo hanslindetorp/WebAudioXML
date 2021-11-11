@@ -166,13 +166,44 @@ class AudioObject{
         if(src){
           let processorName = src.split(".").shift().split("/").pop();
           if(this._ctx.audioWorklet){
-            console.log("addModule", localPath + src);
-            this._ctx.audioWorklet.addModule(localPath + src)
-            .then(e =>{
+
+            let setParams = () => {
+              Object.entries(this._params).forEach(paramObj => {
+                let val = paramObj[1].valueOf();
+                let targetParam = this._node.parameters.get(paramObj[0]);
+                if(typeof val != "undefined" && targetParam){
+                  // if parameter is set
+                  // and target parameter is found in audioworklet
+                  targetParam.setValueAtTime(val, this._ctx.currentTime);
+                }
+              });
+            }
+
+            // use try/catch to avoid mutiple registration of processors
+            // doesn't really seem to work, though...
+            try {
               this._node = new AudioWorkletNode(this._ctx, processorName);
               setTimeout(e => this._node.connect(this._destination), 1000);
-              //this._node.connect(this.output);
-            });
+              setParams();
+            } catch {
+              console.log("addModule", localPath + src);
+              this._ctx.audioWorklet.addModule(localPath + src)
+              .then(e =>{
+                this._node = new AudioWorkletNode(this._ctx, processorName);
+                setTimeout(e => this._node.connect(this._destination), 1000);
+                setParams();
+              });
+            }
+
+            // console.log("addModule", localPath + src);
+            // this._ctx.audioWorklet.addModule(localPath + src)
+            // .then(e =>{
+            //   this._node = new AudioWorkletNode(this._ctx, processorName);
+            //   setTimeout(e => this._node.connect(this._destination), 1000);
+            //   //this._node.connect(this.output);
+            // });
+
+
           } else {
             console.error("WebAudioXML error. No support for AudioWorkletNode");
           }

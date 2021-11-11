@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+
+    <var name="engine_gain" mapin="0,1" default="0.2"></var>
+
+    <Chain gain="$engine_gain">
+		<GainNode class="engine3 white-noise"></GainNode>
+        <DelayNode delayTime="2"></DelayNode>
+		<BiquadFilterNode type="lowpass" frequency="800"></BiquadFilterNode>
+		<BiquadFilterNode frequency="$bandpass_frequency" type="bandpass" Q="$bandpass_Q"></BiquadFilterNode>
+
+	</Chain>
+
+</Audio>

@@ -375,13 +375,44 @@ class AudioObject{
         if(src){
           let processorName = src.split(".").shift().split("/").pop();
           if(this._ctx.audioWorklet){
-            console.log("addModule", localPath + src);
-            this._ctx.audioWorklet.addModule(localPath + src)
-            .then(e =>{
+
+            let setParams = () => {
+              Object.entries(this._params).forEach(paramObj => {
+                let val = paramObj[1].valueOf();
+                let targetParam = this._node.parameters.get(paramObj[0]);
+                if(typeof val != "undefined" && targetParam){
+                  // if parameter is set
+                  // and target parameter is found in audioworklet
+                  targetParam.setValueAtTime(val, this._ctx.currentTime);
+                }
+              });
+            }
+
+            // use try/catch to avoid mutiple registration of processors
+            // doesn't really seem to work, though...
+            try {
               this._node = new AudioWorkletNode(this._ctx, processorName);
               setTimeout(e => this._node.connect(this._destination), 1000);
-              //this._node.connect(this.output);
-            });
+              setParams();
+            } catch {
+              console.log("addModule", localPath + src);
+              this._ctx.audioWorklet.addModule(localPath + src)
+              .then(e =>{
+                this._node = new AudioWorkletNode(this._ctx, processorName);
+                setTimeout(e => this._node.connect(this._destination), 1000);
+                setParams();
+              });
+            }
+
+            // console.log("addModule", localPath + src);
+            // this._ctx.audioWorklet.addModule(localPath + src)
+            // .then(e =>{
+            //   this._node = new AudioWorkletNode(this._ctx, processorName);
+            //   setTimeout(e => this._node.connect(this._destination), 1000);
+            //   //this._node.connect(this.output);
+            // });
+
+
           } else {
             console.error("WebAudioXML error. No support for AudioWorkletNode");
           }
@@ -2083,8 +2114,8 @@ class GUI {
 			}
 
 			#waxml-GUI .waxml-object {
-				margin: 0px 2px;
-				border: 1px solid grey;
+				margin: 6px 2px;
+				border: 1px solid #333;
 				border-radius: 5px;
 				background-color: rgba(0,0,0,0.05);
 				box-sizing: content-box;
@@ -2096,6 +2127,7 @@ class GUI {
 			}
 			#waxml-GUI .waxml-object header {
 				margin: 5px 8px;
+				font-weight: bold;
 			}
 			#waxml-GUI .audio > * {
 				display: inline-block;
@@ -2693,6 +2725,29 @@ class InteractionManager {
 				});
 				
 			});
+
+			if(el.dataset.waxmlAutomation){
+				let data = el.dataset.waxmlAutomation.split(",");
+				let waveForm = data[0] ? data[0].trim() : "sine";
+				let frequency = parseFloat(data[1] ? data[1].trim() : 1);
+				let min = parseFloat(el.getAttribute("min") || 0);
+				let max = parseFloat(el.getAttribute("max") || 0);
+				let range = max - min;
+				let updateFrequency = 20;
+				
+				let x = 0;
+
+				setInterval(() => {
+					let factor = (Math.sin(Math.PI * x * frequency / updateFrequency)+1)/2;
+					let val = min + factor * range;
+					el.value = val;
+
+					var event = new CustomEvent("input");
+					el.dispatchEvent(event);
+
+					x++;
+				}, 1000 / updateFrequency);
+			}
 		});
 
 	}

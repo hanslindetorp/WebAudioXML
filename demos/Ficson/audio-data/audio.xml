@@ -1,55 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" controls="true" timeUnit="ms" gain="0dB" xmlns:xi="http://www.w3.org/2001/XInclude">
-
-    <var name="onX" value="$y" mapin="0,0.5,1" mapout="0,1,0" curve="EaseOut"></var>
-    <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0" curve="EaseOut"></var>
-        
-    <Mixer id="vehicle1">
-
-        <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="100,2000"></var>
-        <var name="bandpass_Q" mapin="0,50" default="20"></var>
-
-
-        <var name="root" mapin="48, 72" steps="0,1" default="60"></var>
-
-        <xi:include href="hang-flyer/main.xml" />
-        
-        <Chain gain="1-($onX*$onY)">
-            <Mixer>
-                <Chain>
-                    <var name="gain" value="(1-$y)*$onY" curve="EaseOut"></var>
-                    <xi:include href="generator1/main.xml" />
-                    <Send output=".filter3" gain="+12dB"></Send>
-                    <GainNode gain="$gain"></GainNode>
-                </Chain>
-
-                <Chain>
-                    <var name="gain" value="$x*$onX" curve="EaseOut"></var>
-
-                    <xi:include href="generator2/main.xml" />
-                </Chain>
-
-                <Chain>
-                    <var name="gain" value="$y*$onY" curve="EaseOut"></var>
-                    <xi:include href="generator3/main.xml" />
-                </Chain>
-
-                <Chain>
-                    <var name="gain" value="(1-$x)*$onX" curve="EaseOut"></var>
-                    <xi:include href="generator4/main.xml" />
-                </Chain>
-            </Mixer>
-            <BiquadFilterNode 
-                type="bandpass" 
-                frequency="$bandpass_frequency" 
-                Q="$bandpass_Q"
-            ></BiquadFilterNode>
-            <Send output=".reverb" gain="$onX*$onY*4"></Send>
-        </Chain>
-        <ConvolverNode class="reverb" src="white_noise_2.wav"></ConvolverNode>
-
+<Audio version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
+    
+    <Mixer output=".white-noise">
+        <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
     </Mixer>
     
-    
+    <xi:include href="_vehicle-1.xml" />
+    <xi:include href="_vehicle-2.xml" />
+    <xi:include href="_vehicle-3.xml" />
 
 </Audio>

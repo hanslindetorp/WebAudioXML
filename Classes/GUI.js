@@ -50,8 +50,8 @@ class GUI {
 			}
 
 			#waxml-GUI .waxml-object {
-				margin: 0px 2px;
-				border: 1px solid grey;
+				margin: 6px 2px;
+				border: 1px solid #333;
 				border-radius: 5px;
 				background-color: rgba(0,0,0,0.05);
 				box-sizing: content-box;
@@ -63,6 +63,7 @@ class GUI {
 			}
 			#waxml-GUI .waxml-object header {
 				margin: 5px 8px;
+				font-weight: bold;
 			}
 			#waxml-GUI .audio > * {
 				display: inline-block;

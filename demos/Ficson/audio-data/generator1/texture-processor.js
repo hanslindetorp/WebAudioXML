@@ -8,6 +8,8 @@ class TextureProcessor extends AudioWorkletProcessor {
     this.sampleIndex = 0;
     this.sampleRate = 44100;
     this.chunkLength = 0;
+    this.smoothCounter = 0;
+    this.smoothLength = 100;
   }
 
   static get parameterDescriptors () {
@@ -58,6 +60,7 @@ class TextureProcessor extends AudioWorkletProcessor {
         this.frequency = this.newFrequency;
         this.newFrequency = this.getRandomFrequency(parameters);
         this.chunkLength = this.getChunkLength(parameters);
+        this.smoothCounter = 0;
       }
 
 
@@ -67,14 +70,21 @@ class TextureProcessor extends AudioWorkletProcessor {
       let sine1 = Math.sin(this.frequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
       let sine2 = Math.sin(this.newFrequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
       let diff = sine2 - sine1;
-      let factor = posInChunck / this.chunkLength;
+      // let factor = Math.min(1, posInChunck / this.chunkLength * 4);
+      let factor = Math.min(1, this.smoothCounter / this.smoothLength);
       let smooth = Math.sin(factor / 2 * Math.PI);
+      // let targetFrequency = this.frequency + (this.newFrequency - this.frequency) * factor;
+      // let sine3 = Math.sin(targetFrequency * this.sampleIndex / this.sampleRate * 2 * Math.PI);
+      
 
       output.forEach(channel => { 
         // channel[i] = (sine1 + diff * Math.min(1, factor * 1)) * sine3;
-        channel[i] = sine1 + diff * smooth;
+        // channel[i] = sine1 + diff * factor;
+        channel[i] = (sine1 * (1-smooth) + sine2 * smooth) * 0.5;
+        // channel[i] = sine3;
       });
       this.sampleIndex++;
+      this.smoothCounter++;
     }
     
     return true;
@@ -99,9 +109,11 @@ class TextureProcessor extends AudioWorkletProcessor {
 
     let chunkLength = this.getValue(parameters['chunklength']);
     let chunkVariation = this.getValue(parameters['chunkvariation']);
+    
     // chunkLength = Math.max(1, chunkLength - chunkVariation / 2);
-    chunkLength += Math.random() * chunkVariation;
-    return Math.floor(chunkLength);
+    chunkLength += (Math.random() * chunkVariation);
+    chunkLength = Math.floor(chunkLength);
+    return chunkLength;
   }
 }
 

@@ -3,81 +3,87 @@
 
     <Chain gain="$gain">
         
-        <var name="attack" mapin="1,100" default="10"></var>
-        <var name="decay" mapin="1,200" default="100"></var>
-        <var name="delay" mapin="1,200" default="100"></var>
-        <var name="loopLength" mapin="10,1000" default="500"></var>
 
         <!-- <var name="lowpass" mapin="100,5000" default="500"></var> -->
 
 
         <Mixer>
-            <Mixer>
+            <Chain>
                 <var name="frequency" value="$root+0" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*0"></var>
+                <!-- <var name="delay" value="$delay*0"></var> -->
+                <DelayNode delayTime="$delay*0/1000"></DelayNode>
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*1)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*1"></var>
+                <!-- <var name="delay" value="$delay*1"></var> -->
+                <DelayNode delayTime="$delay*1/1000"></DelayNode>
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*2)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*2"></var>
+                <!-- <var name="delay" value="$delay*2"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
+                <DelayNode delayTime="$delay*2/1000"></DelayNode>
+            </Chain>
 
 
 
-            <Mixer>
+            <Chain>
                 <var name="frequency" value="$root+(5*3)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*3"></var>
+                <!-- <var name="delay" value="$delay*3"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*3/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*4)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*4"></var>
+                <!-- <var name="delay" value="$delay*4"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*4/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*5)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*5"></var>
+                <!-- <var name="delay" value="$delay*5"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*5/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*6)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*6"></var>
+                <!-- <var name="delay" value="$delay*6"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*6/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*7)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*7"></var>
+                <!-- <var name="delay" value="$delay*7"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*7/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*8)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*8"></var>
+                <!-- <var name="delay" value="$delay*8"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*8/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*9)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*9"></var>
+                <!-- <var name="delay" value="$delay*9"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*9/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*10)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*10"></var>
+                <!-- <var name="delay" value="$delay*10"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
-            <Mixer>
+                <DelayNode delayTime="$delay*10/1000"></DelayNode>
+            </Chain>
+            <Chain>
                 <var name="frequency" value="$root+(5*11)" convert="MIDI->frequency"></var>
-                <var name="delay" value="$delay*11"></var>
+                <!-- <var name="delay" value="$delay*11"></var> -->
                 <xi:include href="chain.xml" />
-            </Mixer>
+                <DelayNode delayTime="$delay*11/1000"></DelayNode>
+            </Chain>
         </Mixer>
-        <!-- <BiquadFilterNode type="bandpass" frequency="$bandpass_frequency" Q="$bandpass_Q"></BiquadFilterNode>
-        <BiquadFilterNode type="lowpass" frequency="$lowpass"></BiquadFilterNode> -->
-
+        
     </Chain>
 </Audio>

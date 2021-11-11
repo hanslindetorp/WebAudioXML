@@ -219,6 +219,29 @@ class InteractionManager {
 				});
 				
 			});
+
+			if(el.dataset.waxmlAutomation){
+				let data = el.dataset.waxmlAutomation.split(",");
+				let waveForm = data[0] ? data[0].trim() : "sine";
+				let frequency = parseFloat(data[1] ? data[1].trim() : 1);
+				let min = parseFloat(el.getAttribute("min") || 0);
+				let max = parseFloat(el.getAttribute("max") || 0);
+				let range = max - min;
+				let updateFrequency = 20;
+				
+				let x = 0;
+
+				setInterval(() => {
+					let factor = (Math.sin(Math.PI * x * frequency / updateFrequency)+1)/2;
+					let val = min + factor * range;
+					el.value = val;
+
+					var event = new CustomEvent("input");
+					el.dispatchEvent(event);
+
+					x++;
+				}, 1000 / updateFrequency);
+			}
 		});
 
 	}

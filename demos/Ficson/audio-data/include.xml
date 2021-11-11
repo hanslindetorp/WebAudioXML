@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" xmlns:xi="http://www.w3.org/2001/XInclude">
-    <xi:include href="sound1/sound1.xml" />
-    <xi:include href="oscillator.xml" />
-</Audio>
