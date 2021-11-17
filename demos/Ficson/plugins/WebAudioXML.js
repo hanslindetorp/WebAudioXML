@@ -1868,6 +1868,7 @@ class Connector {
 						} else {
 							// stupid way of dealing with non-audio elements. But for now...
 							if(targetNode.nodeName == "#text"){continue}
+							if(targetNode.nodeName.toLowerCase() == "var"){continue}
 
 							done = targetNode.nodeName.toLowerCase() != "send";
 							xmlNode.audioObject.connect(targetNode.audioObject.input);
@@ -1898,7 +1899,7 @@ class Connector {
 	getNextInput(xmlNode){
 		let nextSibling = xmlNode.nextElementSibling;
 		if(nextSibling){
-			if(nextSibling.audioObject.input){
+			if(nextSibling.obj && nextSibling.obj.input){
 				return nextSibling.audioObject.input;
 			} else {
 				return this.getNextInput(nextSibling);
@@ -5211,7 +5212,7 @@ class Variable {
 
 		this.derivativeValues = [0];
 		// this.derivative2Values = [0];
-		this.smoothDerivative = 10;
+		this.smoothDerivative = 6;
 
 
 		this._mapper = new Mapper(params);
@@ -5268,10 +5269,10 @@ class Variable {
 				let diff = this.mappedValue - this.lastMappedValue;
 				this.lastMappedValue = this.mappedValue;
 				let now = this.time;
-				let time = now - this.lastUpdate;
+				let time = 1; // now - this.lastUpdate;
 			
 				if(time){
-					let newDerivative = diff / time;
+					let newDerivative = diff; // / time;
 					this.lastUpdate = now;
 	
 					let lastAVG = this._derivative;
@@ -5279,6 +5280,9 @@ class Variable {
 					this._derivative = newAVG;
 					
 					this._derivative2 = newAVG - lastAVG;
+
+					// this._derivative2 = newDerivative - this._derivative;
+					// this._derivative = newDerivative;
 				}
 				
 				// this._derivative = newDerivative;
@@ -5818,9 +5822,11 @@ class Watcher {
 		let variables = {};
 
 		[...str.matchAll(rxp)].forEach(match => {
-			let varName = match[1] || match[2] || match[3];
+			let arr = (match[1] || match[2] || match[3]).split(".");
+			let varName = arr[0];
+			let prop = arr[1] || "value";
 			let parentObj = WebAudioUtils.getVariableContainer(varName, xmlNode, variableType);
-			let prop = this.variablePathToProp(str);
+			// let prop = this.variablePathToProp(str);
 
 			let props;
 			if(parentObj){
@@ -5860,14 +5866,14 @@ class Watcher {
 					// support comma separated array
 					let me = this; // this is undefined inside forEach:eval
 					this.value.split(",").forEach(v => {
-						if(v.includes("getVariable")){
-							// add the default property "value"
-							// if not specified (like "derivative")
+						// if(v.includes("getVariable")){
+						// 	// add the default property "value"
+						// 	// if not specified (like "derivative")
 						
-							if(v.substr(-1) == ")"){
-								v += ".value";
-							}
-						}
+						// 	if(v.substr(-1) == ")"){
+						// 		v += ".value";
+						// 	}
+						// }
 						let v1 = eval(v);
 						v1 = (Number.isNaN(v1) ? val : v1) || 0;
 						values.push(v1);
@@ -6425,7 +6431,7 @@ class WebAudioUtils {
 
 }
 
-var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_]*)|var[(]([a-z0-9_]+)[)]/gi;
+var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_.]*)|var[(]([a-z0-9_]+)[)]/gi;
 var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
 WebAudioUtils.rxp = rxp;
 WebAudioUtils.rxpVal = rxpVal;
@@ -6956,9 +6962,11 @@ WebAudioUtils.nrOfVariableNames = (str = "") => {
 WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	if(typeof str != "string"){return 0};
 	// regExp
-	return str.replaceAll(rxp, (a, b, c, d) => {
-		let v = b || c || d;
-		return `${q}me.getVariable('${v}')${q}`;
+	return str.replaceAll(rxp, (a, b, c, d, e, f) => {
+		let arr = (b || c || d).split(".");
+		let varName = arr[0];
+		let prop = arr[1] || "value";
+		return `${q}me.getVariable('${varName}').${prop}${q}`;
 	});
 }
 
@@ -7057,14 +7065,7 @@ class XY_handle extends HTMLElement {
 		this.style.lineHeight = "1.3em";
 		this.style.padding = "3px";
 
-		this.rect = this.getBoundingClientRect();
-		let br = this.parentNode.getBoundingClientRect();
-		this.boundRect = {
-			left: br.left,
-			top: br.top,
-			width: br.width - this.rect.width,
-			height: br.height - this.rect.height
-		};
+		this.initRects();
 
 		this.direction = this.getAttribute("direction") || "xy";
 
@@ -7079,6 +7080,7 @@ class XY_handle extends HTMLElement {
 
 
 		this.addEventListener("pointerdown", e => {
+			this.initRects();
 			this.dragged = true;
 			this.clickOffset = {x: e.offsetX, y:e.offsetY};
 			this.setPointerCapture(e.pointerId);
@@ -7113,6 +7115,18 @@ class XY_handle extends HTMLElement {
 
 	get value(){
 		return [this.x, this.y];
+	}
+
+	initRects(){
+
+		this.rect = this.getBoundingClientRect();
+		let br = this.parentNode.getBoundingClientRect();
+		this.boundRect = {
+			left: br.left,
+			top: br.top,
+			width: br.width - this.rect.width,
+			height: br.height - this.rect.height
+		};
 	}
 
 	move(x, y){

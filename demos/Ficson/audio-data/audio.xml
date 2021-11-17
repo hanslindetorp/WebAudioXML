@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
-    <var name="zPos" value="$time" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
+    <var name="zPos" value="$time.derivative*2" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
+    <!--
     <var name="f" mapin="0,0.5,1" mapout="200, 400, 50, 1000, 300"></var>
     
     <Mixer gain="-9dB">
         <OscillatorNode transitionTime="1" frequency="$f"></OscillatorNode>
-    </Mixer>
+    </Mixer> -->
     
-    <!-- <GainNode id="gain" gain="$master*0.2" transitionTime="10"></GainNode> -->
-   
+    <!-- <var name="master" default="0"></var> -->
+    
     <Mixer output=".white-noise">
         <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
     </Mixer> 
     
-    <!-- <Mixer gain="1">
+    <Mixer gain="1" output="#ch1-hang-flyer">
         <var name="zPos" value="$time" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
         <var name="angle" value="$time" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_rAngle.csv"></var>
         
@@ -23,25 +24,42 @@
         <xi:include href="vehicle-1-hang-flyer.xml" />
     </Mixer>
 
-    <Mixer gain="1">
+    <Mixer gain="1" output="#ch2-wheel-chair">
         <var name="xPos" value="$time" mapin="0,31" mapout="AnimationData/gyroChair/gyroChair_rXloc.csv"></var>
         <var name="pan" value="$xPos" mapin="-3,7" mapout="-5,5"></var>
-        <var name="speed" value="$xPos.speed" mapin="0,5" mapout="0,1"></var>
+        <var name="speed" value="$xPos.speed" mapin="0,0.1" mapout="0,1"></var>
     
         <xi:include href="vehicle-2-wheel-chair.xml" />
     </Mixer>
 
-    <Mixer gain="1">
+    <Mixer gain="1" output="#ch3-fleeting-board">
         <var name="dist" value="$time" mapin="0,31" mapout="AnimationData/hoverBoard/hoverBoard_Dist.csv"></var>
-        <var name="locZ" value="$dist" mapin="10, 17" mapout="-5,-30"></var>
+        <var name="locZ" value="$dist" mapin="10, 17" mapout="-10,-30"></var>
         <var name="yRot" value="$time" mapin="0,31" mapout="AnimationData/hoverBoard/hoverBoard_rYRot.csv"></var>
 
         <var name="angle" value="$time" mapin="0,31" mapout="AnimationData/hoverBoard/hoverBoard_Angle.csv"></var>
-        <var name="pan" value="$angle" mapin="-0.35,0.5" mapout="-5,5"></var>
-        <var name="speed" value="$yRot" mapin="-0.825,0.816" mapout="1,0"></var>
+        <var name="pan" value="$angle" mapin="-0.35,0.5" mapout="-7,7"></var>
+        <var name="speed" value="$yRot" mapin="-0.825,0.816" mapout="1,0,1"></var>
     
         <xi:include href="vehicle-3-fleeting-board.xml" />
-    </Mixer> -->
+    </Mixer>
 
+    <Mixer gain="$master" transitionTime="10">
+        <Chain>
+            <GainNode id="ch1-hang-flyer"></GainNode>
+            <Send output=".cityConvolution" gain="-3dB"></Send>
+        </Chain>
+        <Chain>
+            <GainNode id="ch2-wheel-chair"></GainNode>
+            <Send output=".cityConvolution" gain="-6dB"></Send>
+        </Chain>
+        <Chain>
+            <GainNode id="ch3-fleeting-board"></GainNode>
+            <Send output=".cityConvolution" gain="-3dB"></Send>
+        </Chain>
+        
+        <ConvolverNode class="cityConvolution" src="convolution/PlateSmall.wav"></ConvolverNode>
+    </Mixer>
+    
 
 </Audio>

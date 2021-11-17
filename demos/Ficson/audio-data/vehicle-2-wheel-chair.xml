@@ -19,7 +19,7 @@
         <xi:include href="engine2-wheel-chair.xml" />
         
         <Chain gain="1-($onX*$onY)">
-            <Mixer>
+            <Mixer gain="0">
 
                 <!-- GENERATOR 1 -->
                 <Chain class="generator1">
@@ -92,7 +92,7 @@
         </Chain>
 
         <Chain>
-            <ConvolverNode class="reverb" src="white_noise_2.wav"></ConvolverNode>
+            <ConvolverNode class="reverb" src="convolution/white_noise_2.wav"></ConvolverNode>
             
             <BiquadFilterNode 
                 type="bandpass" 

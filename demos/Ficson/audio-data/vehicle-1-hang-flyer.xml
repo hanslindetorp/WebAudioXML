@@ -19,7 +19,7 @@
         <xi:include href="engine1-hang-flyer.xml" />
         
         <Chain gain="1-($onX*$onY)">
-            <Mixer gain="0">
+            <Mixer gain="1">
 
                 <!-- GENERATOR 1 -->
                 <Chain class="generator1">
@@ -87,12 +87,13 @@
                 </Chain>
             </Mixer>
 
-
+            <var name="dynGain" value="$speed" mapin="0,0.5" mapout="0.4,1"></var>
+            <GainNode gain="$dynGain"></GainNode>
             <Send output=".reverb1" gain="$onX*$onY*8"></Send>
         </Chain>
 
         <Chain>
-            <ConvolverNode class="reverb1" src="white_noise_2.wav"></ConvolverNode>
+            <ConvolverNode class="reverb1" src="convolution/white_noise_2.wav"></ConvolverNode>
             
             <BiquadFilterNode 
                 type="bandpass" 
@@ -108,7 +109,7 @@
 
     <Chain class="channel">
         <GainNode gain="$gain"></GainNode>
-        <ObjectBasedAudio positionZ="-5" positionX="$pan"></ObjectBasedAudio>
+        <ObjectBasedAudio positionZ="-10" positionX="$pan" positionY="5"></ObjectBasedAudio>
     </Chain>
 
 </Audio>
