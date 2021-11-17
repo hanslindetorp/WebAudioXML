@@ -5,7 +5,7 @@ class WebAudioUtils {
 
 }
 
-var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_]*)|var[(]([a-z0-9_]+)[)]/gi;
+var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_.]*)|var[(]([a-z0-9_]+)[)]/gi;
 var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
 WebAudioUtils.rxp = rxp;
 WebAudioUtils.rxpVal = rxpVal;
@@ -536,9 +536,11 @@ WebAudioUtils.nrOfVariableNames = (str = "") => {
 WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	if(typeof str != "string"){return 0};
 	// regExp
-	return str.replaceAll(rxp, (a, b, c, d) => {
-		let v = b || c || d;
-		return `${q}me.getVariable('${v}')${q}`;
+	return str.replaceAll(rxp, (a, b, c, d, e, f) => {
+		let arr = (b || c || d).split(".");
+		let varName = arr[0];
+		let prop = arr[1] || "value";
+		return `${q}me.getVariable('${varName}').${prop}${q}`;
 	});
 }
 

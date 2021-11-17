@@ -159,6 +159,7 @@ class Connector {
 						} else {
 							// stupid way of dealing with non-audio elements. But for now...
 							if(targetNode.nodeName == "#text"){continue}
+							if(targetNode.nodeName.toLowerCase() == "var"){continue}
 
 							done = targetNode.nodeName.toLowerCase() != "send";
 							xmlNode.audioObject.connect(targetNode.audioObject.input);
@@ -189,7 +190,7 @@ class Connector {
 	getNextInput(xmlNode){
 		let nextSibling = xmlNode.nextElementSibling;
 		if(nextSibling){
-			if(nextSibling.audioObject.input){
+			if(nextSibling.obj && nextSibling.obj.input){
 				return nextSibling.audioObject.input;
 			} else {
 				return this.getNextInput(nextSibling);

@@ -301,9 +301,11 @@ class Watcher {
 		let variables = {};
 
 		[...str.matchAll(rxp)].forEach(match => {
-			let varName = match[1] || match[2] || match[3];
+			let arr = (match[1] || match[2] || match[3]).split(".");
+			let varName = arr[0];
+			let prop = arr[1] || "value";
 			let parentObj = WebAudioUtils.getVariableContainer(varName, xmlNode, variableType);
-			let prop = this.variablePathToProp(str);
+			// let prop = this.variablePathToProp(str);
 
 			let props;
 			if(parentObj){
@@ -343,14 +345,14 @@ class Watcher {
 					// support comma separated array
 					let me = this; // this is undefined inside forEach:eval
 					this.value.split(",").forEach(v => {
-						if(v.includes("getVariable")){
-							// add the default property "value"
-							// if not specified (like "derivative")
+						// if(v.includes("getVariable")){
+						// 	// add the default property "value"
+						// 	// if not specified (like "derivative")
 						
-							if(v.substr(-1) == ")"){
-								v += ".value";
-							}
-						}
+						// 	if(v.substr(-1) == ")"){
+						// 		v += ".value";
+						// 	}
+						// }
 						let v1 = eval(v);
 						v1 = (Number.isNaN(v1) ? val : v1) || 0;
 						values.push(v1);

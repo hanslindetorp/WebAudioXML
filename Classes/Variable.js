@@ -16,7 +16,7 @@ class Variable {
 
 		this.derivativeValues = [0];
 		// this.derivative2Values = [0];
-		this.smoothDerivative = 10;
+		this.smoothDerivative = 6;
 
 
 		this._mapper = new Mapper(params);
@@ -73,10 +73,10 @@ class Variable {
 				let diff = this.mappedValue - this.lastMappedValue;
 				this.lastMappedValue = this.mappedValue;
 				let now = this.time;
-				let time = now - this.lastUpdate;
+				let time = 1; // now - this.lastUpdate;
 			
 				if(time){
-					let newDerivative = diff / time;
+					let newDerivative = diff; // / time;
 					this.lastUpdate = now;
 	
 					let lastAVG = this._derivative;
@@ -84,6 +84,9 @@ class Variable {
 					this._derivative = newAVG;
 					
 					this._derivative2 = newAVG - lastAVG;
+
+					// this._derivative2 = newDerivative - this._derivative;
+					// this._derivative = newDerivative;
 				}
 				
 				// this._derivative = newDerivative;

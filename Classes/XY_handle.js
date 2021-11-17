@@ -18,14 +18,7 @@ class XY_handle extends HTMLElement {
 		this.style.lineHeight = "1.3em";
 		this.style.padding = "3px";
 
-		this.rect = this.getBoundingClientRect();
-		let br = this.parentNode.getBoundingClientRect();
-		this.boundRect = {
-			left: br.left,
-			top: br.top,
-			width: br.width - this.rect.width,
-			height: br.height - this.rect.height
-		};
+		this.initRects();
 
 		this.direction = this.getAttribute("direction") || "xy";
 
@@ -40,6 +33,7 @@ class XY_handle extends HTMLElement {
 
 
 		this.addEventListener("pointerdown", e => {
+			this.initRects();
 			this.dragged = true;
 			this.clickOffset = {x: e.offsetX, y:e.offsetY};
 			this.setPointerCapture(e.pointerId);
@@ -74,6 +68,18 @@ class XY_handle extends HTMLElement {
 
 	get value(){
 		return [this.x, this.y];
+	}
+
+	initRects(){
+
+		this.rect = this.getBoundingClientRect();
+		let br = this.parentNode.getBoundingClientRect();
+		this.boundRect = {
+			left: br.left,
+			top: br.top,
+			width: br.width - this.rect.width,
+			height: br.height - this.rect.height
+		};
 	}
 
 	move(x, y){
