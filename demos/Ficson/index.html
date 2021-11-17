@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8" />
-		<title>Template</title>
+		<title>Ficson - Fiction Sonification Design</title>
 		<link href="style.css" rel="stylesheet" type="text/css" />
 		<script src="plugins/max.size.js"></script>
 	</head>
@@ -16,6 +16,7 @@
 		<video 
 			controls="true" 
 			loop="true" 
+			autoplay muted
 			data-waxml-timeupdate-time="this.currentTime"
 			data-waxml-play-master="1"
 			data-waxml-pause-master="0"
@@ -35,6 +36,8 @@
 				data-waxml-target="x3, y3"
 				x="0.5"
 				y="0.5"
+				data-waxml-pointerdown-solo="3"
+				data-waxml-pointerup-solo="0"
 			></waxml-xy-handle>
 		</waxml-xy-area>
 
@@ -48,6 +51,8 @@
 				data-waxml-target="x2, y2"
 				x="0.5"
 				y="0.5"
+				data-waxml-pointerdown-solo="2"
+				data-waxml-pointerup-solo="0"
 			></waxml-xy-handle>
 		</waxml-xy-area>
 
@@ -61,6 +66,8 @@
 				data-waxml-target="x1, y1"
 				x="0.5"
 				y="0.5"
+				data-waxml-pointerdown-solo="1"
+				data-waxml-pointerup-solo="0"
 			></waxml-xy-handle>
 
 		</waxml-xy-area>
@@ -70,11 +77,17 @@
 		<!-- <h3>Time:</h3>
 		<input type="range" min="0" max="30" step="0.01" data-waxml-target="$time" data-waxml-xautomation="sawtooth, 1/10"/>
 		 -->
-		<h3>Gain:</h3>
+		<h3>Mixer:</h3>
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain3" />
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain2" />
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain1" />
 
+		<h4>Ambience:</h4>
+		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$ambienceGain" />
+
+		<h3>Calibration:</h3>
+		<button data-waxml-pointerdown-calibration="1">ON</button>
+		<button data-waxml-pointerdown-calibration="0">OFF</button>
 		<!-- <h3>Speed:</h3>
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed3" data-waxml-xautomation="sine, 0.5"/>
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed2" data-waxml-xautomation="sine, 0.2" />

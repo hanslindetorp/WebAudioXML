@@ -5874,6 +5874,9 @@ class Watcher {
 						// 		v += ".value";
 						// 	}
 						// }
+						if(v.includes("origo")){
+							console.log("hej");
+						}
 						let v1 = eval(v);
 						v1 = (Number.isNaN(v1) ? val : v1) || 0;
 						values.push(v1);

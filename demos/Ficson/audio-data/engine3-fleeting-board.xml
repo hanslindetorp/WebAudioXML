@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="$engine_gain">
-
-    <var name="engine_gain" mapin="0,1" default="0.5"></var>
+    <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,102" convert="MIDI->frequency"></var>
+    
+    <var name="engine_gain" mapin="0,1" default="1"></var>
     <var name="dynGain" value="$speed" mapin="0.5,1" mapout="0.25,1"></var>
     <var name="AM" value="$speed" mapin="0.5,1" mapout="200,80"></var>
     <var name="BPF" value="$speed" mapin="0,1" mapout="150,180"></var>
@@ -21,6 +22,6 @@
 
     <Chain gain="$dynGain">
         <BiquadFilterNode class="LP" type="bandpass" frequency="$BPF" Q="5"></BiquadFilterNode>
-        <BiquadFilterNode class="HP" type="highpass" frequency="200"></BiquadFilterNode>
+        <BiquadFilterNode class="HP" type="highpass" frequency="$HP"></BiquadFilterNode>
     </Chain>
 </Audio>
