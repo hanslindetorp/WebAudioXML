@@ -23,3 +23,8 @@ iframe {
 body input {
 	width: 295px;
 }
+
+video {
+	width: 80%;
+	height: auto;
+}

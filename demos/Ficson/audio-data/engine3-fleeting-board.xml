@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="$engine_gain">
+
+    <var name="engine_gain" mapin="0,1" default="0.5"></var>
+    <var name="dynGain" value="$speed" mapin="0.5,1" mapout="0.25,1"></var>
+    <var name="AM" value="$speed" mapin="0.5,1" mapout="50,80"></var>
+    <OscillatorNode type="sawtooth" frequency="$AM" output=".AM"></OscillatorNode>
+    
+    <Chain>
+		<GainNode class="engine3 white-noise" gain="$dynGain"></GainNode>
+        <GainNode gain="$distGain"></GainNode>
+        <DelayNode delayTime="2"></DelayNode>
+        <GainNode>
+            <gain class="AM"></gain>
+        </GainNode>
+        <Send output=".LP"></Send>
+		<BiquadFilterNode type="lowpass" frequency="800"></BiquadFilterNode>
+		<BiquadFilterNode frequency="$bandpass_frequency" type="bandpass" Q="2"></BiquadFilterNode>
+	</Chain>
+
+    <Chain>
+        <BiquadFilterNode class="LP" type="bandpass" frequency="$AM+100" Q="5"></BiquadFilterNode>
+        <BiquadFilterNode class="HP" type="highpass" frequency="200"></BiquadFilterNode>
+    </Chain>
+</Audio>

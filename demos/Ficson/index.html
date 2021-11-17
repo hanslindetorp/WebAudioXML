@@ -13,6 +13,16 @@
 		<h1>Ficson - Audio Prototype</h1>
 		<p>Open the control panel and edit the sounds.</p>
 
+		<video 
+			controls="true" 
+			loop="true" 
+			data-waxml-timeupdate-time="this.currentTime"
+			data-waxml-play-master="1"
+			data-waxml-pause-master="0"
+			>
+			<source src="video/ficson_test_v2.mov" />
+		</video>
+
 		<h3>Added sounds 1-4 (clockwise)</h3>
 		<waxml-xy-area 
 			background-color="#A1AFA0" 
@@ -55,18 +65,19 @@
 		</waxml-xy-area>
 
 		<!-- <iframe width="300" height="169" src="https://www.youtube.com/embed/o6LX3bdbnVo" title="Ficson Prototype" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> -->
-
 		
-
+		<h3>Time:</h3>
+		<input type="range" min="0" max="30" step="0.01" data-waxml-target="$time" data-waxml-xautomation="sawtooth, 1/10"/>
+		
 		<h3>Gain:</h3>
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain1" />
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain2" />
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain3" />
 
 		<h3>Speed:</h3>
-		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed1" data-waxml-automation="sine, 0.5"/>
-		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed2" data-waxml-automation="sine, 0.2" />
-		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed3" data-waxml-automation="sine, 0.7" />
+		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed1" data-waxml-xautomation="sine, 0.5"/>
+		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed2" data-waxml-xautomation="sine, 0.2" />
+		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed3" data-waxml-xautomation="sine, 0.7" />
 
 
 		<h3>Pan:</h3>
