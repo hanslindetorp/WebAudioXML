@@ -71,6 +71,15 @@ class Connector {
 			}
 			break;
 
+			case "channelsplitternode":
+			// connect each channel to separate child nodes
+			let srcCh = 0;
+			xmlNode.children.forEach(node => {
+				xmlNode.obj.input.connect(node.obj.input, srcCh, 0);
+				srcCh++;
+			});
+			break;
+
 			case "parsererror":
 			case "style":
 			case "link":
@@ -119,7 +128,14 @@ class Connector {
 					case "voice":
 					case "synth":
 					case "xi:include":
-					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
+					case "channelsplitternode":
+					xmlNode.obj.connect(xmlNode.parentNode.obj._node);
+					break;
+
+
+					case "channelmergernode":
+					let trgCh = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					xmlNode.obj.connect(xmlNode.parentNode.obj._node, 0, trgCh);
 					break;
 
 					case "chain":
@@ -155,7 +171,7 @@ class Connector {
 					break;
 
 
-					// connect to parameter input
+					// connect to parameter input. Vad är det här??
 					case "gain":
 					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 					break;

@@ -147,7 +147,7 @@ class InteractionManager {
 		});
 
 
-		// add waxml commands to HTML link elements
+		// add waxml commands to HTML elements
 		[...document.querySelectorAll("*")].forEach( el => {
 
 			[...el.attributes].forEach( attr => {
@@ -164,10 +164,21 @@ class InteractionManager {
 					}
 					
 					let val = attr.nodeValue;
-					let floatVal = parseFloat(val);
-					if(!Number.isNaN(floatVal)){
-						val = floatVal;
+					
+					if(val.includes("this.")){
+						let targetProperty = val.replace("this", "el");
+						val = {
+							valueOf: () => {
+								return eval(targetProperty);
+							}
+						}
+					} else {
+						let floatVal = parseFloat(val);
+						if(!Number.isNaN(floatVal)){
+							val = floatVal;
+						}
 					}
+					
 
 					let fn;
 					let attrNameArr = attr.localName.split("-");
@@ -191,7 +202,7 @@ class InteractionManager {
 
 						default:
 							fn = e => {
-								this.waxml.setVariable(commandName, val);
+								this.waxml.setVariable(commandName, val.valueOf());
 							}
 							break;
 					}
@@ -223,16 +234,30 @@ class InteractionManager {
 			if(el.dataset.waxmlAutomation){
 				let data = el.dataset.waxmlAutomation.split(",");
 				let waveForm = data[0] ? data[0].trim() : "sine";
-				let frequency = parseFloat(data[1] ? data[1].trim() : 1);
+				let frequency = eval(data[1] ? data[1].trim() : 1);
 				let min = parseFloat(el.getAttribute("min") || 0);
 				let max = parseFloat(el.getAttribute("max") || 0);
 				let range = max - min;
-				let updateFrequency = 20;
+				let updateFrequency = 100;
 				
 				let x = 0;
 
 				setInterval(() => {
-					let factor = (Math.sin(Math.PI * x * frequency / updateFrequency)+1)/2;
+					let factor;
+					switch(waveForm){
+						case "sine":
+						factor = (Math.sin(Math.PI * x * frequency / updateFrequency)+1)/2;
+						break;
+
+						case "sawtooth":
+						factor = (x * frequency / updateFrequency) % 1;
+						break;
+
+						case "square":
+						factor = (x * frequency) % updateFrequency < updateFrequency / 2;
+						break;
+					}
+					
 					let val = min + factor * range;
 					el.value = val;
 

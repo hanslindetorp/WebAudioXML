@@ -18,6 +18,10 @@ class Mapper{
 
 	constructor(params){
 
+		if(params.name){
+			this.printInfo(params);
+		}
+
 		this.params = params;
 		this.sourceValues = [];
 
@@ -54,8 +58,6 @@ class Mapper{
 			// init mapout
 			this.mapout = params.mapout || this.mapin;
 
-
-
 		} else if(params.map){
 
 			// simplified (old) style
@@ -85,6 +87,13 @@ class Mapper{
 		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
 	}
 
+	printInfo(params){
+		if(params.mapin && params.mapout){
+			let mapin = `${Math.min(...params.mapin)}...${Math.max(...params.mapin)}`;
+			let mapout = `${Math.min(...params.mapout)}...${Math.max(...params.mapout)}`;
+			console.log(`${params.name} -> mapin: ${mapin}, mapout: ${mapout}`);
+		}
+	}
 
 	getValue(x){
 
@@ -122,12 +131,16 @@ class Mapper{
 		// each region between the mapout values. It can be a javascript expression
 		// using "x" as the processed value or a preset (like "midi->frequency")
 
-		let i = 0;
+		let i = 0, i1 = 0;
 		if(this.mapin){
-			let e = this.mapin.filter(entry => entry <= x).pop();
-			i = this.mapin.indexOf(e);
+			i1 = this.inToMapInIndex(x);
+			// i = this.inToMapOutIndex(x);
+			x = this.in2Rel(x, i1);
 
-			x = this.in2Rel(x, i);
+			let obj = this.inToMapOutIndex(x, i1);
+			i = obj.i;
+			x = obj.x;
+
 			x = this.applyCurve(x, i);
 			x = this.rel2Out(x, i);
 			x = this.offset(x, i);
@@ -137,7 +150,39 @@ class Mapper{
 
 		return x;
 
-  }
+  	}
+
+	inToMapInIndex(x){
+
+		let e = this.mapin.filter(entry => entry <= x).pop();
+		let i = this.mapin.indexOf(e);
+		return i;
+	}
+
+	inToMapOutIndex(x, i){
+		// let e = this.mapin.filter(entry => entry <= x).pop();
+		// let i = this.mapin.indexOf(e);
+
+		if(this.mapout.length > this.mapin.length && i+2 == this.mapin.length){
+			// more out-values than in-values and this is the next to last in-value
+		
+			// pick an out-value from the range between next to last and last in value
+			let outValues = this.mapout.filter((val, index) => index >= i);
+			let len = outValues.length-1;
+			let x2 = x * len; // / Math.max(...this.mapin);
+			i += Math.floor(x2);
+			x = x == 1 ? x : x2 % 1;
+		} else if(this.mapout.length >= this.mapin.length && i+1 == this.mapin.length){
+			// last mapin-value is mapped to last mapout-value
+			i = this.mapout.length-1;
+			x = 0;
+		} else {
+			// if(i+2 >= this.mapout.length){
+			// match in to out values
+			i = i % this.mapout.length;
+		}
+		return {i:i,x:x};
+	}
 
 	in2Rel(x, i){
 		let in1 = this.mapin[i % this.mapin.length];
@@ -149,8 +194,6 @@ class Mapper{
 		if(this.isNumeric){
 			// interpolate between two in-values
 
-
-
 			if(this.steps){
 				let curSteps = this.steps[i % this.steps.length];
 				if(curSteps instanceof Array){
@@ -160,6 +203,22 @@ class Mapper{
 
 			let out1 = this.mapout[i % this.mapout.length];
 			let out2 = this.mapout[(i+1) % this.mapout.length];
+
+			// if(i+2 >= this.mapout.length){
+			// 	// match in to out values
+			// 	out2 = this.mapout[(i+1) % this.mapout.length];
+			// } else {
+			// 	// pick an out-value from the range between next to last and last in value
+			// 	let outValues = this.mapout.filter((val, index) => index >= i);
+			// 	let len = outValues.length-1;
+			// 	x = x * len;
+			// 	let o1 = Math.floor(x); 
+			// 	let o2 = Math.min(o1+1, len);
+			// 	out1 = outValues[o1];
+			// 	out2 = outValues[o2];
+			// 	x = x % 1;
+			// }
+			
 			let range = out2 - out1;
 			return x * range;
 

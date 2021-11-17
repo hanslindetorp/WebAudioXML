@@ -273,7 +273,10 @@ class Watcher {
 	// in a spread sheet
 	getVariable(varName){
 
-		return this._variables[varName].valueOf();
+		// To support derivate, I think this function needs to return the object
+		// rather than the value
+		return this._variables[varName];
+		// return this._variables[varName].valueOf();
 
 	}
 
@@ -300,7 +303,7 @@ class Watcher {
 		[...str.matchAll(rxp)].forEach(match => {
 			let varName = match[1] || match[2] || match[3];
 			let parentObj = WebAudioUtils.getVariableContainer(varName, xmlNode, variableType);
-			let prop = this.variablePathToProp(varName);
+			let prop = this.variablePathToProp(str);
 
 			let props;
 			if(parentObj){
@@ -328,22 +331,39 @@ class Watcher {
 	}
 
 	valueOf(val){
-		if(typeof this.value == "string"){
-			let values = [];
-			try {
+		if(typeof val == "number" && false){
+			// det här verkar knasigt. Det är väl bara watchern som kan räkna 
+			// ut sitt värde som ska retureras.
+		} else {
 
-				// support comma separated array
-				this.value.split(",").forEach(v => {
-					let v1 = eval(v);
-					v1 = (Number.isNaN(v1) ? val : v1) || 0;
-					values.push(v1);
-				});
-
-			} catch {
-
+			if(typeof this.value == "string"){
+				let values = [];
+				try {
+	
+					// support comma separated array
+					let me = this; // this is undefined inside forEach:eval
+					this.value.split(",").forEach(v => {
+						if(v.includes("getVariable")){
+							// add the default property "value"
+							// if not specified (like "derivative")
+						
+							if(v.substr(-1) == ")"){
+								v += ".value";
+							}
+						}
+						let v1 = eval(v);
+						v1 = (Number.isNaN(v1) ? val : v1) || 0;
+						values.push(v1);
+					});
+	
+				} catch {
+	
+				}
+				val = values.length == 1 ? values.pop() : values;
 			}
-			val = values.length == 1 ? values.pop() : values;
+			
 		}
+		
 		// single value or array
 
 		// Fundera på denna. Farligt att returnera 0! Men om det är undefined 

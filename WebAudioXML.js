@@ -442,7 +442,6 @@ class AudioObject{
         this._node = new AmbientAudio(this, this._params, waxml);
         break;
 
-
         case "send":
 		  	//this.input = this._ctx.createGain();
 		  	this._node = this._ctx.createGain();
@@ -454,6 +453,24 @@ class AudioObject{
 		  	//console.log("chain input", this.input.__resource_id__);
 		  	this._node = this._ctx.createGain();
 		  	break;
+
+        case "channelsplitternode":
+        this.input = new ChannelSpitterNode(this._ctx, {
+          numberOfOutputs: this._ctx.destination.maxChannelCount,
+          channelCountMode: "explicit",
+          channelInterpretation: "discrete"
+        });
+		  	this._node = this._ctx.createGain();
+        break;
+
+        case "channelmergernode":
+        this._node = new ChannelMergerNode(this._ctx, {
+          numberOfOutputs: this._ctx.destination.maxChannelCount,
+          channelCountMode: "explicit",
+          channelInterpretation: "discrete"
+        });
+        break;
+
 
 		  	case "envelope":
 		  	this._node = xmlNode.parentNode.audioObject._node;
@@ -687,9 +704,9 @@ class AudioObject{
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
         case "audioworkletnode":
+        case "channelmergernode":
 		  	break;
 
-		  	case "oscillatornode":
         case "objectbasedaudio":         
         case "convolvernode":
         case "ambientaudio": 
@@ -1763,6 +1780,15 @@ class Connector {
 			}
 			break;
 
+			case "channelsplitternode":
+			// connect each channel to separate child nodes
+			let srcCh = 0;
+			xmlNode.children.forEach(node => {
+				xmlNode.obj.input.connect(node.obj.input, srcCh, 0);
+				srcCh++;
+			});
+			break;
+
 			case "parsererror":
 			case "style":
 			case "link":
@@ -1811,7 +1837,14 @@ class Connector {
 					case "voice":
 					case "synth":
 					case "xi:include":
-					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
+					case "channelsplitternode":
+					xmlNode.obj.connect(xmlNode.parentNode.obj._node);
+					break;
+
+
+					case "channelmergernode":
+					let trgCh = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					xmlNode.obj.connect(xmlNode.parentNode.obj._node, 0, trgCh);
 					break;
 
 					case "chain":
@@ -1847,7 +1880,7 @@ class Connector {
 					break;
 
 
-					// connect to parameter input
+					// connect to parameter input. Vad är det här??
 					case "gain":
 					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 					break;
@@ -2653,7 +2686,7 @@ class InteractionManager {
 		});
 
 
-		// add waxml commands to HTML link elements
+		// add waxml commands to HTML elements
 		[...document.querySelectorAll("*")].forEach( el => {
 
 			[...el.attributes].forEach( attr => {
@@ -2670,10 +2703,21 @@ class InteractionManager {
 					}
 					
 					let val = attr.nodeValue;
-					let floatVal = parseFloat(val);
-					if(!Number.isNaN(floatVal)){
-						val = floatVal;
+					
+					if(val.includes("this.")){
+						let targetProperty = val.replace("this", "el");
+						val = {
+							valueOf: () => {
+								return eval(targetProperty);
+							}
+						}
+					} else {
+						let floatVal = parseFloat(val);
+						if(!Number.isNaN(floatVal)){
+							val = floatVal;
+						}
 					}
+					
 
 					let fn;
 					let attrNameArr = attr.localName.split("-");
@@ -2697,7 +2741,7 @@ class InteractionManager {
 
 						default:
 							fn = e => {
-								this.waxml.setVariable(commandName, val);
+								this.waxml.setVariable(commandName, val.valueOf());
 							}
 							break;
 					}
@@ -2729,16 +2773,30 @@ class InteractionManager {
 			if(el.dataset.waxmlAutomation){
 				let data = el.dataset.waxmlAutomation.split(",");
 				let waveForm = data[0] ? data[0].trim() : "sine";
-				let frequency = parseFloat(data[1] ? data[1].trim() : 1);
+				let frequency = eval(data[1] ? data[1].trim() : 1);
 				let min = parseFloat(el.getAttribute("min") || 0);
 				let max = parseFloat(el.getAttribute("max") || 0);
 				let range = max - min;
-				let updateFrequency = 20;
+				let updateFrequency = 100;
 				
 				let x = 0;
 
 				setInterval(() => {
-					let factor = (Math.sin(Math.PI * x * frequency / updateFrequency)+1)/2;
+					let factor;
+					switch(waveForm){
+						case "sine":
+						factor = (Math.sin(Math.PI * x * frequency / updateFrequency)+1)/2;
+						break;
+
+						case "sawtooth":
+						factor = (x * frequency / updateFrequency) % 1;
+						break;
+
+						case "square":
+						factor = (x * frequency) % updateFrequency < updateFrequency / 2;
+						break;
+					}
+					
 					let val = min + factor * range;
 					el.value = val;
 
@@ -3357,6 +3415,10 @@ class Mapper{
 
 	constructor(params){
 
+		if(params.name){
+			this.printInfo(params);
+		}
+
 		this.params = params;
 		this.sourceValues = [];
 
@@ -3393,8 +3455,6 @@ class Mapper{
 			// init mapout
 			this.mapout = params.mapout || this.mapin;
 
-
-
 		} else if(params.map){
 
 			// simplified (old) style
@@ -3424,6 +3484,13 @@ class Mapper{
 		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
 	}
 
+	printInfo(params){
+		if(params.mapin && params.mapout){
+			let mapin = `${Math.min(...params.mapin)}...${Math.max(...params.mapin)}`;
+			let mapout = `${Math.min(...params.mapout)}...${Math.max(...params.mapout)}`;
+			console.log(`${params.name} -> mapin: ${mapin}, mapout: ${mapout}`);
+		}
+	}
 
 	getValue(x){
 
@@ -3461,12 +3528,16 @@ class Mapper{
 		// each region between the mapout values. It can be a javascript expression
 		// using "x" as the processed value or a preset (like "midi->frequency")
 
-		let i = 0;
+		let i = 0, i1 = 0;
 		if(this.mapin){
-			let e = this.mapin.filter(entry => entry <= x).pop();
-			i = this.mapin.indexOf(e);
+			i1 = this.inToMapInIndex(x);
+			// i = this.inToMapOutIndex(x);
+			x = this.in2Rel(x, i1);
 
-			x = this.in2Rel(x, i);
+			let obj = this.inToMapOutIndex(x, i1);
+			i = obj.i;
+			x = obj.x;
+
 			x = this.applyCurve(x, i);
 			x = this.rel2Out(x, i);
 			x = this.offset(x, i);
@@ -3476,7 +3547,39 @@ class Mapper{
 
 		return x;
 
-  }
+  	}
+
+	inToMapInIndex(x){
+
+		let e = this.mapin.filter(entry => entry <= x).pop();
+		let i = this.mapin.indexOf(e);
+		return i;
+	}
+
+	inToMapOutIndex(x, i){
+		// let e = this.mapin.filter(entry => entry <= x).pop();
+		// let i = this.mapin.indexOf(e);
+
+		if(this.mapout.length > this.mapin.length && i+2 == this.mapin.length){
+			// more out-values than in-values and this is the next to last in-value
+		
+			// pick an out-value from the range between next to last and last in value
+			let outValues = this.mapout.filter((val, index) => index >= i);
+			let len = outValues.length-1;
+			let x2 = x * len; // / Math.max(...this.mapin);
+			i += Math.floor(x2);
+			x = x == 1 ? x : x2 % 1;
+		} else if(this.mapout.length >= this.mapin.length && i+1 == this.mapin.length){
+			// last mapin-value is mapped to last mapout-value
+			i = this.mapout.length-1;
+			x = 0;
+		} else {
+			// if(i+2 >= this.mapout.length){
+			// match in to out values
+			i = i % this.mapout.length;
+		}
+		return {i:i,x:x};
+	}
 
 	in2Rel(x, i){
 		let in1 = this.mapin[i % this.mapin.length];
@@ -3488,8 +3591,6 @@ class Mapper{
 		if(this.isNumeric){
 			// interpolate between two in-values
 
-
-
 			if(this.steps){
 				let curSteps = this.steps[i % this.steps.length];
 				if(curSteps instanceof Array){
@@ -3499,6 +3600,22 @@ class Mapper{
 
 			let out1 = this.mapout[i % this.mapout.length];
 			let out2 = this.mapout[(i+1) % this.mapout.length];
+
+			// if(i+2 >= this.mapout.length){
+			// 	// match in to out values
+			// 	out2 = this.mapout[(i+1) % this.mapout.length];
+			// } else {
+			// 	// pick an out-value from the range between next to last and last in value
+			// 	let outValues = this.mapout.filter((val, index) => index >= i);
+			// 	let len = outValues.length-1;
+			// 	x = x * len;
+			// 	let o1 = Math.floor(x); 
+			// 	let o2 = Math.min(o1+1, len);
+			// 	out1 = outValues[o1];
+			// 	out2 = outValues[o2];
+			// 	x = x % 1;
+			// }
+			
 			let range = out2 - out1;
 			return x * range;
 
@@ -5087,12 +5204,19 @@ class Variable {
 		this._params = params;
 		this._callBackList = [];
 		this.waxml = params.waxml;
-		this.lastUpdate = Date.now();
-		this.derivataFactor = 0;
+		this.lastUpdate = this.time;
+		this._derivative = 0;
+		this._derivative2 = 0;
 		this.name = params.name;
+
+		this.derivativeValues = [0];
+		// this.derivative2Values = [0];
+		this.smoothDerivative = 10;
+
 
 		this._mapper = new Mapper(params);
 		this.scheduledEvents = [];
+
 
 		// it seems hard to add a watcher from here
 		// when Watcher is calling this contructor
@@ -5105,11 +5229,16 @@ class Variable {
 		// 		}
 		// 	});
 		// }
-
-		if(typeof params.value != "undefined"){
+		if(typeof params.default != undefined){
+			this.value = this.default;
+		} else if(typeof params.value != "undefined"){
 			this.value = params.value.valueOf();
 		}
 
+		// setInterval(e => {
+		// 	console.log(this.name, this.mappedValue, this.derivative, this.derivative2);
+		// }, 500);
+		
 	}
 
 	addCallBack(callBack, prop){
@@ -5126,25 +5255,48 @@ class Variable {
 	setValue(val, transistionTime){
 
 		if(this._value != val){
-			this.setDerivative(val);
+			// this.setDerivative(val);
+
+
+
 			this._value = val;
+			this.mappedValue = this._mapper.getValue(this._value);
+
+			if(typeof this.lastMappedValue == "undefined"){
+				this.lastMappedValue = this.mappedValue;
+			} else {
+				let diff = this.mappedValue - this.lastMappedValue;
+				this.lastMappedValue = this.mappedValue;
+				let now = this.time;
+				let time = now - this.lastUpdate;
+			
+				if(time){
+					let newDerivative = diff / time;
+					this.lastUpdate = now;
+	
+					let lastAVG = this._derivative;
+					let newAVG = this.setDerivative(newDerivative);
+					this._derivative = newAVG;
+					
+					this._derivative2 = newAVG - lastAVG;
+				}
+				
+				// this._derivative = newDerivative;
+			}
+
+
 			this.doCallBacks(transistionTime);
 		}
 	}
 
 	get value() {
 		//return this._value;
-		if(typeof this._value == "undefined" && this.default != "undefined"){
-			this._value = this.default;
-		}
-		return this._mapper.getValue(this._value);
-		//
-		// if(typeof this._value == "undefined"){
-		// 	return this._value;
-		// } else {
-		// 	//if(this.name)console.log(this.name, this._value);
-		// 	return this._mapper.getValue(this._value);
+		// if(typeof this._value == "undefined" && this.default != "undefined"){
+		// 	this._value = this.default;
 		// }
+		// return this._mapper.getValue(this._value);
+		return this.mappedValue;
+
 	}
 
 	set value(val) {
@@ -5165,36 +5317,104 @@ class Variable {
 		this.scheduledEvents.forEach(id => clearTimeout(id));
 	}
 
+	average(arr){
+		return arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
+	}
+
+	setDerivative(val){
+		if(isNaN(val)){
+			console.log(`setDerivative(${val})`);
+		}
+		this.derivativeValues.push(val);
+		if(this.derivativeValues.length > this.smoothDerivative){
+			this.derivativeValues.shift();
+		}
+		return this.average(this.derivativeValues);
+	}
 
 	get derivative(){
-		return this._derivative || 0;
+		return this.average(this.derivativeValues);
+		// return this._derivative || 0;
+	}
+
+	get derivative2(){
+		// return this.average(this.derivative2Values);
+		return this._derivative2 || 0;
 	}
 
 	get acceleration(){
 		return this.derivative;
 	}
 
-	setDerivative(newVal){
-		let diff = newVal - (this.value || newVal);
-		let now = Date.now();
-		let time = now - this.lastUpdate;
-		this.lastUpdate = now;
-		let newDerivative = diff / time;
-		// auto scale to keep derivatives between -1 and 1
-		this.derivataFactor = Math.max(Math.abs(newDerivative), this.derivataFactor);
-		newDerivative /= this.derivataFactor;
-
-		this.setDerivative2(newDerivative);
-		this._derivative = newDerivative;
+	get speed(){
+		return Math.abs(this.derivative);
 	}
 
-	get derivative2(){
-		return this._derivative2 || 0;
+	get time(){
+		if(this.waxml){
+			return this.waxml._ctx.currentTime;
+		} else {
+			return Date.now();
+		}
 	}
 
-	setDerivative2(newDerivative){
-		this._derivative2 = newDerivative - this._derivative;
-	}
+	// setDerivative(newVal){
+	// 	let diff = newVal - (this._value || newVal);
+	// 	let now = Date.now();
+	// 	let time = now - this.lastUpdate;
+		
+	// 	if(time){
+	// 		this.lastUpdate = now;
+	// 		let newDerivative = diff / time;
+
+	// 		// this.calibrationValues.push(newDerivative);
+	// 		// this.calibrationValues.sort((a,b) => a-b);
+	// 		// this.derivataFactor = 1 / this.calibrationValues[Math.floor(0.95*this.calibrationValues.length)];
+
+	// 		// if(this.calibrationValues.length < 100){
+	// 		// 	// store values for calibration
+	// 		// 	this.calibrationValues.push(newDerivative);
+	// 		// } else if(this.calibrationValues.length == 100 && !this.derivataFactor){
+	// 		// 	this.calibrationValues.sort((a,b) => a-b);
+	// 		// 	this.derivataFactor = 1 / this.calibrationValues[95];
+	// 		// } else {
+	// 		// 	// this.derivataFactor = Math.min(1/Math.abs(newDerivative), this.derivataFactor);
+	// 		// 	newDerivative *= this.derivataFactor;
+	// 		// 	this.setDerivative2(newDerivative);
+	// 		// 	this._derivative = newDerivative;
+	// 		// 	// console.log(this._derivative, this.derivataFactor);
+	// 		// }
+
+	// 		// if(this.calibrationValues.length > 100){
+	// 		// 	if(Math.abs(newDerivative * this.derivataFactor) > 1){
+	// 		// 		this.derivataFactor = 1 / newDerivative;
+	// 		// 	}
+	// 		// 	newDerivative *= this.derivataFactor;
+	// 		// 	this.setDerivative2(newDerivative);
+	// 		// 	this._derivative = newDerivative;
+	// 		// 	console.log(this._derivative, this.derivataFactor, this.calibrationValues.length)
+			
+	// 		// }
+	// 		this.setDerivative2(newDerivative);
+	// 		this._derivative = newDerivative;
+
+	// 		this.minDerivative = Math.min(this.minDerivative, newDerivative);
+	// 		this.maxDerivative = Math.max(this.maxDerivative, newDerivative);
+	// 		this.minVal = Math.min(this.minVal, newVal);
+	// 		this.maxVal = Math.max(this.maxVal, newVal);
+
+	// 		this.derivativeCounter++;
+	// 		if(this.derivativeCounter == 200){
+	// 			console.log(this.name, this.minVal, this.maxVal, this.minDerivative, this.maxDerivative);
+	// 		}
+			
+	// 	}
+		
+	// }
+
+	// setDerivative2(newDerivative){
+	// 	this._derivative2 = newDerivative - this._derivative;
+	// }
 
 
 	get getterNsetter(){
@@ -5570,7 +5790,10 @@ class Watcher {
 	// in a spread sheet
 	getVariable(varName){
 
-		return this._variables[varName].valueOf();
+		// To support derivate, I think this function needs to return the object
+		// rather than the value
+		return this._variables[varName];
+		// return this._variables[varName].valueOf();
 
 	}
 
@@ -5597,7 +5820,7 @@ class Watcher {
 		[...str.matchAll(rxp)].forEach(match => {
 			let varName = match[1] || match[2] || match[3];
 			let parentObj = WebAudioUtils.getVariableContainer(varName, xmlNode, variableType);
-			let prop = this.variablePathToProp(varName);
+			let prop = this.variablePathToProp(str);
 
 			let props;
 			if(parentObj){
@@ -5625,22 +5848,39 @@ class Watcher {
 	}
 
 	valueOf(val){
-		if(typeof this.value == "string"){
-			let values = [];
-			try {
+		if(typeof val == "number" && false){
+			// det här verkar knasigt. Det är väl bara watchern som kan räkna 
+			// ut sitt värde som ska retureras.
+		} else {
 
-				// support comma separated array
-				this.value.split(",").forEach(v => {
-					let v1 = eval(v);
-					v1 = (Number.isNaN(v1) ? val : v1) || 0;
-					values.push(v1);
-				});
-
-			} catch {
-
+			if(typeof this.value == "string"){
+				let values = [];
+				try {
+	
+					// support comma separated array
+					let me = this; // this is undefined inside forEach:eval
+					this.value.split(",").forEach(v => {
+						if(v.includes("getVariable")){
+							// add the default property "value"
+							// if not specified (like "derivative")
+						
+							if(v.substr(-1) == ")"){
+								v += ".value";
+							}
+						}
+						let v1 = eval(v);
+						v1 = (Number.isNaN(v1) ? val : v1) || 0;
+						values.push(v1);
+					});
+	
+				} catch {
+	
+				}
+				val = values.length == 1 ? values.pop() : values;
 			}
-			val = values.length == 1 ? values.pop() : values;
+			
 		}
+		
 		// single value or array
 
 		// Fundera på denna. Farligt att returnera 0! Men om det är undefined 
@@ -6551,6 +6791,7 @@ WebAudioUtils.split = (str, separator) => {
 		let i = parseFloat(item);
 		return i == item ? i : item;
 	});
+	arr = arr.filter(item => item !== "");
 	return arr;
 }
 
@@ -6717,7 +6958,7 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	// regExp
 	return str.replaceAll(rxp, (a, b, c, d) => {
 		let v = b || c || d;
-		return `${q}this.getVariable('${v}')${q}`;
+		return `${q}me.getVariable('${v}')${q}`;
 	});
 }
 

@@ -371,6 +371,7 @@ WebAudioUtils.split = (str, separator) => {
 		let i = parseFloat(item);
 		return i == item ? i : item;
 	});
+	arr = arr.filter(item => item !== "");
 	return arr;
 }
 
@@ -537,7 +538,7 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	// regExp
 	return str.replaceAll(rxp, (a, b, c, d) => {
 		let v = b || c || d;
-		return `${q}this.getVariable('${v}')${q}`;
+		return `${q}me.getVariable('${v}')${q}`;
 	});
 }
 

@@ -233,7 +233,6 @@ class AudioObject{
         this._node = new AmbientAudio(this, this._params, waxml);
         break;
 
-
         case "send":
 		  	//this.input = this._ctx.createGain();
 		  	this._node = this._ctx.createGain();
@@ -245,6 +244,24 @@ class AudioObject{
 		  	//console.log("chain input", this.input.__resource_id__);
 		  	this._node = this._ctx.createGain();
 		  	break;
+
+        case "channelsplitternode":
+        this.input = new ChannelSpitterNode(this._ctx, {
+          numberOfOutputs: this._ctx.destination.maxChannelCount,
+          channelCountMode: "explicit",
+          channelInterpretation: "discrete"
+        });
+		  	this._node = this._ctx.createGain();
+        break;
+
+        case "channelmergernode":
+        this._node = new ChannelMergerNode(this._ctx, {
+          numberOfOutputs: this._ctx.destination.maxChannelCount,
+          channelCountMode: "explicit",
+          channelInterpretation: "discrete"
+        });
+        break;
+
 
 		  	case "envelope":
 		  	this._node = xmlNode.parentNode.audioObject._node;
@@ -478,9 +495,9 @@ class AudioObject{
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
         case "audioworkletnode":
+        case "channelmergernode":
 		  	break;
 
-		  	case "oscillatornode":
         case "objectbasedaudio":         
         case "convolvernode":
         case "ambientaudio": 
