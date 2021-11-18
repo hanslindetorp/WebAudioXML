@@ -166,12 +166,22 @@ class AmbientAudio {
     }
 	
     start(){
-        if(!this.inited){
-            this.initLoop();
-            this.inited = true;
+        if(this.bufferSource1._buffer && this.bufferSource2._buffer){
+            if(!this.inited){
+                this.initLoop();
+                this.inited = true;
+            }
+            let transitionTime = this.getParameter("transitionTime") || 2;
+            this.fade.gain.setTargetAtTime(1, 0, transitionTime);
+        } else {
+            let fn = () => this.start();
+            if(!this.bufferSource1._buffer){
+                this.bufferSource1.addCallBack(fn);
+            }
+            if(!this.bufferSource2._buffer){
+                this.bufferSource2.addCallBack(fn);
+            }
         }
-        let transitionTime = this.getParameter("transitionTime") || 2;
-        this.fade.gain.setTargetAtTime(1, 0, transitionTime);
     }
 
     stop(){
@@ -189,7 +199,6 @@ class AmbientAudio {
 
         // turn on buffer1
         this.fade1.gain.setTargetAtTime(1, 0, 0.001);
-
     }
 
     trigSample(){

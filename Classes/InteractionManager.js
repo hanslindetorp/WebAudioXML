@@ -206,7 +206,22 @@ class InteractionManager {
 							}
 							break;
 					}
-					el.addEventListener(eventName, fn);
+					let frFn;
+					if(eventName == "timeupdate" && el.requestVideoFrameCallback){
+						// allow for frame synced updates
+						frFn = (now, metaData) => {
+							fn();
+							el.requestVideoFrameCallback(frFn);
+						}
+						el.requestVideoFrameCallback(frFn);
+					} else {
+						el.addEventListener(eventName, fn);
+					}
+
+					if(eventName == "play" && el.autoplay && el.currentTime){
+						// trig function manually if video has already begun playback
+						(frFn || fn)();
+					}
 				}
 			});
 

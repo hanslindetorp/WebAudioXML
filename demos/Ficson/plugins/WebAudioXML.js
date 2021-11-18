@@ -167,12 +167,22 @@ class AmbientAudio {
     }
 	
     start(){
-        if(!this.inited){
-            this.initLoop();
-            this.inited = true;
+        if(this.bufferSource1._buffer && this.bufferSource2._buffer){
+            if(!this.inited){
+                this.initLoop();
+                this.inited = true;
+            }
+            let transitionTime = this.getParameter("transitionTime") || 2;
+            this.fade.gain.setTargetAtTime(1, 0, transitionTime);
+        } else {
+            let fn = () => this.start();
+            if(!this.bufferSource1._buffer){
+                this.bufferSource1.addCallBack(fn);
+            }
+            if(!this.bufferSource2._buffer){
+                this.bufferSource2.addCallBack(fn);
+            }
         }
-        let transitionTime = this.getParameter("transitionTime") || 2;
-        this.fade.gain.setTargetAtTime(1, 0, transitionTime);
     }
 
     stop(){
@@ -190,7 +200,6 @@ class AmbientAudio {
 
         // turn on buffer1
         this.fade1.gain.setTargetAtTime(1, 0, 0.001);
-
     }
 
     trigSample(){
@@ -1594,6 +1603,7 @@ class BufferSourceObject {
 		this._node = new AudioBufferSourceNode(this._ctx);
 		this._params = params;
 		this._parentAudioObj = obj;
+		this.callBackList = [];
 	}
 
 	connect(destination){
@@ -1650,6 +1660,18 @@ class BufferSourceObject {
         }
     }
 
+	addCallBack(fn){
+		this.callBackList = [];
+		this.callBackList.push(fn);
+	}
+
+	doCallBacks(){
+		while(this.callBackList.length){
+			let fn = this.callBackList.pop();
+			fn();
+		}
+	}
+
 	get output(){
 		return this._node;
 	}
@@ -1664,7 +1686,10 @@ class BufferSourceObject {
 
 	set src(src){
 		let localPath = this.getParameter("localpath") || "";
-		Loader.loadAudio(localPath + src, this._ctx).then(audioBuffer => this._buffer = audioBuffer);
+		Loader.loadAudio(localPath + src, this._ctx).then(audioBuffer => {
+			this._buffer = audioBuffer;
+			this.doCallBacks();
+		});
 	}
 
 	get loopEnd(){
@@ -2746,7 +2771,22 @@ class InteractionManager {
 							}
 							break;
 					}
-					el.addEventListener(eventName, fn);
+					let frFn;
+					if(eventName == "timeupdate" && el.requestVideoFrameCallback){
+						// allow for frame synced updates
+						frFn = (now, metaData) => {
+							fn();
+							el.requestVideoFrameCallback(frFn);
+						}
+						el.requestVideoFrameCallback(frFn);
+					} else {
+						el.addEventListener(eventName, fn);
+					}
+
+					if(eventName == "play" && el.autoplay && el.currentTime){
+						// trig function manually if video has already begun playback
+						(frFn || fn)();
+					}
 				}
 			});
 
@@ -5231,7 +5271,7 @@ class Variable {
 		// 	});
 		// }
 		if(typeof params.default != undefined){
-			this.value = this.default;
+			this.value = params.default;
 		} else if(typeof params.value != "undefined"){
 			this.value = params.value.valueOf();
 		}
@@ -5874,9 +5914,6 @@ class Watcher {
 						// 		v += ".value";
 						// 	}
 						// }
-						if(v.includes("origo")){
-							console.log("hej");
-						}
 						let v1 = eval(v);
 						v1 = (Number.isNaN(v1) ? val : v1) || 0;
 						values.push(v1);
@@ -6037,6 +6074,7 @@ class WebAudio {
 						entry.obj.connect(this.master.output);
 					});
 
+					this.init();
 
 				});
 			});

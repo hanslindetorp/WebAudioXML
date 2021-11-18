@@ -8,6 +8,7 @@ class BufferSourceObject {
 		this._node = new AudioBufferSourceNode(this._ctx);
 		this._params = params;
 		this._parentAudioObj = obj;
+		this.callBackList = [];
 	}
 
 	connect(destination){
@@ -64,6 +65,18 @@ class BufferSourceObject {
         }
     }
 
+	addCallBack(fn){
+		this.callBackList = [];
+		this.callBackList.push(fn);
+	}
+
+	doCallBacks(){
+		while(this.callBackList.length){
+			let fn = this.callBackList.pop();
+			fn();
+		}
+	}
+
 	get output(){
 		return this._node;
 	}
@@ -78,7 +91,10 @@ class BufferSourceObject {
 
 	set src(src){
 		let localPath = this.getParameter("localpath") || "";
-		Loader.loadAudio(localPath + src, this._ctx).then(audioBuffer => this._buffer = audioBuffer);
+		Loader.loadAudio(localPath + src, this._ctx).then(audioBuffer => {
+			this._buffer = audioBuffer;
+			this.doCallBacks();
+		});
 	}
 
 	get loopEnd(){

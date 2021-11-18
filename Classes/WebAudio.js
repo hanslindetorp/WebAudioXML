@@ -132,6 +132,7 @@ class WebAudio {
 						entry.obj.connect(this.master.output);
 					});
 
+					this.init();
 
 				});
 			});

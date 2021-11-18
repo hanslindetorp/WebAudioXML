@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
-    <var name="zPos" value="$time.derivative*2" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
-    <!--
-    <var name="f" mapin="0,0.5,1" mapout="200, 400, 50, 1000, 300"></var>
+<Audio transitionTime="1" version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
     
-    <Mixer gain="-9dB">
-        <OscillatorNode transitionTime="1" frequency="$f"></OscillatorNode>
-    </Mixer> -->
-    
-    <!-- <var name="master" default="0"></var> -->
     
     <Mixer output=".white-noise">
         <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
     </Mixer> 
+     
     
     <Mixer gain="1" output="#ch1-hang-flyer">
         <var name="zPos" value="$time" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
@@ -67,14 +60,13 @@
 
 
 
+    <var name="ch1" value="$solo" mapin="0,1,2,3" mapout="0,3,-12,-12" default="0" convert="dB->power"></var>
+    <var name="ch2" value="$solo" mapin="0,1,2,3" mapout="0,-12,3,-12" default="0" convert="dB->power"></var>
+    <var name="ch3" value="$solo" mapin="0,1,2,3" mapout="0,-12,-12,3" default="0" convert="dB->power"></var>
+    <var name="bg" value="$solo" mapin="0,1,2,3" mapout="0,-3,-3,-3" default="0" convert="dB->power"></var>
+    <var name="ambienceGain" default="0.5"></var> 
 
-    <!-- MIXER -->
-    <var name="ch1" value="$solo" mapin="0,1,2,3" mapout="1,1,0,0" default="1"></var>
-    <var name="ch2" value="$solo" mapin="0,1,2,3" mapout="1,0,1,0" default="1"></var>
-    <var name="ch3" value="$solo" mapin="0,1,2,3" mapout="1,0,0,1" default="1"></var>
-    <var name="bg" value="$solo" mapin="0,1,2,3" mapout="1,0,0,0" default="1"></var>
-
-    <Mixer gain="$master" transitionTime="1000">
+    <Mixer gain="$master" transitionTime="200">
         <Chain>
             <GainNode id="ch1-hang-flyer" gain="$ch1"></GainNode>
             <Send output=".cityConvolution" gain="-12dB"></Send>
@@ -102,10 +94,11 @@
         
     </Mixer>
 
-    <!-- <Mixer gain="$calibration">
+    <Mixer gain="$calibration">
         <GainNode class="white-noise" gain="-6dB"></GainNode>
     </Mixer>
-     -->
+    
 
-    <var name="calibration" value="0" default="0"></var>
+    <var name="master" default="1"></var>
+    <var name="calibration" default="0"></var>
 </Audio>

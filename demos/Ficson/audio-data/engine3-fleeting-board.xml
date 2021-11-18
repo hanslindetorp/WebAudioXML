@@ -8,9 +8,9 @@
     <var name="BPF" value="$speed" mapin="0,1" mapout="150,180"></var>
     <OscillatorNode type="sawtooth" frequency="$AM" output=".AM"></OscillatorNode>
     
-    <Chain>
+    <Chain gain="$engine_gain">
 		<GainNode class="engine3 white-noise" gain="$dynGain"></GainNode>
-        <GainNode gain="$distGain"></GainNode>
+        <!-- <GainNode gain="$distGain"></GainNode> -->
         <DelayNode delayTime="2"></DelayNode>
         <GainNode>
             <gain class="AM"></gain>

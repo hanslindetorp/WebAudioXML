@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" controls="true" timeUnit="ms" gain="0dB" xmlns:xi="http://www.w3.org/2001/XInclude">
+    
+    <Mixer gain="-9dB" id="Hans_test">
+        <var name="frequency" mapin="20,1000" default="432"></var>
+        <var name="harmonics" mapin="1,30" mapout="1,30" steps="0,1" default="1"></var>
+        <var name="spectrum" mapin="0,10" mapout="1,10" steps="0,1" default="1"></var>
+        <var name="AM_freq" mapin="1,10" mapout="1,10" steps="0,1"></var>
+        <var name="AM_amt" mapin="0,1"></var>
+        <var name="formants" mapin="1,10" mapout="1,10" steps="0,1"></var>
+        
+
+        <OscillatorNode output="#AM1" frequency="$frequency*$AM_freq"></OscillatorNode>
+        <GainNode id="AM1" output="#AM2" gain="$AM_amt"></GainNode>
+        <AudioWorkletNode 
+            src="HL-processor.js"
+            frequency="$frequency"
+            harmonics="$harmonics"
+            spectrum="$spectrum"
+            output="#gain"
+            formants="$formants"
+        ></AudioWorkletNode>
+        <GainNode id="gain">
+            <gain id="AM2"></gain>
+        </GainNode>
+    </Mixer>
+</Audio>

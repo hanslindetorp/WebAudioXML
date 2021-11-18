@@ -4,7 +4,7 @@
     <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,82" convert="MIDI->frequency"></var>
     <var name="bandpass_Q" mapin="0,50" default="20"></var>
 
-    <var name="gain" value="$gain2"></var>
+    <var name="gain" value="$gain2" default="0.5"></var>
     <var name="dynGain" value="$speed" mapin="0,0.3" mapout="0,1"></var>
 
     <Mixer id="vehicle2" output=".channel" gain="$dynGain">
@@ -94,7 +94,7 @@
 
         <var name="origo" value="$onX*$onY" curve="3"></var>
         <Chain gain="$origo">
-            <ConvolverNode class="reverb" src="convolution/r1_omni_48k.wav"></ConvolverNode>
+            <ConvolverNode class="reverb" src="convolution/r1_omni_48k_1s.wav"></ConvolverNode>
             
             <!-- <BiquadFilterNode 
                 type="bandpass" 

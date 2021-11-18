@@ -13,7 +13,7 @@
         <DelayNode delayTime="1"></DelayNode>
 		<BiquadFilterNode type="lowpass" frequency="800" output=".wheel-chair-filter"></BiquadFilterNode>
 			
-		<Mixer transitionTime="25">
+		<Mixer transitionTime="50">
 			<BiquadFilterNode frequency="$f*1" class="wheel-chair-filter" id="filter1" type="bandpass" Q="$Q*1"></BiquadFilterNode>
 			<!-- <BiquadFilterNode frequency="$f*2" class="wheel-chair-filter" id="filter2" type="bandpass" Q="$Q*2"></BiquadFilterNode> -->
 			<!-- <BiquadFilterNode frequency="$f*3" class="wheel-chair-filter" id="filter3" type="bandpass" Q="$Q*3"></BiquadFilterNode> -->
