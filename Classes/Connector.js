@@ -49,7 +49,6 @@ class Connector {
 
 
 					switch(targetNode.nodeName.toLowerCase()){
-						//case "send":
 						case "oscillatornode":
 						case "audiobuffernode":
 						case "synth":
@@ -97,14 +96,24 @@ class Connector {
 			// let topElement = xmlNode.closest("[href$='.xml]") || this._xml;
 			let curNode = xmlNode;
 			let targetElements = [];
-			while(!targetElements.length && curNode != this._xml.parentNode){
-				targetElements = curNode.querySelectorAll(output);
-				curNode = curNode.parentNode;
+			switch(output){
+				case "audioContext.destination":
+					xmlNode.obj.connect(this._ctx.destination);
+				break;
+
+				default:
+					while(!targetElements.length && curNode != this._xml.parentNode){
+						targetElements = curNode.querySelectorAll(output);
+						curNode = curNode.parentNode;
+					}
+		
+					targetElements.forEach(target => {
+						xmlNode.obj.connect(target.obj.input);
+					});
+				break;
 			}
 
-			targetElements.forEach(target => {
-				xmlNode.obj.connect(target.obj.input);
-			});
+			
 
 		} else {
 
@@ -134,8 +143,11 @@ class Connector {
 
 
 					case "channelmergernode":
-					let trgCh = [...xmlNode.parentNode.children].indexOf(xmlNode);
-					xmlNode.obj.connect(xmlNode.parentNode.obj._node, 0, trgCh);
+					let trgCh = xmlNode.obj.getParameter("channel") || [[...xmlNode.parentNode.children].indexOf(xmlNode)];
+					trgCh.forEach((outputCh, i) => {
+						let inputCh = i % xmlNode.obj._node.channelCount;
+						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh], inputCh, 0);
+					});
 					break;
 
 					case "chain":

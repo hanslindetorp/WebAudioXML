@@ -231,7 +231,9 @@ class GUI {
 				1/1000, 
 				1, 
 				"unspecified",
-				e => this.waxml.setVariable(name, e.target.value)
+				e => {
+					this.waxml.setVariable(name, e.target.value);
+				}
 			);
 		});
 	}
@@ -356,7 +358,9 @@ class GUI {
 		parent.appendChild(sliderContainer);
 
 		let sliderID = `slider-${this.elementCounter++}`;
-
+		// if(name == "$multi_pan"){
+		// 	console.log("$multi_pan");
+		// }
 
 		let label = document.createElement("label");
 		label.innerHTML = name;

@@ -22,6 +22,10 @@ class Variable {
 		this._mapper = new Mapper(params);
 		this.scheduledEvents = [];
 
+		// if(this.name == "pan"){
+		// 	console.log("hej");
+		// }
+
 
 		// it seems hard to add a watcher from here
 		// when Watcher is calling this contructor

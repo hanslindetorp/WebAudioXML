@@ -158,9 +158,9 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "mapout":
 		case "times":
 		case "values":
+		case "channel":
 		value = WebAudioUtils.split(value);
 		break;
-
 
 		case "convert":
 		value = WebAudioUtils.split(value, ";");

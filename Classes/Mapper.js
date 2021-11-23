@@ -19,7 +19,7 @@ class Mapper{
 	constructor(params){
 
 		if(params.name){
-			this.printInfo(params);
+			// this.printInfo(params);
 		}
 
 		this.params = params;

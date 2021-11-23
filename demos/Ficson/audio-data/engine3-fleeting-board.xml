@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="$engine_gain">
+<Audio version="1.0" timeUnit="ms">
     <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,102" convert="MIDI->frequency"></var>
     
     <var name="engine_gain" mapin="0,1" default="1"></var>
     <var name="dynGain" value="$speed" mapin="0.5,1" mapout="0.25,1"></var>
-    <var name="AM" value="$speed" mapin="0.5,1" mapout="200,80"></var>
+    <var name="distGain" value=""></var>
+    <var name="amf" value="$speed" mapin="0.5,1" mapout="200,80"></var>
     <var name="BPF" value="$speed" mapin="0,1" mapout="150,180"></var>
-    <OscillatorNode type="sawtooth" frequency="$AM" output=".AM"></OscillatorNode>
+    <OscillatorNode type="sawtooth" frequency="$amf" output=".AM"></OscillatorNode>
     
     <Chain gain="$engine_gain">
 		<GainNode class="engine3 white-noise" gain="$dynGain"></GainNode>

@@ -22,6 +22,11 @@ class AudioObject{
       let parentAudioObj = xmlNode.parentNode.audioObject;
       this._parentAudioObj = parentAudioObj;
 
+      if(parentAudioObj){
+        parentAudioObj.addChildObj(this);
+      }
+      
+
 	  	this._params = params;
       this.variables = new VariableContainer();
 	  	this._xml = xmlNode;
@@ -55,6 +60,9 @@ class AudioObject{
       if(this._xml.parentNode.audioObject){
         this.parent = this._xml.parentNode.audioObject;
       }
+
+      // currently only used for ChannelMergerNode
+      this.childObjects = [];
 
 
 	  	switch(nodeType){
@@ -183,14 +191,20 @@ class AudioObject{
             // doesn't really seem to work, though...
             try {
               this._node = new AudioWorkletNode(this._ctx, processorName);
-              setTimeout(e => this._node.connect(this._destination), 1000);
+              setTimeout(e => {
+                // this._node.connect(this._destination);
+                this.connect(this._destination);
+              }, 1000);
               setParams();
             } catch {
               console.log("addModule", localPath + src);
               this._ctx.audioWorklet.addModule(localPath + src)
               .then(e =>{
                 this._node = new AudioWorkletNode(this._ctx, processorName);
-                setTimeout(e => this._node.connect(this._destination), 1000);
+                setTimeout(e => {
+                  // this._node.connect(this._destination);
+                  this.connect(this._destination);
+                }, 1000);
                 setParams();
               });
             }
@@ -248,6 +262,7 @@ class AudioObject{
         case "channelsplitternode":
         this.input = new ChannelSpitterNode(this._ctx, {
           numberOfOutputs: this._ctx.destination.maxChannelCount,
+          channelCount: this._ctx.destination.maxChannelCount,
           channelCountMode: "explicit",
           channelInterpretation: "discrete"
         });
@@ -256,10 +271,21 @@ class AudioObject{
 
         case "channelmergernode":
         this._node = new ChannelMergerNode(this._ctx, {
-          numberOfOutputs: this._ctx.destination.maxChannelCount,
+          numberOfInputs: this._ctx.destination.maxChannelCount,
+          channelCount: 1,
           channelCountMode: "explicit",
           channelInterpretation: "discrete"
         });
+        this.inputs = [];
+        while(this.inputs.length < this._ctx.destination.maxChannelCount){
+          let gainNode = new GainNode(this._ctx, {
+            channelCount: 1,
+            channelCountMode: "explicit",
+            channelInterpretation: "discrete"
+          });
+          gainNode.connect(this._node, 0, this.inputs.length);
+          this.inputs.push(gainNode);
+        }
         break;
 
 
@@ -495,7 +521,10 @@ class AudioObject{
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
         case "audioworkletnode":
+		  	break;
+
         case "channelmergernode":
+        // return this.childObjects.length ? this.childObjects : this.inputs;
 		  	break;
 
         case "objectbasedaudio":         
@@ -510,6 +539,9 @@ class AudioObject{
 		  }
 
   	}
+    addChildObj(obj){
+      this.childObjects.push(obj);
+    }
 
   	set input(node){
 	  	this._input = node;
@@ -544,8 +576,13 @@ class AudioObject{
 	  	if(this._node){
 		  	if(this._node.connect){
 			  	destination = destination || this._ctx.destination;
-			  	this._node.connect(destination);
-
+          if(!(destination instanceof Array)){
+            destination = [destination];
+          }
+          destination.forEach(d => {
+            d = d.input || d;
+            this._node.connect(d);
+          });
 		  	}
 	  	}
 	  	this._destination = destination;;
@@ -554,12 +591,18 @@ class AudioObject{
 
 
   	inputFrom(sourceObject){
+      // This function is used when the input from a chain element shall be
+      // redirected to the first child
 	  	switch(this._nodeType){
 
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
         case "audioworkletnode":
 		  	break;
+
+        case "channelmergernode":
+        this.childObjects.forEach(obj => sourceObject.connect(obj.input));
+        break;
 
 		  	default:
 		  	sourceObject.connect(this.input);
@@ -704,7 +747,7 @@ class AudioObject{
 
 
 
-      if(this._node){
+      if(this._node && this._nodeType != "channelmergernode"){
 
         //  web audio parameter
         if(typeof param == "string"){
@@ -768,7 +811,12 @@ class AudioObject{
 
         // javascript object
         if(param == "pan"){
+          if(this._nodeType == "channelmergernode"){
+            this.pan = value;
+          } else {
             this._parentAudioObj.pan = value;
+          }
+            
         } else {
           this._targetObject[param] = value;
         }
@@ -1048,14 +1096,30 @@ class AudioObject{
   	}
 
   	set pan(val){
+      val = Math.max(-1, Math.min(val, 1));
       this._params.pan = val;
 	  	if(this.parent.fakePanner){
-			     this._parentAudioObj._node.setPosition(val, 0, 1-Math.abs(val));
-/*
-		  	this.setTargetAtTime(this.L.gain, 0.5-(val/2));
-		  	this.setTargetAtTime(this.R.gain, 0.5+(val/2));
-*/
-	  	} else {
+			     this._parentAudioObj._node.setPosition(val, 0, -1);
+	  	} else if(this._nodeType == "channelmergernode") {
+        // Tänk igenom strukturen om children inte används. Går det att få till en auto-connect
+        // till alla inputs och sedan kunna göra en multi-pan mellan dem utan att
+        // det stör multi-pan mellan children?
+
+        let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
+        
+        val = ((val + 1) / 2) * (targets.length - 1); // 0 - nr of children or channelCount
+
+        // Det vore kanske bättre att lägga ut detta i Mapper-objektet
+        // Och att ha en extra GainNode mellan child-objekt och input
+        targets.forEach((target, i) => {
+          let input = target.output ? target.output : target;
+          let dist = Math.abs(i - val);
+          let reduction = Math.min(dist, 1);
+          let gain = 1 - reduction;
+          input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
+        });
+
+      } else {
 		  	this.setTargetAtTime("pan", val);
 	  	}
 

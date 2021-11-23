@@ -2,9 +2,12 @@
 <Audio transitionTime="1" version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
     
     
+    
     <Mixer output=".white-noise">
         <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
     </Mixer> 
+
+
      
     
     <Mixer gain="1" output="#ch1-hang-flyer">
@@ -64,12 +67,23 @@
     <var name="ch2" value="$solo" mapin="0,1,2,3" mapout="0,-12,3,-12" default="0" convert="dB->power"></var>
     <var name="ch3" value="$solo" mapin="0,1,2,3" mapout="0,-12,-12,3" default="0" convert="dB->power"></var>
     <var name="bg" value="$solo" mapin="0,1,2,3" mapout="0,-3,-3,-3" default="0" convert="dB->power"></var>
-    <var name="ambienceGain" default="0.5"></var> 
+    <var name="ambiencegain" default="0.5"></var> 
 
-    <Mixer gain="$master" transitionTime="200">
+    
+
+    <Mixer gain="$master-$calibration" transitionTime="200">
         <Chain>
+            <!-- <var name="multi_pan" mapin="-1,1"></var> -->
+            
             <GainNode id="ch1-hang-flyer" gain="$ch1"></GainNode>
-            <Send output=".cityConvolution" gain="-12dB"></Send>
+            <Send output=".cityConvolution" gain="-0"></Send>
+            <GainNode output=".multi-out"></GainNode>
+            <ChannelMergerNode pan="$hang-flyer-pan">
+                <GainNode class="multi-out"></GainNode>
+                <GainNode class="multi-out"></GainNode>
+                <GainNode class="multi-out"></GainNode>
+                <GainNode class="multi-out"></GainNode>
+            </ChannelMergerNode>
         </Chain>
         <Chain>
             <GainNode id="ch2-wheel-chair" gain="$ch2"></GainNode>
@@ -82,12 +96,12 @@
         
         <ConvolverNode class="cityConvolution" src="convolution/PlateSmall.wav"></ConvolverNode>
         
-        <Mixer gain="$ambienceGain">
+        <Mixer gain="$ambiencegain">
             <Mixer gain="$bg">
                 <AmbientAudio src="ambience/front_atmo_w_voices.wav" start="auto" gain="-12dB"></AmbientAudio>
                 <AmbientAudio src="ambience/street_car_distant.wav" start="auto" gain="-12dB"></AmbientAudio>
                 <AmbientAudio src="ambience/surround_atmo.wav" start="auto" gain="-12dB"></AmbientAudio>  
-                <AmbientAudio src="ambience/ped_crossing.wav" start="auto" gain="-12dB"></AmbientAudio>  
+                <!-- <AmbientAudio src="ambience/ped_crossing.wav" start="auto" gain="-12dB"></AmbientAudio>   -->
                 <AmbientAudio src="ambience/steg_loop.wav" start="auto" gain="-12dB"></AmbientAudio>    
             </Mixer>
         </Mixer>
@@ -95,7 +109,18 @@
     </Mixer>
 
     <Mixer gain="$calibration">
-        <GainNode class="white-noise" gain="-6dB"></GainNode>
+        <Chain gain="-9dB">
+            <ChannelMergerNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+                <GainNode class="white-noise"></GainNode>
+            </ChannelMergerNode>
+        </Chain>
     </Mixer>
     
 

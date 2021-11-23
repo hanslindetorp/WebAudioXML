@@ -58,6 +58,8 @@ class WebAudio {
 			if (AudioContext) {
 					// Web Audio API is available.
 					_ctx = new AudioContext();
+					_ctx.destination.channelCount = _ctx.destination.maxChannelCount || 2;
+
 					console.log("WebAudioXML is installed. Version " + version);
 			} else {
 				console.error("This browser does not support Web Audio API");
