@@ -77,13 +77,13 @@
             
             <GainNode id="ch1-hang-flyer" gain="$ch1"></GainNode>
             <Send output=".cityConvolution" gain="-0"></Send>
-            <GainNode output=".multi-out"></GainNode>
+            <!-- <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$hang-flyer-pan">
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
-            </ChannelMergerNode>
+            </ChannelMergerNode> -->
         </Chain>
         <Chain>
             <GainNode id="ch2-wheel-chair" gain="$ch2"></GainNode>
@@ -110,7 +110,8 @@
 
     <Mixer gain="$calibration">
         <Chain gain="-9dB">
-            <ChannelMergerNode>
+            <GainNode class="white-noise"></GainNode>
+            <!-- <ChannelMergerNode>
                 <GainNode class="white-noise"></GainNode>
                 <GainNode class="white-noise"></GainNode>
                 <GainNode class="white-noise"></GainNode>
@@ -119,7 +120,7 @@
                 <GainNode class="white-noise"></GainNode>
                 <GainNode class="white-noise"></GainNode>
                 <GainNode class="white-noise"></GainNode>
-            </ChannelMergerNode>
+            </ChannelMergerNode> -->
         </Chain>
     </Mixer>
     
