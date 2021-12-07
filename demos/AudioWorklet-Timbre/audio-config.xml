@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB" controls="show">
+    
+    <var name="frequency" mapin="20,1000" default="440"></var>
+    <var name="spread" mapin="1,100" default="1"></var>
+    <var name="damping" mapin="1,50" default="1"></var>
+    <!-- <var name="formants" mapin="1,5" default="1"></var>
+    <var name="formant_gain" mapin="0,1" default="1"></var> -->
+    <var name="analogue_factor" mapin="0, 1" default="0"></var>
+
+    <Chain>
+        <AudioWorkletNode 
+            frequency="$frequency" 
+            spread="$spread"
+            damping="$damping"
+            src="texture-processor.js"
+        ></AudioWorkletNode>
+
+        <AudioWorkletNode 
+            factor="$analogue_factor"
+            src="analogue.js"
+        ></AudioWorkletNode>
+    </Chain>
+    
+</Audio>

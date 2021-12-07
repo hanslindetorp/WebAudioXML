@@ -315,7 +315,13 @@ class ObjectBasedAudio {
     }
 	
     start(){
-        if(this.bufferSource)this.bufferSource.start();
+
+        if(this.bufferSource._buffer){
+            this.bufferSource.start();
+        } else {
+            let fn = () => this.start();
+            this.bufferSource.addCallBack(fn);
+        }
     }
 
     stop(){

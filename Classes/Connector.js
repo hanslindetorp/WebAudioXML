@@ -54,6 +54,12 @@ class Connector {
 						case "synth":
 						break;
 
+						case "channelmergernode":
+						// it causes connection bugs to connect incoming signals to ChannelMergers
+						// children as I would like to do
+						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
+						break;
+
 						case "send":
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
@@ -144,9 +150,10 @@ class Connector {
 
 					case "channelmergernode":
 					let trgCh = xmlNode.obj.getParameter("channel") || [[...xmlNode.parentNode.children].indexOf(xmlNode)];
+					let channelCount = this._ctx.destination.channelCount; //xmlNode.parentNode.obj.inputs.length;
 					trgCh.forEach((outputCh, i) => {
 						let inputCh = i % xmlNode.obj._node.channelCount;
-						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh], inputCh, 0);
+						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh % channelCount], inputCh, 0);
 					});
 					break;
 
@@ -184,13 +191,18 @@ class Connector {
 					break;
 
 
-					// connect to parameter input. Vad är det här??
-					case "gain":
+					// connect to parameter input. Envelopes inside gainnode
+					// case "gain":
+					case "gainnode":
 					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 					break;
 
-					default:
+					case "#document":
 					xmlNode.audioObject.connect(this._ctx.destination);
+					break;
+
+					default:
+					// do not connect
 					break;
 				}
 			}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB" controls="true">
+    <var name="frequency" value="880" mapin="100,2000"></var>
+    <Mixer>
+        <Chain>
+            <Mixer>
+                <OscillatorNode>
+                    <frequency value="880"></frequency>
+                </OscillatorNode>
+                <OscillatorNode>
+                    <frequency value="440"></frequency>
+                </OscillatorNode>
+                <OscillatorNode>
+                    <frequency value="220"></frequency>
+                </OscillatorNode>
+            </Mixer>
+            <OscillatorNode></OscillatorNode>
+        </Chain>
+    </Mixer>
+    
+</Audio>

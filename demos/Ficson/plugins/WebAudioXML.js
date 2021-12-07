@@ -328,12 +328,9 @@ class AudioObject{
 		  	break;
 
 		  	case "delaynode":
-		  	if(this._params.maxDelayTime){
-			  	this._node = this._ctx.createDelay(this._params.maxDelayTime * this._params.timescale);
-		  	} else {
-			  	this._node = this._ctx.createDelay();
-		  	}
-
+        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime).valueOf();
+		  	maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+			  this._node = this._ctx.createDelay(maxDelayTime);
 		  	break;
 
 		  	case "dynamicscompressornode":
@@ -793,7 +790,9 @@ class AudioObject{
 
 	  	if(this._node){
 		  	if(this._node.connect){
-			  	destination = destination || this._ctx.destination;
+			  	if(!destination){
+            destination = this._ctx.destination;
+          }
           if(!(destination instanceof Array)){
             destination = [destination];
           }
@@ -850,11 +849,25 @@ class AudioObject{
 		  	break;
 
 
-		  	case "audiobuffersourcenode":
-        case "objectbasedaudio":
+        // There is a problem for audio buffer based objects
+        // that shall be triggered automatically. They might miss
+        // the call if they are not loaded yet.
         case "ambientaudio":
+        case "objectbasedaudio":
 		  	this._node.start();
 		  	break;
+
+
+
+		  	case "audiobuffersourcenode":
+        if(this._node._buffer){
+          this._node.start();
+        } else {
+          let fn = () => this.start();
+          this._node.addCallBack(fn);
+        }
+        break;
+
 
         case "audioworkletnode":
         // this._node = this._aw;
@@ -1322,6 +1335,7 @@ class AudioObject{
         // Tänk igenom strukturen om children inte används. Går det att få till en auto-connect
         // till alla inputs och sedan kunna göra en multi-pan mellan dem utan att
         // det stör multi-pan mellan children?
+        // Ändra också till att använda attributet "fade" eller "crossfade"
 
         let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
         
@@ -1333,6 +1347,7 @@ class AudioObject{
           let input = target.output ? target.output : target;
           let dist = Math.abs(i - val);
           let reduction = Math.min(dist, 1);
+          reduction = Math.pow(reduction, 2); // +3dB for equal power
           let gain = 1 - reduction;
           input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
         });
@@ -1852,6 +1867,12 @@ class Connector {
 						case "synth":
 						break;
 
+						case "channelmergernode":
+						// it causes connection bugs to connect incoming signals to ChannelMergers
+						// children as I would like to do
+						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
+						break;
+
 						case "send":
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
@@ -1942,9 +1963,10 @@ class Connector {
 
 					case "channelmergernode":
 					let trgCh = xmlNode.obj.getParameter("channel") || [[...xmlNode.parentNode.children].indexOf(xmlNode)];
+					let channelCount = this._ctx.destination.channelCount; //xmlNode.parentNode.obj.inputs.length;
 					trgCh.forEach((outputCh, i) => {
 						let inputCh = i % xmlNode.obj._node.channelCount;
-						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh], inputCh, 0);
+						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh % channelCount], inputCh, 0);
 					});
 					break;
 
@@ -1982,13 +2004,18 @@ class Connector {
 					break;
 
 
-					// connect to parameter input. Vad är det här??
-					case "gain":
+					// connect to parameter input. Envelopes inside gainnode
+					// case "gain":
+					case "gainnode":
 					xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 					break;
 
-					default:
+					case "#document":
 					xmlNode.audioObject.connect(this._ctx.destination);
+					break;
+
+					default:
+					// do not connect
 					break;
 				}
 			}
@@ -4283,7 +4310,13 @@ class ObjectBasedAudio {
     }
 	
     start(){
-        if(this.bufferSource)this.bufferSource.start();
+
+        if(this.bufferSource._buffer){
+            this.bufferSource.start();
+        } else {
+            let fn = () => this.start();
+            this.bufferSource.addCallBack(fn);
+        }
     }
 
     stop(){

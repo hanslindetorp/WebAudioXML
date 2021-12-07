@@ -228,10 +228,12 @@ class WebAudio {
 		let level = 0;
 		let audioObjects = [];
 
-		var retrieveObjects = (el, parentObj = {}) => {
+		var retrieveObjects = (el, parentObj = {}, params = {}) => {
 			let obj = {};
+
 			if(el.obj){
 				obj.name = el.id || [...el.classList].join(".") || el.nodeName;
+				obj.label = obj.name;
 				obj.children = [];
 				obj.type = el.nodeName;
 				obj.level = (parentObj.level || 0) + 1;
@@ -249,6 +251,7 @@ class WebAudio {
 					obj.children.push(paramObj);
 					paramObj.parent = obj;
 					paramObj.path = obj.path + "." + paramObj.name;
+					paramObj.label = paramObj.name;
 
 					// add to linear list with parameter objects
 					parameters.push(paramObj);
@@ -256,7 +259,7 @@ class WebAudio {
 
 
 				// add parameters for audioNode
-				if(el.obj._node){
+				if(el.obj._node && !params.onlyXML){
 					for(let key in el.obj._node){
 						let param = el.obj._node[key];
 						if(param instanceof AudioParam){
@@ -264,6 +267,7 @@ class WebAudio {
 							let paramObj = {
 								id: counter++,
 								name: key,
+								label: key,
 								target: param,
 								min: range.min,
 								max: range.max,
@@ -284,7 +288,7 @@ class WebAudio {
 
 				// add children to containers
 				Array.from(el.children).forEach(childNode => {
-					let childObj = retrieveObjects(childNode, obj);
+					let childObj = retrieveObjects(childNode, obj, params);
 					if(childObj){obj.children.push(childObj)}
 				});
 			}
@@ -294,6 +298,7 @@ class WebAudio {
 			parameters: parameters,
 			audioObjects: audioObjects,
 			tree: retrieveObjects(this._xml),
+			XMLtree: retrieveObjects(this._xml, {}, {onlyXML:true}),
 			xml: this._xml.outerHTML
 		}
 		return struct;

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+
+    <Mixer gain="$speaker_recognition*0.2">
+        <ChannelMergerNode>
+            <AudioBufferSourceNode class="count1" src="audio/1.mp3"></AudioBufferSourceNode>
+            <AudioBufferSourceNode class="count2" src="audio/2.mp3"></AudioBufferSourceNode>
+            <AudioBufferSourceNode class="count3" src="audio/3.mp3"></AudioBufferSourceNode>
+            <AudioBufferSourceNode class="count4" src="audio/4.mp3"></AudioBufferSourceNode>  
+            <AudioBufferSourceNode class="count5" src="audio/5.mp3"></AudioBufferSourceNode>  
+            <AudioBufferSourceNode class="count6" src="audio/6.mp3"></AudioBufferSourceNode>  
+            <AudioBufferSourceNode class="count7" src="audio/7.mp3"></AudioBufferSourceNode>  
+            <AudioBufferSourceNode class="count8" src="audio/8.mp3"></AudioBufferSourceNode>  
+        </ChannelMergerNode>
+    </Mixer>
+
+</Audio>

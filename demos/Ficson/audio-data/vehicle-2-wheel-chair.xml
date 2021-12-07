@@ -110,7 +110,7 @@
 
     <Chain class="channel">
         <GainNode gain="$gain"></GainNode>
-        <ObjectBasedAudio positionZ="-5" positionX="$pan"></ObjectBasedAudio>
+        <!-- <ObjectBasedAudio positionZ="-5" positionX="$pan2"></ObjectBasedAudio> -->
     </Chain>
 
 </Audio>

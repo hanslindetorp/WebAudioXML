@@ -1,7 +1,7 @@
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
-
+var Finder = require('../finderjs/index.js');
 
 class GUI {
 
@@ -10,6 +10,7 @@ class GUI {
 		this.waxml = waxml;
 		this.elementCounter = 0;
 
+		
 		let style = document.createElement("style");
 		style.innerHTML = `
 
@@ -132,55 +133,69 @@ class GUI {
 		
 		`;
 
-
-		let shadowContainer = document.createElement("div");
-		shadowContainer.style.width = "0%";
-		shadowContainer.style.height = "0%";
-		shadowContainer.style.display = "none";
-		shadowContainer.style.overflow = "visible";
-		shadowContainer.style.position = "absolute";
-		shadowContainer.style.zIndex = "1";
-		shadowContainer.style.backgroundColor = "white";
-
-		document.body.prepend(shadowContainer);
-
-
-		let shadowElement = shadowContainer.attachShadow({mode: 'open'});
-	    shadowElement.appendChild(style);
-
 		let container = document.createElement("div");
-		shadowElement.appendChild(container);
-
 		container.id = "waxml-GUI";
 		container.classList.add("WebAudioXML");
+
+		let allNodes = xmlNode.querySelectorAll("*[controls='true'], *[controls='show']");
+
+		if(xmlNode.firstChild.getAttribute("controls") == "show"){
+			document.head.appendChild(style);
+			document.body.append(container);
+		} else {
+
+
+			let shadowContainer = document.createElement("div");
+			shadowContainer.style.width = "0%";
+			shadowContainer.style.height = "0%";
+			shadowContainer.style.display = "none";
+			shadowContainer.style.overflow = "visible";
+			shadowContainer.style.position = "absolute";
+			shadowContainer.style.zIndex = "1";
+			shadowContainer.style.backgroundColor = "white";
+
+			document.body.prepend(shadowContainer);
+
+
+			let shadowElement = shadowContainer.attachShadow({mode: 'open'});
+			shadowElement.appendChild(style);
+
+			shadowElement.appendChild(container);
+
+			
+			let openbtn = document.createElement("button");
+			openbtn.innerHTML = "WebAudioXML GUI";
+			openbtn.style.position = "absolute";
+			openbtn.style.right = "2px";
+			openbtn.style.top = "2px";
+			document.body.appendChild(openbtn);
+			openbtn.addEventListener("click", e => {
+				e.target.style.display = "none";
+				shadowContainer.style.width = "100%";
+				shadowContainer.style.height = "100%";
+				shadowContainer.style.display = "block";
+			});
+			openbtn.style.display = allNodes.length ? "block": "none";
+
+
+			let btn = document.createElement("button");
+			btn.innerHTML = "X";
+			btn.classList.add("close");
+			container.appendChild(btn);
+			btn.addEventListener("click", e => {
+				openbtn.style.display = "block";
+				shadowContainer.style.width = "0%";
+				shadowContainer.style.height = "0%";
+				shadowContainer.style.display = "none";
+			});
+		}
 		
-		let openbtn = document.createElement("button");
-		openbtn.innerHTML = "WebAudioXML GUI";
-		openbtn.style.position = "absolute";
-		openbtn.style.right = "2px";
-		openbtn.style.top = "2px";
-		document.body.appendChild(openbtn);
-		openbtn.addEventListener("click", e => {
-			e.target.style.display = "none";
-			shadowContainer.style.width = "100%";
-			shadowContainer.style.height = "100%";
-			shadowContainer.style.display = "block";
-		});
+		
 
 		let header = document.createElement("h1");
 		header.innerHTML = "WebAudioXML";
 		container.appendChild(header);
 
-		let btn = document.createElement("button");
-		btn.innerHTML = "X";
-		btn.classList.add("close");
-		container.appendChild(btn);
-		btn.addEventListener("click", e => {
-			openbtn.style.display = "block";
-			shadowContainer.style.width = "0%";
-			shadowContainer.style.height = "0%";
-			shadowContainer.style.display = "none";
-		});
 
 
 		// Find variables in use without <var> elements
@@ -208,8 +223,8 @@ class GUI {
 		specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
 		specifiedContainer.classList.add("container");
 		container.appendChild(specifiedContainer);
-		let allNodes = xmlNode.querySelectorAll("*[controls='true']");
-		openbtn.style.display = allNodes.length ? "block": "none";
+
+
 
 		allNodes.forEach(xmlNode => {
 			this.XMLtoSliders(xmlNode, specifiedContainer, true);
@@ -217,6 +232,10 @@ class GUI {
 
 		this.addUnspecifiedVariableSliders(this.usedVariables, unspecVarsContainer);
 		
+		let columnView = document.createElement("div");
+		columnView.classList.add("columnView");
+		document.body.appendChild(columnView);
+		this.XMLtoColumnView([this.waxml.structure.XMLtree], columnView);
 	}
 
 	addUnspecifiedVariableSliders(names, container){
@@ -236,6 +255,15 @@ class GUI {
 				}
 			);
 		});
+	}
+
+	XMLtoColumnView(structure, el){
+
+		let f = new Finder(el, structure, {});
+		f.on('leaf-selected', function(item) {
+			console.log('Leaf selected', item);
+		  });
+
 	}
 
 	XMLtoTriggerButtons(xmlNode, el){
@@ -300,12 +328,13 @@ class GUI {
 
 				case "var":
 				let obj = xmlNode.obj;
-				if(typeof obj._params.value == "undefined"){
+				//if(typeof obj._params.value == "undefined"){
 					// remove variable from list so there will be no slider duplicates
-					this.usedVariables = this.usedVariables.filter(name => name != obj.name);
+					this.usedVariables = this.usedVariables.filter(name => name != obj.name);;
 
 					this.addSlider(
-						`&lt;var name="${obj.name}"&gt;`, 
+						//`&lt;var name="${obj.name}"&gt;`, 
+						obj.name,
 						el,
 						obj.minIn,
 						obj.maxIn,
@@ -315,7 +344,7 @@ class GUI {
 						e => obj.value = e.target.value
 					);
 					slidersAdded = true;
-				}
+				//}
 				break;
 	
 				case "envelope":

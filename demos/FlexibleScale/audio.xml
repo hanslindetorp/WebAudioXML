@@ -12,12 +12,12 @@
 		values when the pointer is moving to the right.
 		Finally the value is converted from the range of MIDI notes (60-72) to the range of frequencies for those pitches. -->
 
-	<var name="pitch" value="$relX" mapin="0, 100" mapout="60, 72" steps="[0, 2, 3+$up, 5, 7, 8+$up, 10+$up, 12]" convert="MIDI->frequency"></var>
+	<var name="pitch" value="$relX" mapin="0, 100" mapout="36, 48"  steps="[0, 2, 3+$up, 5, 7, 8+$up, 10+$up, 12]" convert="MIDI->frequency"></var>
 
 
 	<Chain>
 
-		<OscillatorNode type="sine" frequency="$pitch"></OscillatorNode>
+		<OscillatorNode type="sawtooth" frequency="$pitch"></OscillatorNode>
 		<GainNode gain="$pointerdown"></GainNode>
 
 	</Chain>

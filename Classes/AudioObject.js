@@ -110,12 +110,9 @@ class AudioObject{
 		  	break;
 
 		  	case "delaynode":
-		  	if(this._params.maxDelayTime){
-			  	this._node = this._ctx.createDelay(this._params.maxDelayTime * this._params.timescale);
-		  	} else {
-			  	this._node = this._ctx.createDelay();
-		  	}
-
+        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime).valueOf();
+		  	maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+			  this._node = this._ctx.createDelay(maxDelayTime);
 		  	break;
 
 		  	case "dynamicscompressornode":
@@ -172,6 +169,7 @@ class AudioObject{
         let localPath = this.getParameter("localpath") || "";
         src = this._params.src;
         if(src){
+          this._input = this._ctx.createGain();
           let processorName = src.split(".").shift().split("/").pop();
           if(this._ctx.audioWorklet){
 
@@ -203,6 +201,7 @@ class AudioObject{
                 this._node = new AudioWorkletNode(this._ctx, processorName);
                 setTimeout(e => {
                   // this._node.connect(this._destination);
+                  this._input.connect(this._node);
                   this.connect(this._destination);
                 }, 1000);
                 setParams();
@@ -520,7 +519,6 @@ class AudioObject{
 
 		  	case "oscillatornode":
 		  	case "audiobuffersourcenode":
-        case "audioworkletnode":
 		  	break;
 
         case "channelmergernode":
@@ -575,7 +573,9 @@ class AudioObject{
 
 	  	if(this._node){
 		  	if(this._node.connect){
-			  	destination = destination || this._ctx.destination;
+			  	if(!destination){
+            destination = this._ctx.destination;
+          }
           if(!(destination instanceof Array)){
             destination = [destination];
           }
@@ -632,11 +632,25 @@ class AudioObject{
 		  	break;
 
 
-		  	case "audiobuffersourcenode":
-        case "objectbasedaudio":
+        // There is a problem for audio buffer based objects
+        // that shall be triggered automatically. They might miss
+        // the call if they are not loaded yet.
         case "ambientaudio":
+        case "objectbasedaudio":
 		  	this._node.start();
 		  	break;
+
+
+
+		  	case "audiobuffersourcenode":
+        if(this._node._buffer){
+          this._node.start();
+        } else {
+          let fn = () => this.start();
+          this._node.addCallBack(fn);
+        }
+        break;
+
 
         case "audioworkletnode":
         // this._node = this._aw;
@@ -1104,6 +1118,7 @@ class AudioObject{
         // Tänk igenom strukturen om children inte används. Går det att få till en auto-connect
         // till alla inputs och sedan kunna göra en multi-pan mellan dem utan att
         // det stör multi-pan mellan children?
+        // Ändra också till att använda attributet "fade" eller "crossfade"
 
         let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
         
@@ -1115,6 +1130,7 @@ class AudioObject{
           let input = target.output ? target.output : target;
           let dist = Math.abs(i - val);
           let reduction = Math.min(dist, 1);
+          reduction = Math.pow(reduction, 2); // +3dB for equal power
           let gain = 1 - reduction;
           input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
         });
