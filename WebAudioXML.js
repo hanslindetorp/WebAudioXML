@@ -1823,9 +1823,10 @@ class Connector {
 
 
 		// terrible...
+		// very terrible...
 		xml.obj._node.gain.value = 0;
 		this.connect(xml);
-		setTimeout(() => xml.obj.fadeIn(1), 1000);
+		setTimeout(() => xml.obj.fade(xml.obj._params.gain, 0.5), 1000);
 	}
 
 
@@ -4161,7 +4162,7 @@ class ObjectBasedAudio {
     set coneInnerAngle(val){
         this._params.coneInnerAngle = val;
         this.pannerNode.coneInnerAngle = val;
-        // this.pannerNode.coneInnerAngle.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.coneInnerAngle.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get coneOuterAngle(){
@@ -4173,7 +4174,7 @@ class ObjectBasedAudio {
     set coneOuterAngle(val){
         this._params.coneOuterAngle = val;
         this.pannerNode.coneOuterAngle = val;
-        // this.pannerNode.coneOuterAngle.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.coneOuterAngle.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get coneOuterGain(){
@@ -4184,7 +4185,7 @@ class ObjectBasedAudio {
     }
     set coneOuterGain(val){
         this._params.coneOuterGain = val;
-        // this.pannerNode.coneOuterGain.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.coneOuterGain.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get distanceModel(){
@@ -4208,7 +4209,7 @@ class ObjectBasedAudio {
     set maxDistance(val){
         this._params.maxDistance = val;
         this.pannerNode.maxDistance = val;
-        // this.pannerNode.maxDistance.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.maxDistance.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get orientationX(){
@@ -4219,7 +4220,7 @@ class ObjectBasedAudio {
     }
     set orientationX(val){
         this._params.orientationX = val;
-        this.pannerNode.orientationX.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationX.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get orientationY(){
@@ -4230,7 +4231,7 @@ class ObjectBasedAudio {
     }
     set orientationY(val){
         this._params.orientationY = val;
-        this.pannerNode.orientationY.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationY.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
 
@@ -4242,14 +4243,14 @@ class ObjectBasedAudio {
     }
     set orientationZ(val){
         this._params.orientationZ = val;
-        this.pannerNode.orientationZ.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationZ.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     set rotationY(deg){
         let [x,y,z] = this.yRotationToVector(deg);
-        this.pannerNode.orientationX.setTargetAtTime(x, 0, this.getParameter("transitionTime"));
-        this.pannerNode.orientationY.setTargetAtTime(y, 0, this.getParameter("transitionTime"));
-        this.pannerNode.orientationZ.setTargetAtTime(z, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationX.setTargetAtTime(x, this._ctx.currentTime, this.getParameter("transitionTime"));
+        this.pannerNode.orientationY.setTargetAtTime(y, this._ctx.currentTime, this.getParameter("transitionTime"));
+        this.pannerNode.orientationZ.setTargetAtTime(z, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
 
@@ -4273,7 +4274,7 @@ class ObjectBasedAudio {
     }
     set positionX(val){
         this._params.positionX = val;
-        this.pannerNode.positionX.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.positionX.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get positionY(){
@@ -4284,7 +4285,7 @@ class ObjectBasedAudio {
     }
     set positionY(val){
         this._params.positionY = val;
-        this.pannerNode.positionY.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.positionY.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get positionZ(){
@@ -4295,7 +4296,7 @@ class ObjectBasedAudio {
     }
     set positionZ(val){
         this._params.positionZ = val;
-        this.pannerNode.positionZ.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.positionZ.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get refDistance(){
@@ -4307,7 +4308,7 @@ class ObjectBasedAudio {
     set refDistance(val){
         this._params.refDistance = val;
         this.pannerNode.refDistance = val;
-        // this.pannerNode.refDistance.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.refDistance.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get rolloffFactor(){
@@ -4322,12 +4323,12 @@ class ObjectBasedAudio {
     }
 
     set convolutionGain(val){
-        this.send.gain.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.send.gain.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     set gain(val){
         this._params.gain = val;
-        this.output.gain.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.output.gain.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
   
     get gain(){
@@ -5052,6 +5053,7 @@ class Synth{
 		this._voiceID = 0;
 
 		this.variables = {};
+		this.childObjects = [];
 
 		this._node = this._ctx.createGain();
 		this._node.gain.value = 1/this._voices;
@@ -5098,23 +5100,33 @@ class Synth{
 		}
 
 
-		this.trigger = new Trigger(this, 0, waxml);
+		this.trigger = new Trigger(this, this._params.trigger, waxml);
 
 	}
 
 
+	disconnect(ch){
+		if(!this._node){return}
+		ch = ch || 0;
+		this._node.disconnect(ch);
+	}
+
 	connect(destination){
 
-	  	if(this._node){
-		  	if(this._node.connect){
-			  	destination = destination || this._ctx.destination;
-			  	this._node.connect(destination);
-			  	this.destination = destination;
-		  	}
-	  	}
+		if(!this._node){return}
+
+		if(this._node.connect){
+			destination = destination || this._ctx.destination;
+			this._node.connect(destination);
+			this.destination = destination;
+		}
 
   	}
+	
 
+	addChildObj(obj){
+	this.childObjects.push(obj);
+	}
 
 	noteOn(note, vel=1){
 
@@ -5341,13 +5353,22 @@ class Trigger {
 	}
 
 	get frequency(){
-		return this._frequency;
+		return this._frequency.valueOf();
+	}
+
+	get minValue(){
+		return 0.001;
+	}
+
+	get maxValue(){
+		return 100;
 	}
 
 	set frequency(f){
 		//console.log(`f = ${f}`);
-		let oldFrequency = this._frequency;
-		this._frequency = Math.max(f, 1 / 1000);
+		f = Math.max(f.valueOf(), 1 / 1000);
+		let oldFrequency = this._frequency ? this._frequency.valueOf() : 0;
+		this._frequency = f;
 		if(this.state && this._frequency > oldFrequency){
 			this.replay();
 		}
@@ -5495,13 +5516,19 @@ class Variable {
 	}
 
 	setTargetAtTime(param, val=0, delay=0, time=0){
-		switch(param){
-			case "value":
-			// transition time is not implemented
-			// value is set after defined delay + time
-			this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
-			break;
-		}
+		this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
+			
+		// switch(param){
+		// 	case "value":
+		// 	// transition time is not implemented
+		// 	// value is set after defined delay + time
+		// 	this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
+		// 	break;
+		// }
+	}
+
+	setValueAtTime(val, delay){
+		this.setTargetAtTime("value", val, delay);
 	}
 
 	cancelScheduledValues(){
@@ -5627,6 +5654,10 @@ class Variable {
 		return this._params.default ? this._params.default : 1;
 	}
 
+	get defaultValue(){
+		return this.default;
+	}
+
 	doCallBacks(transistionTime){
 		this._callBackList.forEach(obj => {
 			obj.callBack(this[obj.prop], transistionTime);
@@ -5638,10 +5669,21 @@ class Variable {
 	}
 
 	getWAXMLparameters(){
-		let obj = WebAudioUtils.paramNameToRange("var");
+		// this is not really used anymore
+		// Becaues 'value' is the only parameter. The var element is rather the 
+		// parameter itself in the Sonification Toolkits perspective (where it's currently used)
+		// let obj = WebAudioUtils.paramNameToRange("var");
+		let obj = {};
 		obj.name = "value";
+		obj.label = this.name;
 		obj.target = this;
 		obj.path = e => this.path;
+
+		obj.min = this.minIn;
+		obj.max = this.maxIn;
+		obj.default = this.default || this.value;
+		obj.conv = 1;
+		
 		return [obj];
 	}
 
@@ -6111,7 +6153,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.6";
+var version = "1.0.7";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -6156,7 +6198,7 @@ class WebAudio {
 
 		}
 
-		this.HL = new HL2(_ctx);
+		// this.HL = new HL2(_ctx);
 
 		source = source || src;
 		if(!source){
@@ -6322,7 +6364,7 @@ class WebAudio {
 
 			if(el.obj){
 				obj.name = el.id || [...el.classList].join(".") || el.nodeName;
-				obj.label = obj.name;
+				obj.label = el.getAttribute("name") || obj.name;
 				obj.children = [];
 				obj.type = el.nodeName;
 				obj.level = (parentObj.level || 0) + 1;
@@ -6333,18 +6375,33 @@ class WebAudio {
 
 				audioObjects.push(obj);
 
-				// add webAudioXML parameters
-				el.obj.getWAXMLparameters().forEach(paramObj => {
-					paramObj.id = counter++;
-					// add to tree
-					obj.children.push(paramObj);
-					paramObj.parent = obj;
-					paramObj.path = obj.path + "." + paramObj.name;
-					paramObj.label = paramObj.name;
+				if(obj.type == "var"){
+					// only one parameter - 'value' - for var-elements
+					// assign propertieas directly to obj
+					// let param = el.obj.getWAXMLparameters().pop();
+					obj.min = el.obj.minIn;
+					obj.max = el.obj.maxIn;
+					obj.default = el.obj.default || el.obj.value;
+					obj.conv = 1;
+					parameters.push(obj);
 
-					// add to linear list with parameter objects
-					parameters.push(paramObj);
-				});
+				} else {
+					// add webAudioXML parameters
+					el.obj.getWAXMLparameters().forEach(paramObj => {
+						paramObj.id = counter++;
+						// add to tree
+						obj.children.push(paramObj);
+						paramObj.parent = obj;
+						paramObj.target = obj.target;
+						paramObj.path = obj.path + "." + paramObj.name;
+						paramObj.label = paramObj.label || paramObj.name;
+
+						// add to linear list with parameter objects
+						parameters.push(paramObj);
+					});
+				}
+				
+				
 
 
 				// add parameters for audioNode
@@ -7036,7 +7093,7 @@ WebAudioUtils.getParameters = node => {
 }
 
 
-WebAudioUtils.paramNameToRange = name => {
+WebAudioUtils.paramNameToRange = (name) => {
 	range = {};
 
 	switch(name){

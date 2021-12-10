@@ -136,7 +136,7 @@ class ObjectBasedAudio {
     set coneInnerAngle(val){
         this._params.coneInnerAngle = val;
         this.pannerNode.coneInnerAngle = val;
-        // this.pannerNode.coneInnerAngle.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.coneInnerAngle.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get coneOuterAngle(){
@@ -148,7 +148,7 @@ class ObjectBasedAudio {
     set coneOuterAngle(val){
         this._params.coneOuterAngle = val;
         this.pannerNode.coneOuterAngle = val;
-        // this.pannerNode.coneOuterAngle.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.coneOuterAngle.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get coneOuterGain(){
@@ -159,7 +159,7 @@ class ObjectBasedAudio {
     }
     set coneOuterGain(val){
         this._params.coneOuterGain = val;
-        // this.pannerNode.coneOuterGain.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.coneOuterGain.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get distanceModel(){
@@ -183,7 +183,7 @@ class ObjectBasedAudio {
     set maxDistance(val){
         this._params.maxDistance = val;
         this.pannerNode.maxDistance = val;
-        // this.pannerNode.maxDistance.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.maxDistance.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get orientationX(){
@@ -194,7 +194,7 @@ class ObjectBasedAudio {
     }
     set orientationX(val){
         this._params.orientationX = val;
-        this.pannerNode.orientationX.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationX.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get orientationY(){
@@ -205,7 +205,7 @@ class ObjectBasedAudio {
     }
     set orientationY(val){
         this._params.orientationY = val;
-        this.pannerNode.orientationY.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationY.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
 
@@ -217,14 +217,14 @@ class ObjectBasedAudio {
     }
     set orientationZ(val){
         this._params.orientationZ = val;
-        this.pannerNode.orientationZ.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationZ.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     set rotationY(deg){
         let [x,y,z] = this.yRotationToVector(deg);
-        this.pannerNode.orientationX.setTargetAtTime(x, 0, this.getParameter("transitionTime"));
-        this.pannerNode.orientationY.setTargetAtTime(y, 0, this.getParameter("transitionTime"));
-        this.pannerNode.orientationZ.setTargetAtTime(z, 0, this.getParameter("transitionTime"));
+        this.pannerNode.orientationX.setTargetAtTime(x, this._ctx.currentTime, this.getParameter("transitionTime"));
+        this.pannerNode.orientationY.setTargetAtTime(y, this._ctx.currentTime, this.getParameter("transitionTime"));
+        this.pannerNode.orientationZ.setTargetAtTime(z, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
 
@@ -248,7 +248,7 @@ class ObjectBasedAudio {
     }
     set positionX(val){
         this._params.positionX = val;
-        this.pannerNode.positionX.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.positionX.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get positionY(){
@@ -259,7 +259,7 @@ class ObjectBasedAudio {
     }
     set positionY(val){
         this._params.positionY = val;
-        this.pannerNode.positionY.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.positionY.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get positionZ(){
@@ -270,7 +270,7 @@ class ObjectBasedAudio {
     }
     set positionZ(val){
         this._params.positionZ = val;
-        this.pannerNode.positionZ.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.pannerNode.positionZ.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get refDistance(){
@@ -282,7 +282,7 @@ class ObjectBasedAudio {
     set refDistance(val){
         this._params.refDistance = val;
         this.pannerNode.refDistance = val;
-        // this.pannerNode.refDistance.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        // this.pannerNode.refDistance.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     get rolloffFactor(){
@@ -297,12 +297,12 @@ class ObjectBasedAudio {
     }
 
     set convolutionGain(val){
-        this.send.gain.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.send.gain.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
 
     set gain(val){
         this._params.gain = val;
-        this.output.gain.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+        this.output.gain.setTargetAtTime(val, this._ctx.currentTime, this.getParameter("transitionTime"));
     }
   
     get gain(){

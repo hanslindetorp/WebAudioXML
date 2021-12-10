@@ -9,9 +9,10 @@ class Connector {
 
 
 		// terrible...
+		// very terrible...
 		xml.obj._node.gain.value = 0;
 		this.connect(xml);
-		setTimeout(() => xml.obj.fadeIn(1), 1000);
+		setTimeout(() => xml.obj.fade(xml.obj._params.gain, 0.5), 1000);
 	}
 
 

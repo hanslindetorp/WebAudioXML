@@ -415,7 +415,7 @@ WebAudioUtils.getParameters = node => {
 }
 
 
-WebAudioUtils.paramNameToRange = name => {
+WebAudioUtils.paramNameToRange = (name) => {
 	range = {};
 
 	switch(name){

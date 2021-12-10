@@ -20,6 +20,7 @@ class Synth{
 		this._voiceID = 0;
 
 		this.variables = {};
+		this.childObjects = [];
 
 		this._node = this._ctx.createGain();
 		this._node.gain.value = 1/this._voices;
@@ -66,23 +67,33 @@ class Synth{
 		}
 
 
-		this.trigger = new Trigger(this, 0, waxml);
+		this.trigger = new Trigger(this, this._params.trigger, waxml);
 
 	}
 
 
+	disconnect(ch){
+		if(!this._node){return}
+		ch = ch || 0;
+		this._node.disconnect(ch);
+	}
+
 	connect(destination){
 
-	  	if(this._node){
-		  	if(this._node.connect){
-			  	destination = destination || this._ctx.destination;
-			  	this._node.connect(destination);
-			  	this.destination = destination;
-		  	}
-	  	}
+		if(!this._node){return}
+
+		if(this._node.connect){
+			destination = destination || this._ctx.destination;
+			this._node.connect(destination);
+			this.destination = destination;
+		}
 
   	}
+	
 
+	addChildObj(obj){
+	this.childObjects.push(obj);
+	}
 
 	noteOn(note, vel=1){
 

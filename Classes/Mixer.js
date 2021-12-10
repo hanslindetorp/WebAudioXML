@@ -7,7 +7,9 @@
 		  	this.nodes = [];
 		  	this._output = new AudioNode("gain", {}, ctx, el);
 		  	this._output.connect(this.ctx.destination);
-		  	this.sends = {};
+			this.childObjects = [];
+		  	
+			this.sends = {};
 				this._xml = el;
 
 				if(this._xml.parentNode.audioObject){
@@ -28,6 +30,9 @@
 		  	return this._output.node;
 	  	}
 
+		addChildObj(obj){
+			this.childObjects.push(obj);
+		}
 
 	  	addNode(nodeType, params){
 

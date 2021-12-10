@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.6";
+var version = "1.0.7";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -67,7 +67,7 @@ class WebAudio {
 
 		}
 
-		this.HL = new HL2(_ctx);
+		// this.HL = new HL2(_ctx);
 
 		source = source || src;
 		if(!source){
@@ -233,7 +233,7 @@ class WebAudio {
 
 			if(el.obj){
 				obj.name = el.id || [...el.classList].join(".") || el.nodeName;
-				obj.label = obj.name;
+				obj.label = el.getAttribute("name") || obj.name;
 				obj.children = [];
 				obj.type = el.nodeName;
 				obj.level = (parentObj.level || 0) + 1;
@@ -244,18 +244,33 @@ class WebAudio {
 
 				audioObjects.push(obj);
 
-				// add webAudioXML parameters
-				el.obj.getWAXMLparameters().forEach(paramObj => {
-					paramObj.id = counter++;
-					// add to tree
-					obj.children.push(paramObj);
-					paramObj.parent = obj;
-					paramObj.path = obj.path + "." + paramObj.name;
-					paramObj.label = paramObj.name;
+				if(obj.type == "var"){
+					// only one parameter - 'value' - for var-elements
+					// assign propertieas directly to obj
+					// let param = el.obj.getWAXMLparameters().pop();
+					obj.min = el.obj.minIn;
+					obj.max = el.obj.maxIn;
+					obj.default = el.obj.default || el.obj.value;
+					obj.conv = 1;
+					parameters.push(obj);
 
-					// add to linear list with parameter objects
-					parameters.push(paramObj);
-				});
+				} else {
+					// add webAudioXML parameters
+					el.obj.getWAXMLparameters().forEach(paramObj => {
+						paramObj.id = counter++;
+						// add to tree
+						obj.children.push(paramObj);
+						paramObj.parent = obj;
+						paramObj.target = obj.target;
+						paramObj.path = obj.path + "." + paramObj.name;
+						paramObj.label = paramObj.label || paramObj.name;
+
+						// add to linear list with parameter objects
+						parameters.push(paramObj);
+					});
+				}
+				
+				
 
 
 				// add parameters for audioNode

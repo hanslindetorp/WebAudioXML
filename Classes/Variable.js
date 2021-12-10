@@ -116,13 +116,19 @@ class Variable {
 	}
 
 	setTargetAtTime(param, val=0, delay=0, time=0){
-		switch(param){
-			case "value":
-			// transition time is not implemented
-			// value is set after defined delay + time
-			this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
-			break;
-		}
+		this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
+			
+		// switch(param){
+		// 	case "value":
+		// 	// transition time is not implemented
+		// 	// value is set after defined delay + time
+		// 	this.scheduledEvents.push(setTimeout(() => this.value = val, (delay+time)*1000));
+		// 	break;
+		// }
+	}
+
+	setValueAtTime(val, delay){
+		this.setTargetAtTime("value", val, delay);
 	}
 
 	cancelScheduledValues(){
@@ -248,6 +254,10 @@ class Variable {
 		return this._params.default ? this._params.default : 1;
 	}
 
+	get defaultValue(){
+		return this.default;
+	}
+
 	doCallBacks(transistionTime){
 		this._callBackList.forEach(obj => {
 			obj.callBack(this[obj.prop], transistionTime);
@@ -259,10 +269,21 @@ class Variable {
 	}
 
 	getWAXMLparameters(){
-		let obj = WebAudioUtils.paramNameToRange("var");
+		// this is not really used anymore
+		// Becaues 'value' is the only parameter. The var element is rather the 
+		// parameter itself in the Sonification Toolkits perspective (where it's currently used)
+		// let obj = WebAudioUtils.paramNameToRange("var");
+		let obj = {};
 		obj.name = "value";
+		obj.label = this.name;
 		obj.target = this;
 		obj.path = e => this.path;
+
+		obj.min = this.minIn;
+		obj.max = this.maxIn;
+		obj.default = this.default || this.value;
+		obj.conv = 1;
+		
 		return [obj];
 	}
 

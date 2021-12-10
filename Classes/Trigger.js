@@ -62,13 +62,22 @@ class Trigger {
 	}
 
 	get frequency(){
-		return this._frequency;
+		return this._frequency.valueOf();
+	}
+
+	get minValue(){
+		return 0.001;
+	}
+
+	get maxValue(){
+		return 100;
 	}
 
 	set frequency(f){
 		//console.log(`f = ${f}`);
-		let oldFrequency = this._frequency;
-		this._frequency = Math.max(f, 1 / 1000);
+		f = Math.max(f.valueOf(), 1 / 1000);
+		let oldFrequency = this._frequency ? this._frequency.valueOf() : 0;
+		this._frequency = f;
 		if(this.state && this._frequency > oldFrequency){
 			this.replay();
 		}
