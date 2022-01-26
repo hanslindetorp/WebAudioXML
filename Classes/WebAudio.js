@@ -152,6 +152,15 @@ class WebAudio {
 		this.initAudio(xml);
 	}
 
+	updateFromFile(url){
+		this.reset();
+		this.parser.init(url).then(xml => {
+			this._xml = xml;
+			this.initGUI(xml);
+			this.initAudio(xml);
+		});
+	}
+
 	reset(){
 
 		this.plugins = [];
