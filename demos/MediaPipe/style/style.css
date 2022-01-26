@@ -1,0 +1,90 @@
+
+html, body {
+  font-family: sans-serif;
+  background-color: white;
+}
+
+body {
+  background-color: black;
+}
+
+section {
+  background-color: white;
+}
+
+h1 {
+  text-align: center;
+}
+
+main {
+  width: 1000px;
+  height: 567.5px;
+}
+
+.input_video {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+}
+
+
+.output_canvas {
+  /*
+  max-width: 100% ;
+  display: block;
+  position: relative;
+  left: 0;
+  top: 0;
+  */
+
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+navigation {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 31px;
+  background-color: #999;
+  padding: 5px;
+
+}
+
+navigation > a {
+  position: relative;
+  display: inline-block;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  margin: 0px;
+  width: 90px;
+  padding: 5px;
+  border-radius: 3px;
+  border: 1px solid #333;
+  text-decoration: none;
+}
+
+navigation > #helpBtn {
+  display: none;
+}
+
+
+#edit {
+  padding: 10px; 
+}
+
+textarea {
+  margin: 0px;
+  margin-top: 50px;
+  width: 100%;
+  height: 480px;
+  box-sizing: border-box;
+  overflow: scroll;
+}
