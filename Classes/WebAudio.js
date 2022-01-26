@@ -154,10 +154,16 @@ class WebAudio {
 
 	updateFromFile(url){
 		this.reset();
-		this.parser.init(url).then(xml => {
-			this._xml = xml;
-			this.initGUI(xml);
-			this.initAudio(xml);
+
+		return new Promise((resolve, reject) => {
+
+			this.parser.init(url).then(xml => {
+				this._xml = xml;
+				this.initGUI(xml);
+				this.initAudio(xml);
+				resolve(xml);
+			});
+
 		});
 	}
 

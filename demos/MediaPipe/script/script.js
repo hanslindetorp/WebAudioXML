@@ -133,7 +133,11 @@ window.addEventListener("load", () => {
   let done = initFromURL();
   if(!done){
     // init from file
-    let result = webAudioXML.updateFromFile("audio-config.xml");
+    webAudioXML.updateFromFile("audio-config.xml")
+    .then(xml => {
+      let str = XML.prettify(xml, true);
+      myCodeMirror.setValue(str);
+    });
   }
 
   window.location = "#camera";
