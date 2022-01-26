@@ -29,6 +29,10 @@ class ConvolverNodeObject {
         this._node.connect(destination);
         return destination;
     }
+
+    disconnect(ch=0){
+        this._node.disconnect(ch);
+    }
 	    
     
 }

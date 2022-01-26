@@ -40,6 +40,14 @@ class Parser {
 
 	}
 
+	initFromString(str){
+		let parser = new DOMParser();
+		let xml = parser.parseFromString(str,"text/xml");
+		this._xml = xml.firstChild;
+		this.parseXML(this._xml);
+		return this._xml;
+	}
+
 
 	loadXML(source){
 
@@ -386,6 +394,10 @@ class Parser {
 
 		return this._xml.firstElementChild;
 
+	}
+
+	get XMLstring(){
+		return this._XMLstring;
 	}
 }
 

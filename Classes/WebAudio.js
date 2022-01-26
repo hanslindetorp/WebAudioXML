@@ -69,22 +69,19 @@ class WebAudio {
 
 		// this.HL = new HL2(_ctx);
 
-		source = source || src;
-		if(!source){
-			console.error("No WebAudioXML configuration file specified");
-			return;
-		}
-
-		this.plugins = [];
 		this._ctx = _ctx;
 		this._listeners = [];
+		this.reset();
+
 		this.audioInited = false;
-		this.convolvers = [];
+		this.parser = new Parser(this);
+
+		source = source || src;
 
 		if(source){
 			window.addEventListener("load", () => {
 
-				this.parser = new Parser(this);
+				
 				this.parser.init(source)
 				.then(xmlDoc => {
 					this._xml = xmlDoc;
@@ -105,22 +102,8 @@ class WebAudio {
 						});
 					}
 
-					new GUI(xmlDoc.parentNode, this);
-
-					this.master = this._xml.audioObject;
-
-					//webAudioXML = xmlDoc.audioObject;
-					//webAudioXML.touch = touches;
-					new Connector(xmlDoc, _ctx);
-					this.plugins.forEach(plugin => {
-						plugin.init();
-					});
-
-					// make all variable elements broadcast their init values
-					this.querySelectorAll("var").forEach(el => {
-						el.update();
-					});
-
+					this.initGUI(this._xml);
+					this.initAudio(this._xml);
 
 					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
@@ -130,16 +113,13 @@ class WebAudio {
 					this.setVariable("mousedown", 0);
 					this.setVariable("touchdown", 0);
 
-					this.convolvers.forEach(entry => {
-						entry.obj.connect(this.master.output);
-					});
 
 					this.init();
 
 				});
 			});
 		} else {
-			console.error("No WebAudioXML source specified")
+			console.warn("No WebAudioXML source specified")
 		}
 
 		this.ui = new InteractionManager(this);
@@ -158,6 +138,67 @@ class WebAudio {
 			this._ctx.resume();
 			this.start("*[trig='auto'], *[start='auto']");
 		}
+	}
+
+	getXMLString(){
+		return new XMLSerializer().serializeToString(this._xml);
+	}
+
+	updateFromString(str){
+		this.reset();
+		let xml = this.parser.initFromString(str);
+		this._xml = xml;
+		this.initGUI(xml);
+		this.initAudio(xml);
+	}
+
+	reset(){
+
+		this.plugins = [];
+		this.convolvers = [];
+
+		if(this._xml){
+			if(this.GUI) this.GUI.remove(); // inte fixad än
+			this._xml = this.removeObjects(this._xml);
+		}
+		
+	}
+
+	removeObjects(xml){
+		if(xml.obj){
+			if(xml.obj.disconnect){
+				xml.obj.disconnect();
+			}
+			xml.obj = null;
+			xml.audioObject = null;
+		}
+		[...xml.children].forEach(childNode => this.removeObjects(childNode));
+		return null;
+	}
+
+	initGUI(xmlDoc){
+		this.GUI = new GUI(xmlDoc.parentNode, this);
+	}
+
+	initAudio(xmlDoc){
+
+		this.master = this._xml.audioObject;
+
+		//webAudioXML = xmlDoc.audioObject;
+		//webAudioXML.touch = touches;
+		new Connector(xmlDoc, this._ctx);
+		this.plugins.forEach(plugin => {
+			plugin.init();
+		});
+
+		// make all variable elements broadcast their init values
+		this.querySelectorAll("var").forEach(el => {
+			el.update();
+		});
+
+		this.convolvers.forEach(entry => {
+			entry.obj.connect(this.master.output);
+		});
 	}
 
 	start(selector = "*"){

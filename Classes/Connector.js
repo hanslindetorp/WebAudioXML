@@ -10,9 +10,12 @@ class Connector {
 
 		// terrible...
 		// very terrible...
-		xml.obj._node.gain.value = 0;
-		this.connect(xml);
-		setTimeout(() => xml.obj.fade(xml.obj._params.gain, 0.5), 1000);
+		if(xml.obj && xml.obj._node){
+			xml.obj._node.gain.value = 0;
+			this.connect(xml);
+			setTimeout(() => xml.obj.fade(xml.obj._params.gain, 0.5), 1000);
+		}
+		
 	}
 
 

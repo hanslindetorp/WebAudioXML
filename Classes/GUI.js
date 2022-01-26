@@ -1,7 +1,7 @@
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
-var Finder = require('../finderjs/index.js');
+//var Finder = require('../finderjs/index.js');
 
 class GUI {
 
@@ -238,6 +238,11 @@ class GUI {
 		this.XMLtoColumnView([this.waxml.structure.XMLtree], columnView);
 	}
 
+
+	remove(){
+		// not implementet yet
+	}
+
 	addUnspecifiedVariableSliders(names, container){
 		container.innerHTML = "<h2>Unspecified variables</h2>";
 		container.classList.add("container", "sliders", "variables", "unspecified");
@@ -259,10 +264,10 @@ class GUI {
 
 	XMLtoColumnView(structure, el){
 
-		let f = new Finder(el, structure, {});
-		f.on('leaf-selected', function(item) {
-			console.log('Leaf selected', item);
-		  });
+		// let f = new Finder(el, structure, {});
+		// f.on('leaf-selected', function(item) {
+		// 	console.log('Leaf selected', item);
+		//   });
 
 	}
 

@@ -56,6 +56,7 @@ class AudioObject{
 	  	let fn, src;
 	  	this._nodeType = nodeType;
 
+      
       // make sure ALL audioObjects have their parent object set
       if(this._xml.parentNode.audioObject){
         this.parent = this._xml.parentNode.audioObject;
@@ -1328,7 +1329,7 @@ class AudioObject{
     }
     set positionX(val){
       this._params.positionX = val;
-      if(this._node.setTargetAtTime){
+      if(this.setTargetAtTime){
         this.setTargetAtTime("positionX", val);
       } else if(this._node.positionX.automationRate){
         this._node.positionX.value = val;
@@ -1345,7 +1346,7 @@ class AudioObject{
     }
     set positionY(val){
       this._params.positionY = val;
-      if(this._node.setTargetAtTime){
+      if(this.setTargetAtTime){
         this.setTargetAtTime("positionY", val);
       } else if(this._node.positionY.automationRate){
         this._node.positionY.value = val;
@@ -1362,7 +1363,7 @@ class AudioObject{
     }
     set positionZ(val){
       this._params.positionZ = val;
-      if(this._node.setTargetAtTime){
+      if(this.setTargetAtTime){
         this.setTargetAtTime("positionZ", val);
       } else if(this._node.positionZ.automationRate){
         this._node.positionZ.value = val;
