@@ -109,7 +109,7 @@ window.addEventListener("load", () => {
   });
 
 
-  document.querySelector("navigation > #cameraBtn").addEventListener("click", e => {
+  document.querySelector("navigation > #playBtn").addEventListener("click", e => {
     webAudioXML.updateFromString(myCodeMirror.getValue());
   });
 
@@ -140,7 +140,7 @@ window.addEventListener("load", () => {
     });
   }
 
-  window.location = "#camera";
+  window.location = "#play";
 
 });
 

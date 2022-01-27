@@ -41,3 +41,18 @@
   <ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
   
 </Audio>
+
+
+<Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20" localpath="">
+
+	<var name="pitch1" value="$hand_left_4y" mapin="0.2,0.8" mapout="36,48" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency" />
+	<var name="cutoff1" value="$hand_right_8x.speed" mapin="0,0.015" mapout="0,1000" curve="3" />
+	<Chain>
+
+		<OscillatorNode type="sawtooth" frequency="$pitch1" />
+		<BiquadFilterNode type="lowpass" frequency="$cutoff1" />
+		<PannerNode panningModel="HRTF" positionX="4" />
+		<Send output="ConvolverNode" gain="-3dB" />
+	</Chain>
+
+</Audio>

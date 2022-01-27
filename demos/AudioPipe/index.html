@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>AudioPipe - Gesture Controlled Musical Instrument</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <link rel="stylesheet" type="text/css" href="style/codemirror.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.3/hands.js" crossorigin="anonymous"></script>
+    
+    <script type="text/javascript" src="script/XML.js"></script>
+    <script type="text/javascript" src="script/lzw_encoder.js"></script>
+    <script type="text/javascript" src="script/codemirror.js"></script>
+    <script type="text/javascript" src="script/max.size.js"></script>
+  </head>
+
+  <body>
+    <main class="max-sized">
+      <section id="play">
+        <video class="input_video"></video>
+        <canvas class="output_canvas" width="1000" height="567.5"></canvas>
+      </section>
+      
+      <section id="edit">
+        <textarea id="xml-edit"></textarea>
+      </section>
+
+      <section id="share">
+        <textarea id="shareURL"></textarea>
+      </section>
+
+      <section id="help">
+        <p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
+        <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. It is an online fully programmable
+      gesture controlled musical instrument. You can play with the presets or edit the code and make your own sound
+      synthesis and mappings. Please read the documentation for WebAudioXML to take advantage of all the possibilities.
+      </p>
+      <p>The image below indicates the 21 available points for each hand. In WebAudioXML all those variables can be 
+        mapped to any audio parameter using the &lt;var&gt;-element. The naming convention for the variables follow the 
+        following scheme:
+      </p>
+      <div>
+        <ul>
+          <li>hand_left_0x</li>
+          <li>hand_left_0y</li>
+          <li>hand_left_0z</li>
+          <li>hand_left_1x</li>
+          <li>etc...</li>
+        </ul>
+        <ul>
+          <li>hand_right_0x</li>
+          <li>hand_right_0y</li>
+          <li>hand_right_0z</li>
+          <li>hand_right_1x</li>
+          <li>etc...</li>
+        </ul>
+        <img src="images/hand.png" />
+        <code>
+          Example:<br />
+          &lt;var name="f" value="hand_right_8y" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
+          &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
+        </code>
+      </div>
+
+      <p>AudioPipe is part of a reasearch project at the <a href="https://www.kmh.se/">Royal College 
+        of Music</a> and <a href="https://www.kth.se/">Royal Institute of Technology</a> in Stockholm by 
+        Hans Lindetorp. Please follow my blog at <a href="https://hans.arapoviclindetorp.se/">hans.arapoviclindetorp.se/</a></p>
+      </section>
+
+      <navigation>
+        <a id="playBtn" href="#play">Play</a>
+        <a id="editBtn" href="#edit">Edit</a>
+        <a id="shareBtn" href="#share">Share</a>
+        <a id="helpBtn" href="#help">Help</a>
+        <h2>AudioPipe - Gesture Controlled Musical Instrument</h2>
+      </navigation>
+      
+    </main>
+
+    <script src="script/WebAudioXML.js"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+  </body>
+</html>
