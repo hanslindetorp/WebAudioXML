@@ -9,6 +9,7 @@ const BufferSourceObject = require('./BufferSourceObject.js');
 const ConvolverNodeObject = require('./ConvolverNodeObject.js');
 const ObjectBasedAudio = require('./ObjectBasedAudio.js');
 const AmbientAudio = require('./AmbientAudio.js');
+const Noise = require('./Noise.js');
 
 
 
@@ -245,6 +246,10 @@ class AudioObject{
 
         case "ambientaudio":
         this._node = new AmbientAudio(this, this._params, waxml);
+        break;
+
+        case "noise":
+        this._node = new Noise(waxml._ctx);
         break;
 
         case "send":

@@ -54,13 +54,16 @@ function onResults(results) {
         }
       })
 
-    let target = ("hand_" + classification.label + "_").toLowerCase();
-    landmarks.forEach((data, i) => {
-      Object.entries(data).forEach(([key, val]) => {
-        webAudioXML.setVariable(target + i + key, val);
+    if(classification.score > 0.8){
+      let target = ("hand_" + classification.label + "_").toLowerCase();
+      landmarks.forEach((data, i) => {
+        Object.entries(data).forEach(([key, val]) => {
+          webAudioXML.setVariable(target + i + key, val);
+        });
+        
       });
-      
-    });
+    }
+    
   }
   canvasCtx.restore();
   }
