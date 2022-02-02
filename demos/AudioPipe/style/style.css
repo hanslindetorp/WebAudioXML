@@ -33,7 +33,7 @@ main {
 }
 
 
-.output_canvas {
+.output_canvas, waxml-xy-area {
   /*
   max-width: 100% ;
   display: block;

@@ -18,10 +18,11 @@
   </head>
 
   <body>
-    <main class="max-sized">
+    <main class="max-size">
       <section id="play">
         <video class="input_video"></video>
         <canvas class="output_canvas" width="1000" height="567.5"></canvas>
+        <waxml-xy-area background-color="rgba(0,0,0,0)" grid-color="rgba(255,255,255,0.4)" columns="8" rows="8"></waxml-xy-area>
       </section>
       
       <section id="edit">
@@ -34,7 +35,9 @@
 
       <section id="help">
         <p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
-        <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. It is an online fully programmable
+        <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. I was inspired by the great idea from 
+        <a href="https://github.com/monlim/Handmate-MIDI">Handmate-MIDI</a> to control
+        audio data with the fantastic MediaPipe library. AudioPipe is an online, fully programmable,
       gesture controlled musical instrument. You can play with the presets or edit the code and make your own sound
       synthesis and mappings. Please read the documentation for WebAudioXML to take advantage of all the possibilities.
       </p>
@@ -81,6 +84,7 @@
     </main>
 
     <script src="script/WebAudioXML.js"></script>
+    <script src="script/imusic_091.js" data-music-structure="imusic.xml"></script>
     <script type="text/javascript" src="script/script.js"></script>
   </body>
 </html>

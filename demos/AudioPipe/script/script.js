@@ -111,9 +111,18 @@ window.addEventListener("load", () => {
     myCodeMirror.setValue(str);
   });
 
+  document.querySelectorAll("navigation > a:not([id='playBtn'])").forEach(el => {
+    el.addEventListener("click", e => {
+      webAudioXML.mute();
+      iMusic.stop();
+    });
+  });
 
   document.querySelector("navigation > #playBtn").addEventListener("click", e => {
     webAudioXML.updateFromString(myCodeMirror.getValue());
+    iMusic.play();
+    webAudioXML.init();
+    webAudioXML.unmute();
   });
 
   document.querySelector("navigation > #shareBtn").addEventListener("click", e => {

@@ -32,6 +32,9 @@ var GUI = require('./GUI.js');
 var InteractionManager = require('./InteractionManager.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 var Variable = require('./Variable.js');
+var InputBusses = require('./InputBusses.js');
+
+
 
 
 var HL2 = require("./HL2.js");
@@ -74,10 +77,13 @@ class WebAudio {
 
 		this._ctx = _ctx;
 		this._listeners = [];
+		this.plugins = [];
 		this.reset();
 
 		this.audioInited = false;
 		this.parser = new Parser(this);
+
+		this.inputBusses = new InputBusses(_ctx);
 
 		source = source || src;
 
@@ -143,6 +149,14 @@ class WebAudio {
 		}
 	}
 
+	mute(){
+		this.master.fadeOut(0.1);
+	}
+
+	unmute(){
+		this.master.fadeIn(0.1);
+	}
+
 	getXMLString(){
 		return new XMLSerializer().serializeToString(this._xml);
 	}
@@ -172,7 +186,7 @@ class WebAudio {
 
 	reset(){
 
-		this.plugins = [];
+		// this.plugins = [];
 		this.convolvers = [];
 
 		if(this._xml){
@@ -191,6 +205,8 @@ class WebAudio {
 			xml.audioObject = null;
 		}
 		[...xml.children].forEach(childNode => this.removeObjects(childNode));
+
+		this.inputBusses.disconnectAll();
 		return null;
 	}
 
@@ -217,6 +233,20 @@ class WebAudio {
 		this.convolvers.forEach(entry => {
 			entry.obj.connect(this.master.output);
 		});
+
+		this.inputBusses.all.forEach(bus => {
+			this.querySelectorAll(bus.selector).forEach(obj => {
+				bus.input.connect(obj.input);
+			});
+		});
+	}
+
+	getInputBus(selector){
+		let destinations = [];
+		this.querySelectorAll(selector).forEach(obj => {
+			destinations.push(obj.input);
+		});
+		return this.inputBusses.getBus(selector, destinations);
 	}
 
 	start(selector = "*"){

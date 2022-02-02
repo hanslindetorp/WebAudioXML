@@ -1678,7 +1678,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":11,"./Mapper.js":12,"./Noise.js":13,"./ObjectBasedAudio.js":14,"./Variable.js":20,"./VariableContainer.js":21,"./Watcher.js":22,"./WebAudioUtils.js":24}],3:[function(require,module,exports){
+},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":12,"./Mapper.js":13,"./Noise.js":14,"./ObjectBasedAudio.js":15,"./Variable.js":21,"./VariableContainer.js":22,"./Watcher.js":23,"./WebAudioUtils.js":25}],3:[function(require,module,exports){
 var Loader = require('./Loader.js');
 
 
@@ -1817,7 +1817,7 @@ class BufferSourceObject {
 
 module.exports = BufferSourceObject;
 
-},{"./Loader.js":11}],4:[function(require,module,exports){
+},{"./Loader.js":12}],4:[function(require,module,exports){
 
 
 class Connector {
@@ -2097,7 +2097,7 @@ class ConvolverNodeObject {
 
 module.exports = ConvolverNodeObject;
 
-},{"./Loader.js":11}],6:[function(require,module,exports){
+},{"./Loader.js":12}],6:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -2238,7 +2238,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":17}],7:[function(require,module,exports){
+},{"./Sequence.js":18}],7:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -2674,7 +2674,7 @@ module.exports = GUI;
 
 
 
-},{"./Mapper.js":12,"./WebAudioUtils.js":24}],8:[function(require,module,exports){
+},{"./Mapper.js":13,"./WebAudioUtils.js":25}],8:[function(require,module,exports){
 
 
 
@@ -2719,6 +2719,40 @@ class HL2 extends HL1(OscillatorNode) {
 
 module.exports = HL2;
 },{"./HL1.js":8}],10:[function(require,module,exports){
+class InputBusses {
+
+    constructor(ctx){
+        this._ctx = ctx;
+        this.busses = [];
+    }
+
+    addBus(selector, destinations){
+        let bus = {selector: selector, input: new GainNode(this._ctx)};
+        destinations.forEach(dest => bus.input.connect(dest));
+        this.busses.push(bus);
+        return bus;
+    }
+
+    getBus(selector, destinations){
+        let bus = this.busses.filter(bus => selector == bus.selector).pop()
+        if(bus){
+            return bus;
+        } else {
+            return this.addBus(selector, destinations);
+        }
+    }
+
+    disconnectAll(){
+        this.busses.forEach(bus => bus.input.disconnect());
+    }
+
+    get all(){
+        return this.busses;
+    }
+}
+
+module.exports = InputBusses;
+},{}],11:[function(require,module,exports){
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
@@ -3450,7 +3484,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":6,"./Variable.js":20,"./VariableContainer.js":21,"./WebAudioUtils.js":24,"./XY_area.js":25,"./XY_handle.js":26}],11:[function(require,module,exports){
+},{"./EventTracker.js":6,"./Variable.js":21,"./VariableContainer.js":22,"./WebAudioUtils.js":25,"./XY_area.js":26,"./XY_handle.js":27}],12:[function(require,module,exports){
 const InteractionManager = require("./InteractionManager");
 
 
@@ -3591,7 +3625,7 @@ Loader.filesLoading = [];
 
 module.exports = Loader;
 
-},{"./InteractionManager":10}],12:[function(require,module,exports){
+},{"./InteractionManager":11}],13:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
@@ -4041,7 +4075,7 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":16,"./WebAudioUtils.js":24}],13:[function(require,module,exports){
+},{"./Range.js":17,"./WebAudioUtils.js":25}],14:[function(require,module,exports){
 
 var processorName = 'white-noise-processor';
 var _noise;
@@ -4104,7 +4138,7 @@ class Noise {
 module.exports = Noise;
 
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 
@@ -4454,7 +4488,7 @@ class ObjectBasedAudio {
 
 module.exports = ObjectBasedAudio;
 
-},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],15:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],16:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -4862,7 +4896,7 @@ class Parser {
 
 module.exports = Parser;
 
-},{"./AudioObject.js":2,"./Loader.js":11,"./Synth.js":18,"./Variable.js":20,"./Watcher.js":22,"./WebAudioUtils.js":24}],16:[function(require,module,exports){
+},{"./AudioObject.js":2,"./Loader.js":12,"./Synth.js":19,"./Variable.js":21,"./Watcher.js":23,"./WebAudioUtils.js":25}],17:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -4996,7 +5030,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":24}],17:[function(require,module,exports){
+},{"./WebAudioUtils.js":25}],18:[function(require,module,exports){
 
 
 
@@ -5123,7 +5157,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -5381,7 +5415,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":19,"./Watcher.js":22,"./WebAudioUtils.js":24}],19:[function(require,module,exports){
+},{"./Trigger.js":20,"./Watcher.js":23,"./WebAudioUtils.js":25}],20:[function(require,module,exports){
 
 
 
@@ -5490,7 +5524,7 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -5814,7 +5848,7 @@ class Variable {
 
 module.exports = Variable;
 
-},{"./Mapper.js":12,"./WebAudioUtils.js":24}],21:[function(require,module,exports){
+},{"./Mapper.js":13,"./WebAudioUtils.js":25}],22:[function(require,module,exports){
 
 
 
@@ -5840,7 +5874,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -6221,7 +6255,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":20,"./WebAudioUtils.js":24}],23:[function(require,module,exports){
+},{"./Variable.js":21,"./WebAudioUtils.js":25}],24:[function(require,module,exports){
 /*
 MIT License
 
@@ -6256,6 +6290,9 @@ var GUI = require('./GUI.js');
 var InteractionManager = require('./InteractionManager.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 var Variable = require('./Variable.js');
+var InputBusses = require('./InputBusses.js');
+
+
 
 
 var HL2 = require("./HL2.js");
@@ -6298,10 +6335,13 @@ class WebAudio {
 
 		this._ctx = _ctx;
 		this._listeners = [];
+		this.plugins = [];
 		this.reset();
 
 		this.audioInited = false;
 		this.parser = new Parser(this);
+
+		this.inputBusses = new InputBusses(_ctx);
 
 		source = source || src;
 
@@ -6367,6 +6407,14 @@ class WebAudio {
 		}
 	}
 
+	mute(){
+		this.master.fadeOut(0.2);
+	}
+
+	unmute(){
+		this.master.fadeIn(0.2);
+	}
+
 	getXMLString(){
 		return new XMLSerializer().serializeToString(this._xml);
 	}
@@ -6396,7 +6444,7 @@ class WebAudio {
 
 	reset(){
 
-		this.plugins = [];
+		// this.plugins = [];
 		this.convolvers = [];
 
 		if(this._xml){
@@ -6415,6 +6463,8 @@ class WebAudio {
 			xml.audioObject = null;
 		}
 		[...xml.children].forEach(childNode => this.removeObjects(childNode));
+
+		this.inputBusses.disconnectAll();
 		return null;
 	}
 
@@ -6441,6 +6491,20 @@ class WebAudio {
 		this.convolvers.forEach(entry => {
 			entry.obj.connect(this.master.output);
 		});
+
+		this.inputBusses.all.forEach(bus => {
+			this.querySelectorAll(bus.selector).forEach(obj => {
+				bus.input.connect(obj.input);
+			});
+		});
+	}
+
+	getInputBus(selector){
+		let destinations = [];
+		this.querySelectorAll(selector).forEach(obj => {
+			destinations.push(obj.input);
+		});
+		return this.inputBusses.getBus(selector, destinations);
 	}
 
 	start(selector = "*"){
@@ -6827,7 +6891,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":7,"./HL2.js":9,"./InteractionManager.js":10,"./Parser.js":15,"./Variable.js":20,"./WebAudioUtils.js":24}],24:[function(require,module,exports){
+},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":7,"./HL2.js":9,"./InputBusses.js":10,"./InteractionManager.js":11,"./Parser.js":16,"./Variable.js":21,"./WebAudioUtils.js":25}],25:[function(require,module,exports){
 
 class WebAudioUtils {
 
@@ -7416,7 +7480,7 @@ WebAudioUtils.getVariableContainer = (variable, callerNode, variableType) => {
 
 module.exports = WebAudioUtils;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
@@ -7448,7 +7512,7 @@ class XY_area extends HTMLElement {
 
 module.exports = XY_area;
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 
 
 
@@ -7544,4 +7608,4 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{}]},{},[23]);
+},{}]},{},[24]);
