@@ -25,10 +25,11 @@ class HandController {
   }
 
   update(hand, landmarks){
-    let handOffset = hand == "Right" ? 5 : 0;
+    hand = hand.toLowerCase();
+    let handOffset = hand == "right" ? 5 : 0;
 
     // store landmarks for current hand
-    let target = (`hand_${hand}_`).toLowerCase();
+    let target = (`hand_${hand}_`);
     landmarks.forEach((data, i) => {
       Object.entries(data).forEach(([key, val]) => {
         this._variables[target + i + key] = val;
