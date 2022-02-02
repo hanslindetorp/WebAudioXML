@@ -41,11 +41,13 @@ class Parser {
 	}
 
 	initFromString(str){
-		let parser = new DOMParser();
-		let xml = parser.parseFromString(str,"text/xml");
-		this._xml = xml.firstChild;
-		this.parseXML(this._xml);
-		return this._xml;
+		return new Promise((resolve, reject) => {
+			let parser = new DOMParser();
+			let xml = parser.parseFromString(str,"text/xml");
+			this._xml = xml.firstChild;
+			this.parseXML(this._xml);
+			resolve(xml);
+		});
 	}
 
 

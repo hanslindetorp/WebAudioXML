@@ -10,23 +10,88 @@ function handleError(error) {
 };
 
 
-//Trigger note if index fingers touching
-let t1on = false;
-let fingerDistanceActivate = 0.02;
-let fingerDistanceDeactivate = 0.05;
 
 
-function Trigger1(distance) {
-  if(distance <= fingerDistanceActivate){
-    if(t1on)return;
-    t1on = true;
-    output.playNote(midi1Note, [trigger1Channel.value]);
-    setTimeout(function(){output.stopNote(midi1Note, [trigger1Channel.value])}, 500);
+class HandController {
+
+  constructor(){
+    this.threshold = 0.1;
+    this.fingersUp = Array(10).fill(0);
+    this._variables = {};
   }
-  if(distance > fingerDistanceDeactivate){
-    t1on = false;
+
+  get numberOfFingersUp(){
+    return this.fingersUp.reduce((accumulator, curr) => accumulator + curr);
   }
+
+  update(hand, landmarks){
+    let handOffset = hand == "Right" ? 5 : 0;
+
+    // store landmarks for current hand
+    let target = (`hand_${hand}_`).toLowerCase();
+    landmarks.forEach((data, i) => {
+      Object.entries(data).forEach(([key, val]) => {
+        this._variables[target + i + key] = val;
+      });
+    });
+
+    let handWidth = Math.abs(landmarks[17].x - landmarks[5].x);
+
+    // fingers up
+    for(let finger = 0; finger < 5; finger++){
+      let targetIndex = handOffset + finger;
+      let fingerOffset = finger * 4;
+      let tip = fingerOffset + 4;
+      let joint = fingerOffset + 1;
+      
+      let dist;
+      if(finger == 0){
+        // compare thumb with all other finger joints
+        let dists = [];
+        [5,9,13,17].forEach(joint => {
+          let deltaX = landmarks[joint].x - landmarks[tip].x;
+          let deltaY = landmarks[joint].y - landmarks[tip].y;
+          dists.push(Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2)));
+        });
+        dist = Math.min(...dists);
+
+      } else {
+        // all other fingers
+        dist = landmarks[joint].y - landmarks[tip].y;
+      }
+      let state = dist > handWidth * 0.9 ? 1 : 0;
+      this.fingersUp[targetIndex] = state;
+    }
+
+    // left hand
+    let leftCnt = 0;
+    for(let i = 0; i < 5; i++){
+      leftCnt += this.fingersUp[i];
+    }
+    this._variables["hand_left_fingersup"] = leftCnt;
+
+    // right hand
+    let rightCnt = 0;
+    for(let i = 5; i < 10; i++){
+      rightCnt += this.fingersUp[i];
+    }
+    this._variables["hand_right_fingersup"] = rightCnt;
+    this._variables["hand_fingersup"] = leftCnt + rightCnt;
+    // console.log(this.fingersUp);
+
+    return this.variables;
+  }
+
+  get variables(){
+    return this._variables;
+  }
+
 }
+
+
+
+
+var handController = new HandController();
 
 
 function onResults(results) {
@@ -54,14 +119,11 @@ function onResults(results) {
         }
       })
 
-    if(classification.score > 0.8){
-      let target = ("hand_" + classification.label + "_").toLowerCase();
-      landmarks.forEach((data, i) => {
-        Object.entries(data).forEach(([key, val]) => {
-          webAudioXML.setVariable(target + i + key, val);
-        });
-        
-      });
+    if(classification.score > 0.7){     
+      let vars = handController.update(classification.label, landmarks);
+      Object.entries(vars).forEach(([key, val]) => {
+        webAudioXML.setVariable(key, val);
+      }); 
     }
     
   }
@@ -103,13 +165,32 @@ var myCodeMirror;
 
 window.addEventListener("load", () => {
 
-  let myTextArea = document.querySelector("#xml-edit");
-  myCodeMirror = CodeMirror.fromTextArea(myTextArea);
 
-  webAudioXML.addEventListener("init", e => {
-    let str = XML.prettify(webAudioXML._xml, true);
+  let initCodeMirror = xml => {
+    let myTextArea = document.querySelector("#xml-edit");
+    myCodeMirror = CodeMirror.fromTextArea(myTextArea);
+
+    let scale = document.querySelector("main").dataset.scale;
+    document.querySelectorAll(".CodeMirror-cursors, .CodeMirror-measure:nth-child(2) + div").forEach(cmObj => {
+      cmObj.style.transform = `scale(${1/scale},${1/scale}) translate(0%, 0%)`;
+      cmObj.style.transformOrigin = "0 0";
+    });
+
+
+    str = XML.prettify(xml, true);
     myCodeMirror.setValue(str);
-  });
+  }
+
+  let str = dataFromURL();
+
+  if(str){
+    webAudioXML.updateFromString(str)
+    .then(xml => initCodeMirror(xml));
+  } else {
+    webAudioXML.updateFromFile("audio-config.xml")
+    .then(xml => initCodeMirror(xml));
+  }
+
 
   document.querySelectorAll("navigation > a:not([id='playBtn'])").forEach(el => {
     el.addEventListener("click", e => {
@@ -142,15 +223,6 @@ window.addEventListener("load", () => {
 
   });
 
-  let done = initFromURL();
-  if(!done){
-    // init from file
-    webAudioXML.updateFromFile("audio-config.xml")
-    .then(xml => {
-      let str = XML.prettify(xml, true);
-      myCodeMirror.setValue(str);
-    });
-  }
 
   window.location = "#play";
 
@@ -161,7 +233,7 @@ function getSharedLink(){
   return window.location.origin + window.location.pathname + "?data=" + encodeURIComponent(str);
 }
 
-function initFromURL(){
+function dataFromURL(){
   let indexOfQuery = window.location.hash.indexOf("?")+1;
   let queryString = window.location.hash.substr(indexOfQuery);
   let urlParams = new URLSearchParams(window.location.search);
@@ -169,8 +241,5 @@ function initFromURL(){
   if(!dataStr){return false}
 
   let str = lzw_decode(dataStr);
-  myCodeMirror.setValue(str);
-  webAudioXML.updateFromString(str);
-
-  return true;
+  return str;
 }

@@ -58,9 +58,10 @@ navigation {
 
 }
 
-navigation > h2 {
+navigation > h1 {
   display: inline-block;
   margin: 0px 10px;
+  font-size: 15px;
 }
 navigation > a {
   position: relative;

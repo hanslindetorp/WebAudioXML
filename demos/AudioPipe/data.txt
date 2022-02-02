@@ -1,11 +1,9 @@
-
-
+<!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 Tryout with vibrato
 
-* * * * * * * * * * * * * * * * * * * * * * * * * * *
-
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-9dB" transitionTime="50">
     
@@ -28,14 +26,12 @@ Tryout with vibrato
 
 
 
-
+<!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 Two parts
 
-* * * * * * * * * * * * * * * * * * * * * * * * * * *
-
-
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
@@ -70,15 +66,15 @@ Two parts
 
 
 
-
+<!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 Cello
 
-* * * * * * * * * * * * * * * * * * * * * * * * * * *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 
 
-
+<?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20" localpath="">
 
 	<var name="pitch1" value="$hand_left_4y" mapin="0.2,0.8" mapout="36,48" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency" />
@@ -98,13 +94,12 @@ Cello
 
 
 
-
+<!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 Two parts
 
-* * * * * * * * * * * * * * * * * * * * * * * * * * *
-
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
@@ -140,13 +135,12 @@ Two parts
 
 
 
-
+<!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 Noise
 
-* * * * * * * * * * * * * * * * * * * * * * * * * * *
-
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="+3dB" transitionTime="10">
 
@@ -185,7 +179,86 @@ Noise
 </Audio>
 
 
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Full band
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+
+	<var name="intensity" value="$hand_right_8x-$hand_left_8x" mapin="0.1,0.9" mapout="0,100"></var>
+
+    <var name="padGain" value="$intensity" mapin="30,60" mapout="1,0"></var>
+    <var name="padFrequency" value="$intensity" mapin="0,10" mapout="1000,0"></var>
+    <var name="padQ" value="$intensity" mapin="0,10" mapout="25,0"></var>
+
+    <var name="clavGain" value="$intensity" mapin="0,10,50,60" mapout="0.5,0,0,1"></var>
+    <var name="pianoGain" value="$intensity" mapin="0,10,30,40" mapout="0,1,1,0"></var>
+    <var name="rhodesGain" value="$intensity" mapin="10,20" mapout="0,1"></var>
+    <var name="organGain" value="$intensity" mapin="70,80" mapout="0,1"></var>
+    <var name="shakerGain" value="$intensity" mapin="20,30" mapout="0,1"></var>
+    <var name="bass1Gain" value="$intensity" mapin="30,40,60,61" mapout="0,2,2,0"></var>
+    <var name="bass2Gain" value="$intensity" mapin="60,61" mapout="0,1"></var>
+    <var name="drums1Gain" value="$intensity" mapin="30,40,60,61" mapout="0,1,1,0"></var>
+    <var name="drums2Gain" value="$intensity" mapin="60,61" mapout="0,1"></var>
+
+    <var name="lowpassFrequency" value="$intensity" mapin="0,20" mapout="100, 20000" curve="2"></var>
+    
+	<Chain>
+
+		<Mixer>
+			<GainNode id="pad" gain="$padGain"></GainNode>
+			<GainNode id="clav" gain="$clavGain"></GainNode>
+			<GainNode id="piano" gain="$pianoGain"></GainNode>
+			<GainNode id="rhodes" gain="$rhodesGain"></GainNode>
+			<GainNode id="organ" gain="$organGain"></GainNode>
+			<GainNode id="shaker" gain="$shakerGain"></GainNode>
+			<GainNode id="bass1" gain="$bass1Gain"></GainNode>
+			<GainNode id="bass2" gain="$bass2Gain"></GainNode>
+			<GainNode id="drums1" gain="$drums1Gain"></GainNode>
+			<GainNode id="drums2" gain="$drums2Gain"></GainNode>
+		</Mixer>
+
+
+		<BiquadFilterNode type="lowpass" frequency="$lowpassFrequency"></BiquadFilterNode>
+		<DynamicsCompressorNode ratio="12" threshold="-35"></DynamicsCompressorNode>
+
+	</Chain>
+
+</Audio>
 
 
 
 
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Drums lowpass
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-20dB">
+	<var name="lowpassFrequency" value="$hand_right_8x-$hand_left_8x" mapin="0.1,0.9" mapout="20, 20000" curve="3"></var>
+	<BiquadFilterNode id="drums2" type="lowpass" frequency="$lowpassFrequency"></BiquadFilterNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Finger Counting
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="20">
+	<var name="frequency" value="$hand_fingersup - 1" mapin="0,10" mapout="60,77" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="gain" value="$hand_fingersup" mapin="0,1" mapout="0,1"></var>
+	
+	<Chain>
+		<OscillatorNode type="sine" frequency="$frequency"></OscillatorNode>
+		<GainNode gain="$gain"></GainNode>
+	</Chain>
+	
+</Audio>

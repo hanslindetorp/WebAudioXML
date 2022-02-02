@@ -12,7 +12,7 @@
 		height: 100%;
 	}
 
-	section{
+	.max-size section{
 		position: absolute;
 		width: 100%;
 		height: 100%;
@@ -23,7 +23,7 @@
 		transition: 500ms;
 	}
 
-	section:target {
+	.max-size section:target {
 		opacity: 1;
 		z-index: 0;
 	}
@@ -166,7 +166,17 @@
 			el.style.top = top;
 			el.style.left = left;
 
+			el.dataset.scale = scale;
+
+
+			// extra fix for non-scalable objects like CodeMirror
+			el.querySelectorAll(".CodeMirror-cursors, .CodeMirror-measure:nth-child(2) + div").forEach(cmObj => {
+				cmObj.style.transform = `scale(${1/scale},${1/scale}) translate(0%, 0%)`;
+				cmObj.style.transformOrigin = "0 0";
+			});
+
 		});
+
 	}
 
 }());

@@ -1,48 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="0dB">
-
-	<var name="intensity" value="$hand_right_4y" mapin="0.1,0.9" mapout="100,0"></var>
-
-    <var name="padGain" value="$intensity" mapin="30,60" mapout="1,0"></var>
-    <var name="padFrequency" value="$intensity" mapin="0,10" mapout="1000,0"></var>
-    <var name="padQ" value="$intensity" mapin="0,10" mapout="25,0"></var>
-
-    <var name="clavGain" value="$intensity" mapin="0,10,50,60" mapout="0.5,0,0,1"></var>
-    <var name="pianoGain" value="$intensity" mapin="0,10,30,40" mapout="0,1,1,0"></var>
-    <var name="rhodesGain" value="$intensity" mapin="10,20" mapout="0,1"></var>
-    <var name="organGain" value="$intensity" mapin="70,80" mapout="0,1"></var>
-    <var name="shakerGain" value="$intensity" mapin="20,30" mapout="0,1"></var>
-    <var name="bass1Gain" value="$intensity" mapin="30,40,60,61" mapout="0,2,2,0"></var>
-    <var name="bass2Gain" value="$intensity" mapin="60,61" mapout="0,1"></var>
-    <var name="drums1Gain" value="$intensity" mapin="30,40,60,61" mapout="0,1,1,0"></var>
-    <var name="drums2Gain" value="$intensity" mapin="60,61" mapout="0,1"></var>
-
-    <var name="lowpassFrequency" value="$intensity" mapin="70,100" mapout="20000,40" curve="easeOutQuad"></var>
-    <var name="lowPassQ" value="$intensity" mapin="80, 90" mapout="0,10"></var>
-
+<Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="20">
+	<var name="frequency" value="$hand_fingersup - 1" mapin="0,10" mapout="60,77" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="gain" value="$hand_fingersup" mapin="0,1" mapout="0,1"></var>
+	
 	<Chain>
-
-		<Mixer>
-			<Chain id="pad">
-				<GainNode gain="$padGain"></GainNode>
-				<BiquadFilterNode type="highpass" frequency="$padFrequency" Q="$padQ"></BiquadFilterNode>
-			</Chain>
-
-			<GainNode id="clav" gain="$clavGain"></GainNode>
-			<GainNode id="piano" gain="$pianoGain"></GainNode>
-			<GainNode id="rhodes" gain="$rhodesGain"></GainNode>
-			<GainNode id="organ" gain="$organGain"></GainNode>
-			<GainNode id="shaker" gain="$shakerGain"></GainNode>
-			<GainNode id="bass1" gain="$bass1Gain"></GainNode>
-			<GainNode id="bass2" gain="$bass2Gain"></GainNode>
-			<GainNode id="drums1" gain="$drums1Gain"></GainNode>
-			<GainNode id="drums2" gain="$drums2Gain"></GainNode>
-		</Mixer>
-
-
-		<BiquadFilterNode type="lowpass" frequency="$lowpassFrequency" Q="$lowPassQ"></BiquadFilterNode>
-		<DynamicsCompressorNode ratio="12" threshold="-35"></DynamicsCompressorNode>
-
+		<OscillatorNode type="sine" frequency="$frequency"></OscillatorNode>
+		<GainNode gain="$gain"></GainNode>
 	</Chain>
-
+	
 </Audio>
