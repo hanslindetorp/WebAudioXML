@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="20">
-	<var name="frequency" value="$hand_fingersup - 1" mapin="0,10" mapout="60,77" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
-	<var name="gain" value="$hand_fingersup" mapin="0,1" mapout="0,1"></var>
-	
-	<Chain>
-		<OscillatorNode type="sine" frequency="$frequency"></OscillatorNode>
-		<GainNode gain="$gain"></GainNode>
-	</Chain>
-	
+<Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
+    
+	<var name="pitch1" value="$hand_r4y" mapin="0.1,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="cutoff1" value="$hand_r8tor4" mapin="0.01,0.1" mapout="1000,0" curve="3"></var>
+
+	<OscillatorNode type="sawtooth" frequency="$pitch1" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="$cutoff1" output="next"></BiquadFilterNode>
+	<PannerNode panningModel="HRTF" positionX="4" output="next"></PannerNode>
+	<Send bus="ConvolverNode" gain="-6dB"></Send>
+ 
+    
+	<var name="pitch2" value="$hand_l4y" mapin="0.1,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="cutoff2" value="$hand_l8tol4" mapin="0.01,0.1" mapout="400,0" curve="3"></var>
+
+	<OscillatorNode type="sawtooth" frequency="$pitch2" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="$cutoff2" output="next"></BiquadFilterNode>
+	<PannerNode panningModel="HRTF" positionX="-4" output="next"></PannerNode>
+	<Send bus="ConvolverNode" gain="-6dB"></Send>
+  
+  	<ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
+  
 </Audio>

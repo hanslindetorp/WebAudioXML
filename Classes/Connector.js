@@ -24,6 +24,7 @@ class Connector {
 
 
 		let nodeName = xmlNode.nodeName.toLowerCase();
+		let targetElements;
 		switch(nodeName){
 			case "chain":
 			// connect chain input to first element in chain
@@ -65,6 +66,7 @@ class Connector {
 						break;
 
 						case "send":
+						// is this really correct? Why should "done" not be set to true?
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
 
@@ -94,6 +96,14 @@ class Connector {
 			case "link":
 			return;
 			break;
+
+			case "send":
+			let selector = xmlNode.obj.getParameter("bus");
+			targetElements = this.getTargetElements(xmlNode, selector);
+			targetElements.forEach(target => {
+				xmlNode.obj._bus.connect(target.obj.input);
+			});
+			break;
 		}
 
 
@@ -111,11 +121,38 @@ class Connector {
 					xmlNode.obj.connect(this._ctx.destination);
 				break;
 
+				case "next":
+					let nextElement = xmlNode.nextElementSibling;
+					if(nextElement){
+						let obj = nextElement.obj;
+						if(obj){
+							if(obj.input){
+								xmlNode.obj.connect(obj.input);
+							}
+						}
+					} 
+				break;
+
+
+				case "parent":
+					let parentNode = xmlNode.parentNode;
+					if(parentNode){
+						let obj = parentNode.obj;
+						if(obj){
+							if(obj.input){
+								xmlNode.obj.connect(obj.input);
+							}
+						}
+					} 
+				break;
+
 				default:
-					while(!targetElements.length && curNode != this._xml.parentNode){
-						targetElements = curNode.querySelectorAll(output);
-						curNode = curNode.parentNode;
-					}
+					// while(!targetElements.length && curNode != this._xml.parentNode){
+					// 	targetElements = curNode.querySelectorAll(output);
+					// 	curNode = curNode.parentNode;
+					// }
+
+					targetElements = this.getTargetElements(curNode, output);
 		
 					targetElements.forEach(target => {
 						xmlNode.obj.connect(target.obj.input);
@@ -168,28 +205,43 @@ class Connector {
 					let targetNode = xmlNode;
 					done = false;
 
+
 					while(!done){
 
 						targetNode = targetNode.nextElementSibling;
-
+						// stupid way of dealing with non-audio elements. But for now...
+						if(targetNode.nodeName == "#text"){continue}
+						if(targetNode.nodeName.toLowerCase() == "var"){continue}
 
 						if(!targetNode){
-
 							// connect last object to chain output
-							done = true;
-							targetNode = xmlNode.parentNode;
-							xmlNode.audioObject.connect(targetNode.audioObject._node);
+							xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 						} else {
-							// stupid way of dealing with non-audio elements. But for now...
-							if(targetNode.nodeName == "#text"){continue}
-							if(targetNode.nodeName.toLowerCase() == "var"){continue}
-
-							done = targetNode.nodeName.toLowerCase() != "send";
 							xmlNode.audioObject.connect(targetNode.audioObject.input);
 						}
-
-
+						done = true;
 					}
+
+
+
+					// while(!done){
+
+					// 	targetNode = targetNode.nextElementSibling;
+					// 	if(!targetNode){
+
+					// 		// connect last object to chain output
+					// 		done = true;
+					// 		targetNode = xmlNode.parentNode;
+					// 		xmlNode.audioObject.connect(targetNode.audioObject._node);
+					// 	} else {
+					// 		// stupid way of dealing with non-audio elements. But for now...
+					// 		if(targetNode.nodeName == "#text"){continue}
+					// 		if(targetNode.nodeName.toLowerCase() == "var"){continue}
+
+					// 		done = targetNode.nodeName.toLowerCase() != "send";
+					// 		xmlNode.audioObject.connect(targetNode.audioObject.input);
+					// 	}
+					// }
 
 					target = this.getNextInput(xmlNode);
 					break;
@@ -227,6 +279,15 @@ class Connector {
 			return xmlNode.parentNode.audioObject._node;
 		}
 
+	}
+
+	getTargetElements(curNode, selector){
+		let targetElements = [];
+		while(!targetElements.length && curNode != this._xml.parentNode){
+			targetElements = curNode.querySelectorAll(selector);
+			curNode = curNode.parentNode;
+		}
+		return targetElements;
 	}
 }
 

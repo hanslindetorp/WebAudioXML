@@ -18,6 +18,7 @@ class HandController {
     this.threshold = 0.1;
     this.fingersUp = Array(10).fill(0);
     this._variables = {};
+    this.storedLandmarks = {};
   }
 
   get numberOfFingersUp(){
@@ -25,16 +26,35 @@ class HandController {
   }
 
   update(hand, landmarks){
-    hand = hand.toLowerCase();
-    let handOffset = hand == "right" ? 5 : 0;
+    hand = hand.toLowerCase().substr(0,1);
+    let handOffset = hand == "r" ? 5 : 0;
 
     // store landmarks for current hand
-    let target = (`hand_${hand}_`);
-    landmarks.forEach((data, i) => {
-      Object.entries(data).forEach(([key, val]) => {
-        this._variables[target + i + key] = val;
+    
+    landmarks.forEach((point, i) => {
+      let pointTarget = hand+i;
+      Object.entries(point).forEach(([key, val]) => {
+        this._variables[`hand_${pointTarget+key}`] = val;
+
+        // store distances to each other point
+        this.storedLandmarks[hand] = landmarks;
+        Object.entries(this.storedLandmarks).forEach(([hand2, landmarks2]) => {
+          landmarks2.forEach((point2, i2) => {
+
+            let distX = this.deltaX(point, point2);
+            let distY = this.deltaY(point, point2);
+            let dist = this.hypotenuse(distX, distY);
+
+            let point2Target = hand2+i2;
+            this._variables[`hand_${pointTarget}xto${point2Target}x`] = distX;
+            this._variables[`hand_${pointTarget}yto${point2Target}y`] = distY;
+            this._variables[`hand_${pointTarget}to${point2Target}`] = dist;
+          });
+        });
       });
     });
+
+
 
     let handWidth = Math.abs(landmarks[17].x - landmarks[5].x);
 
@@ -50,9 +70,7 @@ class HandController {
         // compare thumb with all other finger joints
         let dists = [];
         [5,9,13,17].forEach(joint => {
-          let deltaX = landmarks[joint].x - landmarks[tip].x;
-          let deltaY = landmarks[joint].y - landmarks[tip].y;
-          dists.push(Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2)));
+          dists.push(this.distance(landmarks[joint], landmarks[tip]));
         });
         dist = Math.min(...dists);
 
@@ -69,18 +87,37 @@ class HandController {
     for(let i = 0; i < 5; i++){
       leftCnt += this.fingersUp[i];
     }
-    this._variables["hand_left_fingersup"] = leftCnt;
+    this._variables["hand_fingersUpL"] = leftCnt;
 
     // right hand
     let rightCnt = 0;
     for(let i = 5; i < 10; i++){
       rightCnt += this.fingersUp[i];
     }
-    this._variables["hand_right_fingersup"] = rightCnt;
-    this._variables["hand_fingersup"] = leftCnt + rightCnt;
-    // console.log(this.fingersUp);
+    this._variables["hand_fingersUpR"] = rightCnt;
+    this._variables["hand_fingersUp"] = leftCnt + rightCnt;
+
+    // distances
+
+
 
     return this.variables;
+  }
+
+  deltaX(point1, point2){
+    return point1.x - point2.x
+  }
+  deltaY(point1, point2){
+    return point1.y - point2.y
+  }
+  hypotenuse(deltaX, deltaY){
+    return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+  }
+
+  distance(point1, point2){
+    let deltaX = this.deltaX(point1, point2);
+    let deltaY = this.deltaY(point1, point2);
+    return this.hypotenuse(deltaX, deltaY);   
   }
 
   get variables(){

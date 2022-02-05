@@ -471,9 +471,9 @@ class AudioObject{
         break;
 
         case "send":
-		  	//this.input = this._ctx.createGain();
 		  	this._node = this._ctx.createGain();
-        //this.input.connect(this._node);
+        this._bus = this._ctx.createGain();
+        this._node.connect(this._bus);
         break;
 
 		  	case "chain":
@@ -971,12 +971,12 @@ class AudioObject{
 
 
 
-  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious){
+  	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious, audioNode){
 
 	  	let startTime = this._ctx.currentTime + (delay || 0);
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
-
+      audioNode = audioNode || this._node;
 
       if(typeof value == "undefined"){
         console.warn("Cannot set " + param + " value to undefined");
@@ -985,29 +985,29 @@ class AudioObject{
 
 
 
-      if(this._node && this._nodeType != "channelmergernode"){
+      if(audioNode && this._nodeType != "channelmergernode"){
 
         //  web audio parameter
         if(typeof param == "string"){
           // stupid code because Classes are not structured into
           // AudioNode, AudioParameter and WebAudioXML objects
           if(this._nodeType == param){
-            param = this._node;
+            param = audioNode;
           } else {
             // some properties, like "coneInnerAngle" are not parameter objects but numbers
-            if(typeof this._node[param] == "object"){
-              param = this._node[param];
+            if(typeof audioNode[param] == "object"){
+              param = audioNode[param];
             } else {
               // Den här var bökig. Den skapar oändliga calls för 
               // t.ex. ObjectBasedAudio
               // Det ställer också till det för AudioWorklet nodes med custom
               // parameters. De sätts inte med setTargetAtTime() som de ska utan 
               // hamnar här...
-              if(this._nodeType == "audioworkletnode" && this._node.parameters){
-                param = this._node.parameters.get(param);
+              if(this._nodeType == "audioworkletnode" && audioNode.parameters){
+                param = audioNode.parameters.get(param);
               } else {
-                if(this._node.hasOwnProperty(param) || !(this._node instanceof AudioObject)){
-                  this._node[param] = value;
+                if(audioNode.hasOwnProperty(param) || !(audioNode instanceof AudioObject)){
+                  audioNode[param] = value;
                 } else {
                   this[param] = value;
                 }
@@ -1208,7 +1208,8 @@ class AudioObject{
 
 
   	set gain(val){
-	  	this.setTargetAtTime("gain", val, 0, 0.001, true);
+      let audioNode = this._nodeType == "send" ? this._bus : this._node;
+	  	this.setTargetAtTime("gain", val, 0, 0.001, true, audioNode);
       //console.log(this._nodeType + ".gain = " + val);
   	}
 
@@ -1844,6 +1845,7 @@ class Connector {
 
 
 		let nodeName = xmlNode.nodeName.toLowerCase();
+		let targetElements;
 		switch(nodeName){
 			case "chain":
 			// connect chain input to first element in chain
@@ -1885,6 +1887,7 @@ class Connector {
 						break;
 
 						case "send":
+						// is this really correct? Why should "done" not be set to true?
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
 
@@ -1914,6 +1917,14 @@ class Connector {
 			case "link":
 			return;
 			break;
+
+			case "send":
+			let selector = xmlNode.obj.getParameter("bus");
+			targetElements = this.getTargetElements(xmlNode, selector);
+			targetElements.forEach(target => {
+				xmlNode.obj._bus.connect(target.obj.input);
+			});
+			break;
 		}
 
 
@@ -1931,11 +1942,38 @@ class Connector {
 					xmlNode.obj.connect(this._ctx.destination);
 				break;
 
+				case "next":
+					let nextElement = xmlNode.nextElementSibling;
+					if(nextElement){
+						let obj = nextElement.obj;
+						if(obj){
+							if(obj.input){
+								xmlNode.obj.connect(obj.input);
+							}
+						}
+					} 
+				break;
+
+
+				case "parent":
+					let parentNode = xmlNode.parentNode;
+					if(parentNode){
+						let obj = parentNode.obj;
+						if(obj){
+							if(obj.input){
+								xmlNode.obj.connect(obj.input);
+							}
+						}
+					} 
+				break;
+
 				default:
-					while(!targetElements.length && curNode != this._xml.parentNode){
-						targetElements = curNode.querySelectorAll(output);
-						curNode = curNode.parentNode;
-					}
+					// while(!targetElements.length && curNode != this._xml.parentNode){
+					// 	targetElements = curNode.querySelectorAll(output);
+					// 	curNode = curNode.parentNode;
+					// }
+
+					targetElements = this.getTargetElements(curNode, output);
 		
 					targetElements.forEach(target => {
 						xmlNode.obj.connect(target.obj.input);
@@ -1988,28 +2026,43 @@ class Connector {
 					let targetNode = xmlNode;
 					done = false;
 
+
 					while(!done){
 
 						targetNode = targetNode.nextElementSibling;
-
+						// stupid way of dealing with non-audio elements. But for now...
+						if(targetNode.nodeName == "#text"){continue}
+						if(targetNode.nodeName.toLowerCase() == "var"){continue}
 
 						if(!targetNode){
-
 							// connect last object to chain output
-							done = true;
-							targetNode = xmlNode.parentNode;
-							xmlNode.audioObject.connect(targetNode.audioObject._node);
+							xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
 						} else {
-							// stupid way of dealing with non-audio elements. But for now...
-							if(targetNode.nodeName == "#text"){continue}
-							if(targetNode.nodeName.toLowerCase() == "var"){continue}
-
-							done = targetNode.nodeName.toLowerCase() != "send";
 							xmlNode.audioObject.connect(targetNode.audioObject.input);
 						}
-
-
+						done = true;
 					}
+
+
+
+					// while(!done){
+
+					// 	targetNode = targetNode.nextElementSibling;
+					// 	if(!targetNode){
+
+					// 		// connect last object to chain output
+					// 		done = true;
+					// 		targetNode = xmlNode.parentNode;
+					// 		xmlNode.audioObject.connect(targetNode.audioObject._node);
+					// 	} else {
+					// 		// stupid way of dealing with non-audio elements. But for now...
+					// 		if(targetNode.nodeName == "#text"){continue}
+					// 		if(targetNode.nodeName.toLowerCase() == "var"){continue}
+
+					// 		done = targetNode.nodeName.toLowerCase() != "send";
+					// 		xmlNode.audioObject.connect(targetNode.audioObject.input);
+					// 	}
+					// }
 
 					target = this.getNextInput(xmlNode);
 					break;
@@ -2047,6 +2100,15 @@ class Connector {
 			return xmlNode.parentNode.audioObject._node;
 		}
 
+	}
+
+	getTargetElements(curNode, selector){
+		let targetElements = [];
+		while(!targetElements.length && curNode != this._xml.parentNode){
+			targetElements = curNode.querySelectorAll(selector);
+			curNode = curNode.parentNode;
+		}
+		return targetElements;
 	}
 }
 
@@ -4532,11 +4594,13 @@ class Parser {
 	}
 
 	initFromString(str){
-		let parser = new DOMParser();
-		let xml = parser.parseFromString(str,"text/xml");
-		this._xml = xml.firstChild;
-		this.parseXML(this._xml);
-		return this._xml;
+		return new Promise((resolve, reject) => {
+			let parser = new DOMParser();
+			let xml = parser.parseFromString(str,"text/xml");
+			this._xml = xml.firstChild;
+			this.parseXML(this._xml);
+			resolve(xml);
+		});
 	}
 
 
@@ -6408,11 +6472,11 @@ class WebAudio {
 	}
 
 	mute(){
-		this.master.fadeOut(0.2);
+		this.master.fadeOut(0.1);
 	}
 
 	unmute(){
-		this.master.fadeIn(0.2);
+		this.master.fadeIn(0.1);
 	}
 
 	getXMLString(){
@@ -6420,11 +6484,16 @@ class WebAudio {
 	}
 
 	updateFromString(str){
-		this.reset();
-		let xml = this.parser.initFromString(str);
-		this._xml = xml;
-		this.initGUI(xml);
-		this.initAudio(xml);
+		return Promise((resolve, reject) => {
+			this.reset();
+			let xml = this.parser.initFromString(str)
+			.then(xml => {
+				this._xml = xml;
+				this.initGUI(xml);
+				this.initAudio(xml);
+				resolve(xml);
+			});
+		});
 	}
 
 	updateFromFile(url){

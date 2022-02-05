@@ -7,9 +7,9 @@ Tryout with vibrato
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-9dB" transitionTime="50">
     
-  <var name="pitch" value="$hand_right_8y" mapin="0,1" mapout="51,63" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
-  <var name="vibrato" value="$hand_right_8x.derivative" mapin="-0.1,0.1" mapout="-200,200"></var>
-  <var name="cutoff" value="$hand_right_8z" mapin="1,0" mapout="0,2000" curve="3"></var>
+  <var name="pitch" value="$hand_r8y" mapin="0,1" mapout="51,63" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+  <var name="vibrato" value="$hand_r8x.derivative" mapin="-0.1,0.1" mapout="-200,200"></var>
+  <var name="cutoff" value="$hand_r8z" mapin="1,0" mapout="0,2000" curve="3"></var>
   
   <Chain>     
     <OscillatorNode type="square" frequency="$pitch" detune="$vibrato"></OscillatorNode>
@@ -36,8 +36,8 @@ Two parts
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
     
-  <var name="pitch1" value="$hand_right_4y" mapin="0.2,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
-  <var name="cutoff1" value="Math.abs($hand_right_8x-$hand_right_4x)" mapin="0,0.05" mapout="1000,0" curve="3"></var>
+  <var name="pitch1" value="$hand_r4y" mapin="0.2,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+  <var name="cutoff1" value="Math.abs($hand_r8x-$hand_r4x)" mapin="0,0.05" mapout="1000,0" curve="3"></var>
   
   <Chain>     
     <OscillatorNode type="sawtooth" frequency="$pitch1"></OscillatorNode>
@@ -47,8 +47,8 @@ Two parts
  </Chain>
  
     
-  <var name="pitch2" value="$hand_left_4y" mapin="0.2,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
-  <var name="cutoff2" value="Math.abs($hand_left_8x-$hand_left_4x)" mapin="0,0.05" mapout="400,0" curve="3"></var>
+  <var name="pitch2" value="$hand_l4y" mapin="0.2,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+  <var name="cutoff2" value="Math.abs($hand_l8x-$hand_l4x)" mapin="0,0.05" mapout="400,0" curve="3"></var>
   
   <Chain>     
     <OscillatorNode type="sawtooth" frequency="$pitch2"></OscillatorNode>
@@ -77,8 +77,8 @@ Cello
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20" localpath="">
 
-	<var name="pitch1" value="$hand_left_4y" mapin="0.2,0.8" mapout="36,48" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency" />
-	<var name="cutoff1" value="$hand_right_8x.speed" mapin="0,0.015" mapout="0,1000" curve="3" />
+	<var name="pitch1" value="$hand_l4y" mapin="0.2,0.8" mapout="36,48" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency" />
+	<var name="cutoff1" value="$hand_r8x.speed" mapin="0,0.015" mapout="0,1000" curve="3" />
 	<Chain>
 
 		<OscillatorNode type="sawtooth" frequency="$pitch1" />
@@ -104,8 +104,8 @@ Two parts
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
     
-  <var name="pitch1" value="$hand_right_4y" mapin="0.2,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
-  <var name="cutoff1" value="Math.abs($hand_right_8x-$hand_right_4x)" mapin="0,0.05" mapout="1000,0" curve="3"></var>
+  <var name="pitch1" value="$hand_r4y" mapin="0.2,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+  <var name="cutoff1" value="Math.abs($hand_r8x-$hand_r4x)" mapin="0,0.05" mapout="1000,0" curve="3"></var>
   
   <Chain>     
     <OscillatorNode type="sawtooth" frequency="$pitch1"></OscillatorNode>
@@ -115,8 +115,8 @@ Two parts
  </Chain>
  
     
-  <var name="pitch2" value="$hand_left_4y" mapin="0.2,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
-  <var name="cutoff2" value="Math.abs($hand_left_8x-$hand_left_4x)" mapin="0,0.05" mapout="400,0" curve="3"></var>
+  <var name="pitch2" value="$hand_l4y" mapin="0.2,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+  <var name="cutoff2" value="Math.abs($hand_l8x-$hand_l4x)" mapin="0,0.05" mapout="400,0" curve="3"></var>
   
   <Chain>     
     <OscillatorNode type="sawtooth" frequency="$pitch2"></OscillatorNode>
@@ -144,13 +144,13 @@ Noise
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="+3dB" transitionTime="10">
 
-    <var name="frequency1" value="$hand_right_4y" mapin="0.1,0.9" mapout="84,48" steps="0,2" convert="MIDI->frequency"></var>
-    <var name="lowpass" value="Math.abs($hand_left_8x-$hand_left_4x)" mapin="0,0.2" mapout="50,120" convert="MIDI->frequency"></var>
-    <var name="highpass" value="Math.abs($hand_left_8x-$hand_left_4x)" mapin="0,0.2" mapout="10, 120" convert="MIDI->frequency"></var>
+    <var name="frequency1" value="$hand_r4y" mapin="0.1,0.9" mapout="84,48" steps="0,2" convert="MIDI->frequency"></var>
+    <var name="lowpass" value="Math.abs($hand_l8x-$hand_l4x)" mapin="0,0.2" mapout="50,120" convert="MIDI->frequency"></var>
+    <var name="highpass" value="Math.abs($hand_l8x-$hand_l4x)" mapin="0,0.2" mapout="10, 120" convert="MIDI->frequency"></var>
     
-    <var name="gain" value="Math.abs($hand_right_8x-$hand_right_4x)" mapin="0,0.05" mapout="1,0" curve="4"></var>
-    <var name="Q" value="$hand_left_4y" mapin="0,1" mapout="50,5" curve="4"></var>
-    <var name="pan" value="$hand_right_4x" mapin="0,1" mapout="-4,4"></var>
+    <var name="gain" value="Math.abs($hand_r8x-$hand_r4x)" mapin="0,0.05" mapout="1,0" curve="4"></var>
+    <var name="Q" value="$hand_l4y" mapin="0,1" mapout="50,5" curve="4"></var>
+    <var name="pan" value="$hand_r4x" mapin="0,1" mapout="-4,4"></var>
     
     <Chain>
         <Noise></Noise>
@@ -188,7 +188,7 @@ Full band
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="0dB">
 
-	<var name="intensity" value="$hand_right_8x-$hand_left_8x" mapin="0.1,0.9" mapout="0,100"></var>
+	<var name="intensity" value="$hand_r8x-$hand_l8x" mapin="0.1,0.9" mapout="0,100"></var>
 
     <var name="padGain" value="$intensity" mapin="30,60" mapout="1,0"></var>
     <var name="padFrequency" value="$intensity" mapin="0,10" mapout="1000,0"></var>
@@ -240,7 +240,7 @@ Drums lowpass
 * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-20dB">
-	<var name="lowpassFrequency" value="$hand_right_8x-$hand_left_8x" mapin="0.1,0.9" mapout="20, 20000" curve="3"></var>
+	<var name="lowpassFrequency" value="$hand_r8x-$hand_l8x" mapin="0.1,0.9" mapout="20, 20000" curve="3"></var>
 	<BiquadFilterNode id="drums2" type="lowpass" frequency="$lowpassFrequency"></BiquadFilterNode>
 </Audio>
 
@@ -251,9 +251,8 @@ Drums lowpass
 Finger Counting
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="20">
-	<var name="frequency" value="$hand_fingersup - 1" mapin="0,10" mapout="60,77" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="frequency" value="$hand_fingersUp - 1" mapin="0,10" mapout="60,77" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
 	<var name="gain" value="$hand_fingersup" mapin="0,1" mapout="0,1"></var>
 	
 	<Chain>
