@@ -1,10 +1,17 @@
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+Simple Gain - 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="$hand_r8y">
+	<OscillatorNode></OscillatorNode>
+</Audio>
 
 
 <!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
 Two parts
-
 * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 
 <?xml version="1.0" encoding="UTF-8"?>
