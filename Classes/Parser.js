@@ -46,7 +46,7 @@ class Parser {
 			let xml = parser.parseFromString(str,"text/xml");
 			this._xml = xml.firstChild;
 			this.parseXML(this._xml);
-			resolve(xml);
+			resolve(this._xml);
 		});
 	}
 

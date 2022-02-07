@@ -15,9 +15,11 @@ function handleError(error) {
 class HandController {
 
   constructor(){
-    this.threshold = 0.1;
+    this.threshold = 0.07;
     this.fingersUp = Array(10).fill(0);
     this._variables = {};
+    this._triggers = {};
+    this._newTriggers = {};
     this.storedLandmarks = {};
   }
 
@@ -46,9 +48,38 @@ class HandController {
             let dist = this.hypotenuse(distX, distY);
 
             let point2Target = hand2+i2;
-            this._variables[`hand_${pointTarget}xto${point2Target}x`] = distX;
-            this._variables[`hand_${pointTarget}yto${point2Target}y`] = distY;
-            this._variables[`hand_${pointTarget}to${point2Target}`] = dist;
+            let varName;
+
+            varName = `hand_${pointTarget}xto${point2Target}x`;
+            this._variables[varName] = distX;
+            if(!this._triggers[varName] && distX < this.threshold){
+              this._triggers[varName] = true;
+              this._newTriggers[varName] = true;
+            } else if(this._triggers[varName] && distX > this.threshold){
+              this._triggers[varName] = false;
+              this._newTriggers[varName] = false;
+            }
+
+            varName = `hand_${pointTarget}yto${point2Target}y`;
+            this._variables[varName] = distY;
+            if(!this._triggers[varName] && distY < this.threshold){
+              this._triggers[varName] = true;
+              this._newTriggers[varName] = true;
+            } else if(this._triggers[varName] && distY > this.threshold){
+              this._triggers[varName] = false;
+              this._newTriggers[varName] = false;
+            }
+
+            varName = `hand_${pointTarget}to${point2Target}`;
+            this._variables[varName] = dist;
+            if(!this._triggers[varName] && dist < this.threshold){
+              this._triggers[varName] = true;
+              this._newTriggers[varName] = true;
+            } else if(this._triggers[varName] && dist > this.threshold){
+              this._triggers[varName] = false;
+              this._newTriggers[varName] = false;
+            }
+
           });
         });
       });
@@ -124,6 +155,12 @@ class HandController {
     return this._variables;
   }
 
+  get newTriggers(){
+    let triggers = this._newTriggers;
+    this._newTriggers = {};
+    return triggers;
+  }
+
 }
 
 
@@ -161,7 +198,14 @@ function onResults(results) {
       let vars = handController.update(classification.label, landmarks);
       Object.entries(vars).forEach(([key, val]) => {
         webAudioXML.setVariable(key, val);
-      }); 
+      });
+      Object.entries(handController.newTriggers).forEach(([selector, state]) => {
+        if(state){
+          webAudioXML.trig(selector);
+        } else {
+          webAudioXML.release(selector);
+        }
+      });
     }
     
   }
@@ -219,12 +263,19 @@ window.addEventListener("load", () => {
     myCodeMirror.setValue(str);
   }
 
-  let str = dataFromURL();
+  let data = dataFromURL();
+  
+  if(data){
 
-  if(str){
-    webAudioXML.updateFromString(str)
+    document.querySelector("#instrument-name").innerHTML = data.title;
+    document.querySelector("#author-name").innerHTML = data.name;
+    document.querySelector("#demo-URL").innerHTML = data.demoURL;
+
+    webAudioXML.updateFromString(data.xml)
     .then(xml => initCodeMirror(xml));
+
   } else {
+
     webAudioXML.updateFromFile("audio-config.xml")
     .then(xml => initCodeMirror(xml));
   }
@@ -267,7 +318,14 @@ window.addEventListener("load", () => {
 });
 
 function getSharedLink(){
-  let str = lzw_encode(myCodeMirror.getValue());
+  let data = {
+    title: document.querySelector("#instrument-name").innerHTML,
+    name: document.querySelector("#author-name").innerHTML,
+    url: document.querySelector("#demo-URL").innerHTML,
+    xml: myCodeMirror.getValue()
+  }
+  let str = JSON.stringify(data);
+  str = lzw_encode(str);
   return window.location.origin + window.location.pathname + "?data=" + encodeURIComponent(str);
 }
 
@@ -278,6 +336,7 @@ function dataFromURL(){
   let dataStr = urlParams.get('data');
   if(!dataStr){return false}
 
-  let str = lzw_decode(dataStr);
-  return str;
+  let str = decodeURIComponent(dataStr);
+  str = lzw_decode(str);
+  return JSON.parse(str);
 }

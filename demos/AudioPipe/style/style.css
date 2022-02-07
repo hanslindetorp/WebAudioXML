@@ -81,6 +81,14 @@ navigation > a {
 
 #edit {
   padding: 10px; 
+  padding-top: 50px;
+}
+
+#edit input {
+  display: block;
+  width: 30em;
+  padding: 3px;
+  margin: 3px;
 }
 
 textarea {
@@ -94,13 +102,12 @@ textarea {
 #help {
   padding-left: 10px;
   padding-right: 10px;
+  overflow-y: auto;
 }
 
-#help  ul {
-  float: left;
-}
+
 #help  img {
   width: 300px;
   height: auto;
-  float: left;
+  display: block;
 }

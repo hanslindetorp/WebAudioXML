@@ -788,7 +788,7 @@ class AudioObject{
   	}
 
   	disconnect(ch){
-	  	if(!this._node){return}
+	  	if(!this._node || !this._node.disconnect){return}
 	  	ch = ch || 0;
 	  	this._node.disconnect(ch);
   	}
@@ -2030,17 +2030,26 @@ class Connector {
 					while(!done){
 
 						targetNode = targetNode.nextElementSibling;
-						// stupid way of dealing with non-audio elements. But for now...
-						if(targetNode.nodeName == "#text"){continue}
-						if(targetNode.nodeName.toLowerCase() == "var"){continue}
 
 						if(!targetNode){
 							// connect last object to chain output
 							xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
+							done = true;
 						} else {
-							xmlNode.audioObject.connect(targetNode.audioObject.input);
+
+							switch(targetNode.nodeName.toLowerCase()){
+
+								case "var":
+								case "#text":
+								// stupid way of dealing with non-audio elements. But for now...
+								break;
+									
+								default:
+								xmlNode.audioObject.connect(targetNode.audioObject.input);
+								done = true;
+								break;
+							}
 						}
-						done = true;
 					}
 
 
@@ -4023,6 +4032,11 @@ class Mapper{
 
 			switch (curve) {
 
+				case "step":
+				case "steps":
+				return 0;
+				break;
+
 				case "lin":
 				case "linear":
 				return x;
@@ -4599,7 +4613,7 @@ class Parser {
 			let xml = parser.parseFromString(str,"text/xml");
 			this._xml = xml.firstChild;
 			this.parseXML(this._xml);
-			resolve(xml);
+			resolve(this._xml);
 		});
 	}
 
@@ -6484,7 +6498,7 @@ class WebAudio {
 	}
 
 	updateFromString(str){
-		return Promise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			this.reset();
 			let xml = this.parser.initFromString(str)
 			.then(xml => {
@@ -6576,35 +6590,52 @@ class WebAudio {
 		return this.inputBusses.getBus(selector, destinations);
 	}
 
-	start(selector = "*"){
+	start(selector = "*", options){
+
 		if(this._ctx.state != "running"){
 			this.init();
 		}
-
-		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.obj && XMLnode.obj.start){
-				XMLnode.obj.start();
-			}
-		});
-	}
-
-	trig(selector = "*"){
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
 			if(XMLnode.obj.start){
-				XMLnode.obj.start();
+				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
-				XMLnode.obj.noteOn();
+				XMLnode.obj.noteOn(options);
+			}
+		});
+		
+	}
+
+	trig(selector, options){
+		
+		this._xml.querySelectorAll(`*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`).forEach(XMLnode => {
+			if(XMLnode.obj.start){
+				XMLnode.obj.start(options);
+			} else if(XMLnode.obj.noteOn){
+				XMLnode.obj.noteOn(options);
+			}
+		});
+	}
+	
+
+	release(selector, options){
+		this._xml.querySelectorAll(`*[noteoff='${selector}'], *[stop='${selector}']`).forEach(XMLnode => {
+			if(XMLnode.obj.stop){
+				XMLnode.obj.stop(options);
+			} else if(XMLnode.obj.noteOff){
+				XMLnode.obj.noteOn(options);
 			}
 		});
 	}
 
-	stop(selector = "*"){
-		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.obj && XMLnode.obj.stop){
-				XMLnode.obj.stop();
-			}
-		});
-	}
+	
+
+	// stop(selector = "*"){
+	// 	this._xml.querySelectorAll(selector).forEach(XMLnode => {
+	// 		if(XMLnode.obj && XMLnode.obj.stop){
+	// 			XMLnode.obj.stop();
+	// 		}
+	// 	});
+	// }
 
 	registerPlugin(plugin){
 
@@ -6858,6 +6889,10 @@ class WebAudio {
 	}
 
 }
+
+WebAudio.prototype.noteOn = WebAudio.prototype.trig;
+WebAudio.prototype.noteOff = WebAudio.prototype.release;
+WebAudio.prototype.stop = WebAudio.prototype.release;
 
 
 

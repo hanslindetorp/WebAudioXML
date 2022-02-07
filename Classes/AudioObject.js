@@ -570,7 +570,7 @@ class AudioObject{
   	}
 
   	disconnect(ch){
-	  	if(!this._node){return}
+	  	if(!this._node || !this._node.disconnect){return}
 	  	ch = ch || 0;
 	  	this._node.disconnect(ch);
   	}

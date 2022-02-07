@@ -209,17 +209,26 @@ class Connector {
 					while(!done){
 
 						targetNode = targetNode.nextElementSibling;
-						// stupid way of dealing with non-audio elements. But for now...
-						if(targetNode.nodeName == "#text"){continue}
-						if(targetNode.nodeName.toLowerCase() == "var"){continue}
 
 						if(!targetNode){
 							// connect last object to chain output
 							xmlNode.audioObject.connect(xmlNode.parentNode.audioObject._node);
+							done = true;
 						} else {
-							xmlNode.audioObject.connect(targetNode.audioObject.input);
+
+							switch(targetNode.nodeName.toLowerCase()){
+
+								case "var":
+								case "#text":
+								// stupid way of dealing with non-audio elements. But for now...
+								break;
+									
+								default:
+								xmlNode.audioObject.connect(targetNode.audioObject.input);
+								done = true;
+								break;
+							}
 						}
-						done = true;
 					}
 
 

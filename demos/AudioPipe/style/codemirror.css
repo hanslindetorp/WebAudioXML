@@ -4,10 +4,11 @@
   /* Set height, width, borders, and global font properties here */
   font-family: monospace;
   margin: 0px;
-  margin-top: 40px;
+  margin-top: 1em;
   width: 100%;
-  height: 700px;
+  height: 400px;
   box-sizing: border-box;
+  border: 1px solid #333;
   color: black;
   direction: ltr;
 }

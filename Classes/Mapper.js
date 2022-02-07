@@ -333,6 +333,11 @@ class Mapper{
 
 			switch (curve) {
 
+				case "step":
+				case "steps":
+				return 0;
+				break;
+
 				case "lin":
 				case "linear":
 				return x;

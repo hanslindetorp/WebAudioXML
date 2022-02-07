@@ -26,6 +26,9 @@
       </section>
       
       <section id="edit">
+        <input id="instrument-name" value="" placeholder="Intrument Name" />
+        <input id="author-name" value="" placeholder="Your Name" />
+        <input id="demo-URL" placeholder="URL to demo video" />
         <textarea id="xml-edit"></textarea>
       </section>
 
@@ -42,30 +45,54 @@
       synthesis and mappings. Please read the documentation for WebAudioXML to take advantage of all the possibilities.
       </p>
       <p>The image below indicates the 21 available points for each hand. In WebAudioXML all those variables can be 
-        mapped to any audio parameter using the &lt;var&gt;-element. The naming convention for the variables follow the 
+        mapped to any audio parameter using the &lt;var&gt;-element. Please not that all variable names shall be prefixed 
+        with a dollar sign. The naming convention for the variables follow the 
         following scheme:
       </p>
       <div>
+        <h3>Position on the axis (0 - 1) for each point on each hand:</h3>
         <ul>
           <li>hand_l0x</li>
           <li>hand_l0y</li>
-          <li>hand_l0z</li>
           <li>hand_l1x</li>
-          <li>etc...</li>
-        </ul>
-        <ul>
+          <li>etc...to hand_l21y</li>
           <li>hand_r0x</li>
           <li>hand_r0y</li>
-          <li>hand_r0z</li>
           <li>hand_r1x</li>
-          <li>etc...</li>
+          <li>etc...to hand_r21y</li>
         </ul>
-        <img src="images/hand.png" />
         <code>
           Example:<br />
-          &lt;var name="f" value="hand_r8y" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
+          &lt;var name="f" value="$hand_r8y" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
           &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
         </code>
+
+        <h3>Distance (0 - 1) between each point and all other points</h3>
+        <ul>
+          <li>hand_r4tor8 (distance between the pointing finger and the thumb on the right hand)</li>
+          <li>hand_l8tor8 (distance between the two pointing fingers)</li>
+        </ul>
+        <code>
+          Example:<br />
+          &lt;var name="f" value="$hand_r8tor4" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
+          &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
+        </code>
+
+        <h3>Events</h3>
+        <p>Events can trigger Envelopes and AudioFiles using trig="&#91eventName&#93" and/or 
+          release="&#91eventName&#93". Please note event names are NOT prefixed with dollar sign.</p>
+        <ul>
+          <li>trig=&quot;hand_r4tor8&quot; (right hand pointing finger and thumb are touching each other)</li>
+          <li>release=&quot;hand_r4tor8&quot; (right hand pointing finger and thumb are releasing each other)</li>
+        </ul>
+        <code>
+          Example:<br />
+          &lt;OscillatorNode frequency="440"&gt;&lt;/OscillatorNode&gt;<br />
+          &lt;GainNode&gt;&lt;gain&gt;</br>
+            &lt;Envelope start=&quot;hand_r4tor4&quot; max=&quot;1&quot; ADSR=&quot;10,100,20,50&quot;&gt&lt;/Envelope&gt;</br>
+          &lt;/gain&gt;&lt;/GainNode&gt;<br />
+        </code><br />
+        <img src="images/hand.png" />
       </div>
 
       <p>AudioPipe is part of a reasearch project at the <a href="https://www.kmh.se/">Royal College 

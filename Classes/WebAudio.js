@@ -162,7 +162,7 @@ class WebAudio {
 	}
 
 	updateFromString(str){
-		return Promise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			this.reset();
 			let xml = this.parser.initFromString(str)
 			.then(xml => {
@@ -254,35 +254,52 @@ class WebAudio {
 		return this.inputBusses.getBus(selector, destinations);
 	}
 
-	start(selector = "*"){
+	start(selector = "*", options){
+
 		if(this._ctx.state != "running"){
 			this.init();
 		}
-
-		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.obj && XMLnode.obj.start){
-				XMLnode.obj.start();
-			}
-		});
-	}
-
-	trig(selector = "*"){
 		this._xml.querySelectorAll(selector).forEach(XMLnode => {
 			if(XMLnode.obj.start){
-				XMLnode.obj.start();
+				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
-				XMLnode.obj.noteOn();
+				XMLnode.obj.noteOn(options);
+			}
+		});
+		
+	}
+
+	trig(selector, options){
+		
+		this._xml.querySelectorAll(`*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`).forEach(XMLnode => {
+			if(XMLnode.obj.start){
+				XMLnode.obj.start(options);
+			} else if(XMLnode.obj.noteOn){
+				XMLnode.obj.noteOn(options);
+			}
+		});
+	}
+	
+
+	release(selector, options){
+		this._xml.querySelectorAll(`*[noteoff='${selector}'], *[stop='${selector}']`).forEach(XMLnode => {
+			if(XMLnode.obj.stop){
+				XMLnode.obj.stop(options);
+			} else if(XMLnode.obj.noteOff){
+				XMLnode.obj.noteOn(options);
 			}
 		});
 	}
 
-	stop(selector = "*"){
-		this._xml.querySelectorAll(selector).forEach(XMLnode => {
-			if(XMLnode.obj && XMLnode.obj.stop){
-				XMLnode.obj.stop();
-			}
-		});
-	}
+	
+
+	// stop(selector = "*"){
+	// 	this._xml.querySelectorAll(selector).forEach(XMLnode => {
+	// 		if(XMLnode.obj && XMLnode.obj.stop){
+	// 			XMLnode.obj.stop();
+	// 		}
+	// 	});
+	// }
 
 	registerPlugin(plugin){
 
@@ -536,6 +553,10 @@ class WebAudio {
 	}
 
 }
+
+WebAudio.prototype.noteOn = WebAudio.prototype.trig;
+WebAudio.prototype.noteOff = WebAudio.prototype.release;
+WebAudio.prototype.stop = WebAudio.prototype.release;
 
 
 
