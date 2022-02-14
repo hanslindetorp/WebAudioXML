@@ -82,7 +82,9 @@
             </Mixer>
         </Mixer>
         <BiquadFilterNode type="lowpass" frequency="$lowpass"></BiquadFilterNode>
-        <BiquadFilterNode type="highpass" frequency="500"></BiquadFilterNode>
+        <BiquadFilterNode type="highpass" frequency="500"></BiquadFilterNode>            
+        <DynamicsCompressorNode threshold="-20" ratio="20"></DynamicsCompressorNode>
+
 
     </Chain>
 </Audio>

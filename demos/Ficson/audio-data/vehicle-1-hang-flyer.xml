@@ -7,6 +7,13 @@
     <var name="gain" value="$gain1" default="0.5"></var>
     <var name="dynGain" value="$speed" mapin="0,0.3" mapout="0,1"></var>
 
+    <var name="gen1Gain" value="$deg1" mapin="0,90,180,270,360" mapout="1,0,0,0,1"></var>
+    <var name="gen2Gain" value="$deg1" mapin="0,90,180,270,360" mapout="0,1,0,0,0"></var>
+    <var name="gen3Gain" value="$deg1" mapin="0,90,180,270,360" mapout="0,0,1,0,0"></var>
+    <var name="gen4Gain" value="$deg1" mapin="0,90,180,270,360" mapout="0,0,0,1,0"></var>
+
+    <var name="dryGain" value="$dist1"></var>
+    <var name="wetGain" value="1-$dist1"></var>
 
     <Mixer id="vehicle1" output=".channel">
 
@@ -14,12 +21,14 @@
 
         <xi:include href="engine1-hang-flyer.xml" />
         
-        <Chain gain="1-($onX*$onY)">
+        <Chain gain="$dryGain">
+        <!-- <Chain gain="1-($onX*$onY)"> -->
             <Mixer gain="$dynGain">
 
                 <!-- GENERATOR 1 -->
-                <Chain class="generator1" gain="-3dB">
-                    <var name="gain" value="(1-$y)*$onY" mapin="0.5,1" mapout="0,1"></var>
+                <Chain class="generator1" gain="-9dB">
+                    <!-- <var name="gain" value="(1-$y)*$onY" mapin="0.5,1" mapout="0,1"></var> -->
+                    <var name="gain" value="$gen1Gain"></var>
 
                     <var name="chunklength" value="$speed" mapin="0,1" mapout="1000, 100" default="735"></var>
                     <var name="chunkvariation" mapin="0,5000" default="1555"></var>
@@ -36,8 +45,9 @@
                 </Chain>
 
                 <!-- GENERATOR 2 -->
-                <Chain class="generator2">
-                    <var name="gain" value="$x*$onX" mapin="0.5,1" mapout="0,1"></var>
+                <Chain class="generator2" gain="-6dB">
+                    <!-- <var name="gain" value="$x*$onX" mapin="0.5,1" mapout="0,1"></var> -->
+                    <var name="gain" value="$gen2Gain"></var>
 
                     <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,94" convert="MIDI->frequency"></var>
                     <var name="bandpass_Q" mapin="0,500" default="50"></var>
@@ -56,8 +66,9 @@
                 </Chain>
 
                 <!-- GENERATOR 3 -->
-                <Chain class="generator3" gain="0dB">
-                    <var name="gain" value="$y*$onY" mapin="0.5,1" mapout="0,1"></var>
+                <Chain class="generator3" gain="-6dB">
+                    <!-- <var name="gain" value="$y*$onY" mapin="0.5,1" mapout="0,1"></var> -->
+                    <var name="gain" value="$gen3Gain"></var>
 
                     <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,112" convert="MIDI->frequency"></var>
                     <var name="bandpass_Q" mapin="0,50" default="20"></var>
@@ -68,8 +79,9 @@
                 </Chain>
 
                 <!-- GENERATOR 4 -->
-                <Chain class="generator4">
-                    <var name="gain" value="(1-$x)*$onX" mapin="0.5,1" mapout="0,1"></var>
+                <Chain class="generator4" gain="-6dB">
+                    <!-- <var name="gain" value="(1-$x)*$onX" mapin="0.5,1" mapout="0,1"></var> -->
+                    <var name="gain" value="$gen4Gain"></var>
 
                     <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,106" convert="MIDI->frequency"></var>
                     <!-- <var name="bandpass_Q" mapin="0,50" default="40"></var> -->
@@ -93,7 +105,8 @@
         </Chain>
 
         <var name="origo" value="$onX*$onY" curve="3"></var>
-        <Chain gain="$origo">
+        <!-- <Chain gain="$origo"> -->
+        <Chain gain="$wetGain">
             <ConvolverNode class="reverb" src="convolution/r1_omni_48k_1s.wav"></ConvolverNode>
             
             <!-- <BiquadFilterNode 
@@ -110,7 +123,7 @@
 
     <Chain class="channel">
         <GainNode gain="$gain"></GainNode>
-        <!-- <ObjectBasedAudio positionZ="-10" positionX="$pan1" positionY="5"></ObjectBasedAudio> -->
+        <ObjectBasedAudio positionZ="-10" positionX="$pan" positionY="5"></ObjectBasedAudio>
     </Chain>
 
 </Audio>

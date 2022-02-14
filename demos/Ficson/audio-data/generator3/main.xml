@@ -20,5 +20,7 @@
             <BiquadFilterNode class="generator3input" type="bandpass" frequency="$f*13" Q="$Q*13"></BiquadFilterNode>
             <BiquadFilterNode class="generator3input" type="bandpass" frequency="$f*14" Q="$Q*14"></BiquadFilterNode>
         </Mixer>
+        <DynamicsCompressorNode threshold="-20" ratio="20"></DynamicsCompressorNode>
+
     </Chain>
 </Audio>

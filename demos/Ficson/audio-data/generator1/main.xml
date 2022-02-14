@@ -10,6 +10,8 @@
             maxfrequency="$max_pitch"
             src="texture-processor.js"
         ></AudioWorkletNode>
+        <DynamicsCompressorNode threshold="-20" ratio="20"></DynamicsCompressorNode>
+
     </Chain>
     
     

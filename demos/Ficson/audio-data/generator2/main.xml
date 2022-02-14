@@ -84,6 +84,7 @@
                 <DelayNode delayTime="$delay*11/1000"></DelayNode>
             </Chain>
         </Mixer>
-        
+        <DynamicsCompressorNode threshold="-20" ratio="20"></DynamicsCompressorNode>
+
     </Chain>
 </Audio>

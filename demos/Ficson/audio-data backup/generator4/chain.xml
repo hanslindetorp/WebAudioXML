@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+    <Chain>
+        <Chain>
+            <OscillatorNode frequency="$frequency"></OscillatorNode>
+        </Chain>
+        
+        <GainNode>
+            <gain>
+                <Envelope class="env" start="auto" times="$attack,$decay" values="100,0" loopEnd="$loopLength" loop="true"></Envelope>
+            </gain>
+        </GainNode>
+    </Chain>
+</Audio>
