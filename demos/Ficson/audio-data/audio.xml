@@ -135,19 +135,23 @@
         
         <ConvolverNode class="cityConvolution" src="convolution/PlateSmall.wav"></ConvolverNode>
         
-        <Chain gain="+3db">
-            <!-- gain="$ambiencegain" -->
+        <!-- <Chain gain="+3db">
             <ChannelMergerNode>
                 <AmbientAudio src="ambience/front_atmo_w_voices.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio>
-                <!-- <AmbientAudio src="ambience/street_car_distant.wav" start="auto" gain="-12dB" channel="6,7"></AmbientAudio> -->
-                <!--AmbientAudio src="ambience/surround_atmo.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio-->  
                 <AmbientAudio src="ambience/ped_crossing.wav" start="auto" gain="-18dB" channel="6,7"></AmbientAudio>  
                 <AmbientAudio src="ambience/steg_loop.wav" start="auto" gain="-12dB" channel="6,4"></AmbientAudio>    
             </ChannelMergerNode>
             <GainNode gain="$bg"></GainNode>
 
             <GainNode gain="1"></GainNode>
-        </Chain>
+        </Chain> -->
+
+        <Mixer>
+            <AmbientAudio src="ambience/front_atmo_w_voices.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio>
+            <AmbientAudio src="ambience/ped_crossing.wav" start="auto" gain="-18dB" channel="6,7"></AmbientAudio>  
+            <AmbientAudio src="ambience/steg_loop.wav" start="auto" gain="-12dB" channel="6,4"></AmbientAudio>    
+        </Mixer>
+
         
     </Mixer>
 
