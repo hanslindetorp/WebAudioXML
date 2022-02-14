@@ -1,12 +1,71 @@
 <!-- 
 * * * * * * * * * * * * * * * * * * * * * * * * * * *
-Simple Gain - 
+1. Simple Gain - 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 -->
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="$hand_r8y">
-	<OscillatorNode></OscillatorNode>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+	<OscillatorNode output="next"></OscillatorNode>
+    <GainNode gain="$hand_r8y"></GainNode>
 </Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+2. Inverted Gain - 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+    <var name="g" value="$hand_r8y" mapin="0,1" mapout="1,0"></var>
+
+	<OscillatorNode output="next"></OscillatorNode>
+    <GainNode gain="$g"></GainNode>
+</Audio>
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+3. Filter Cutoff 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-20dB">
+    <var name="f" value="$hand_r8y" mapin="0,1" mapout="5000, 20"></var>
+
+	<OscillatorNode type="sawtooth" output="next"></OscillatorNode>
+    <BiquadFilterNode frequency="$f"></BiquadFilterNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+4. Pitch
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-3dB">
+    <var name="p" value="$hand_r8x" mapin="0,1" mapout="60,62,64,65,67,69,71,72" curve="step" convert="MIDI->frequency"></var>
+
+	<OscillatorNode frequency="$p"></OscillatorNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+4. Distance
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-3dB" transitionTime="10">
+    <var name="p" value="$hand_r8x" mapin="0,1" mapout="60,62,64,65,67,69,71,72" curve="step" convert="MIDI->frequency"></var>
+    <var name="g" value="$hand_r4tor8" mapin="0.1,0.2" mapout="1,0"></var>
+	
+    <OscillatorNode frequency="$p" output="next"></OscillatorNode>
+    <GainNode gain="$g"></GainNode>
+</Audio>
+
 
 
 <!-- 
@@ -220,7 +279,7 @@ Synth Bass
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="10">
 
-    <var name="frequency" value="$hand_r8y" mapin="0,0.7" mapout="36,33,31,29,28" curve="step" convert="MIDI->frequency"></var>
+    <var name="frequency" value="$hand_r8x" mapin="0.1,0.9" mapout="28,29,31,33,36" curve="step" convert="MIDI->frequency"></var>
     
 
     <OscillatorNode type="sawtooth" frequency="$frequency" output="next"></OscillatorNode>

@@ -267,9 +267,9 @@ window.addEventListener("load", () => {
   
   if(data){
 
-    document.querySelector("#instrument-name").innerHTML = data.title;
-    document.querySelector("#author-name").innerHTML = data.name;
-    document.querySelector("#demo-URL").innerHTML = data.demoURL;
+    document.querySelector("#instrument-name").value = data.title || "";
+    document.querySelector("#author-name").value = data.name || "";
+    document.querySelector("#demo-URL").value = data.demoURL || "";
 
     webAudioXML.updateFromString(data.xml)
     .then(xml => initCodeMirror(xml));
@@ -319,9 +319,9 @@ window.addEventListener("load", () => {
 
 function getSharedLink(){
   let data = {
-    title: document.querySelector("#instrument-name").innerHTML,
-    name: document.querySelector("#author-name").innerHTML,
-    url: document.querySelector("#demo-URL").innerHTML,
+    title: document.querySelector("#instrument-name").value,
+    name: document.querySelector("#author-name").value,
+    url: document.querySelector("#demo-URL").value,
     xml: myCodeMirror.getValue()
   }
   let str = JSON.stringify(data);
