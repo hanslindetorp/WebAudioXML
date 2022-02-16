@@ -10,19 +10,13 @@ var exes = [];
 var ys = [];  
 
 window.addEventListener("load", coordinatesHb);
-window.addEventListener("load", coordinatesHf);
+window.addEventListener("load", coordinatesFh);
 window.addEventListener("load", coordinatesWc);
-
-window.addEventListener("touchstart", touchHandler, false);
 
 document.querySelector("body").addEventListener("ontouchmove", function coordinatesStorage() {
 	var xgen = event.touches[0].clientX;
 	var ygen = event.touches[0].clientY
 
-})
-document.addEventListener("contextmenu", function(event){
-	event.preventDefault();
-	return false;
 })
 
 function download_txt(textToSave) {
@@ -35,11 +29,6 @@ function download_txt(textToSave) {
   hiddenElement.click();
 }
 
-function touchHandler(event){
-	if(event.touches.length > 1){
-		event.preventDefault()
-	}
-}
 
 /*function done(event){
 {
@@ -58,8 +47,8 @@ function touchHandler(event){
 
 
 function coordinatesHb(event){
-	var hbxpos = 1-(650-event.touches[0].clientX)/450;
-	var hbypos = (535-event.touches[0].clientY)/450;
+	var hbxpos = 1-(410-event.touches[0].clientX)/400;
+	var hbypos = (410-event.touches[0].clientY)/400;
 		//document.getElementById("hbx").innerHTML = hbxpos;
 		//document.getElementById("hby").innerHTML = hbypos;
 	if(hbxpos >= 0 && hbxpos <= 1 && hbypos >= 0 && hbypos <= 1){
@@ -70,26 +59,26 @@ function coordinatesHb(event){
 	})
 	}}
 
-	function coordinatesWc(event){
-		var fhxpos = 1-(1150-event.touches[0].clientX)/450;
-		var fhypos = (535-event.touches[0].clientY)/450;
+	function coordinatesFh(event){
+		var fhxpos = 1-(830-event.touches[0].clientX)/400;
+		var fhypos = (410-event.touches[0].clientY)/400;
 		//document.getElementById("fhx").innerHTML = fhxpos;
 		//document.getElementById("fhy").innerHTML = fhypos;
 		if(fhxpos >= 0 && fhxpos <= 1 && fhypos >= 0 && fhypos <= 1){
 		clientToServer({
-		name: "Wc",
+		name: "Fh",
 		x: fhxpos,
 		y: fhypos
 	})
 	}}
-	function coordinatesHf(event){
-		var wcxpos = 1-(1750-event.touches[0].clientX)/450;
-		var wcypos = (530-event.touches[0].clientY)/450;
+	function coordinatesWc(event){
+		var wcxpos = 1-(1250-event.touches[0].clientX)/400;
+		var wcypos = (410-event.touches[0].clientY)/400;
 		//document.getElementById("wcx").innerHTML = wcxpos;
 		//document.getElementById("wcy").innerHTML = wcypos;
 		if(wcxpos >= 0 && wcxpos <= 1 && wcypos >= 0 && wcypos <= 1){
 		clientToServer({
-		name: "Hf",
+		name: "Wc",
 		x: wcxpos,
 		y: wcypos
 	})

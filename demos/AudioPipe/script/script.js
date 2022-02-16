@@ -313,6 +313,12 @@ window.addEventListener("load", () => {
   });
 
 
+  document.querySelector("navigation select").addEventListener("change", e => {
+    if(!e.target.value)return
+    window.location = e.target.value;
+  });
+
+
   window.location = "#play";
 
 });

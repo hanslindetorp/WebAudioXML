@@ -12,18 +12,24 @@ window.addEventListener('load', event => {
 			
 			case "Hb":
 			//document.getElementById("show").innerHTML = "X: " + msg.x + "     " + "Y: " + msg.y;
-			webAudioXML.setVariable("x1", msg.x);
-			webAudioXML.setVariable("y1", msg.y);
+			webAudioXML.setVariable("x3", msg.x);
+			webAudioXML.setVariable("y3", msg.y);
+			webAudioXML.setVariable("deg3", msg.deg);
+			webAudioXML.setVariable("dist3", msg.dist);
 		 	break;
 
 		 	case "Wc":
 			webAudioXML.setVariable("x2", msg.x);
 			webAudioXML.setVariable("y2", msg.y);
+			webAudioXML.setVariable("deg2", msg.deg);
+			webAudioXML.setVariable("dist2", msg.dist);
 		 	break;
 
-		    case "Fh":
-		 	webAudioXML.setVariable("x3", msg.x);
-			webAudioXML.setVariable("y3", msg.y);
+		    case "Hf":
+		 	webAudioXML.setVariable("x1", msg.x);
+			webAudioXML.setVariable("y1", msg.y);
+			webAudioXML.setVariable("deg1", msg.deg);
+			webAudioXML.setVariable("dist1", msg.dist);
 		 	break;
 
 			case "solo":
@@ -31,6 +37,22 @@ window.addEventListener('load', event => {
 			break;
 
 		 	case "I'm done":
+				webAudioXML.setVariable("x1", 0.5);
+				webAudioXML.setVariable("y1", 0.5);
+				webAudioXML.setVariable("x2", 0.5);
+				webAudioXML.setVariable("y2", 0.5);
+				webAudioXML.setVariable("x3", 0.5);
+				webAudioXML.setVariable("y3", 0.5);
+		 	//Data logging to be implemented
+			 break;
+
+			 case "Time out":
+				webAudioXML.setVariable("x1", 0.5);
+				webAudioXML.setVariable("y1", 0.5);
+				webAudioXML.setVariable("x2", 0.5);
+				webAudioXML.setVariable("y2", 0.5);
+				webAudioXML.setVariable("x3", 0.5);
+				webAudioXML.setVariable("y3", 0.5);
 		 	//Data logging to be implemented
 			 break;
 

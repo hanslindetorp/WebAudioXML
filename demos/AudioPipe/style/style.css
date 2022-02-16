@@ -63,7 +63,8 @@ navigation > h1 {
   margin: 0px 10px;
   font-size: 15px;
 }
-navigation > a {
+navigation > a,
+navigation > select {
   position: relative;
   display: inline-block;
   background-color: white;

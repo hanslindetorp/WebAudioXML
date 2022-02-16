@@ -1,0 +1,195 @@
+<!doctype html>
+	<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, user-scalable=0" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<title>CONTROLLER</title>
+		<!--
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js" integrity="sha512-WL6WGKMPBiM9PnHRYIn5YEtq0Z8XP4fkVb4qy7PP4vhmYQErJ/dySyXuFIMDf1eEYCXCrQrMJfkNwKc9gsjTjA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		-->
+		<script type="text/javascript" src="plugins/socket.io.js"></script>
+
+		<link href="mystyle.css" rel="stylesheet" type="text/css" />
+		<style>
+			body{
+				  overscroll-behavior: contain;
+				  touch-action: none;
+				  
+			}
+					#hoverboardCircle, #wheelchairCircle, #hangerCircle{
+						  left: 0px;
+						  bottom: 0px;
+						  width: 450px;
+						  height: 450px;
+						  border-radius: 50%;
+						  display: flex;
+						  flex-wrap: wrap;
+						  overflow: hidden;
+						  position: relative;
+						  
+			
+					}
+			
+					#gap{
+						width: 120px;
+						display: flex;
+					}
+					table{
+						margin: auto;
+									
+					}
+					.space{
+						height: 110px;
+					}
+					td{
+						border: 5%;
+					}
+			
+					.button {
+						display: inline-block;
+						border-radius: 4px;
+						background-color: #f4511e;
+						border: none;
+						color: #FFFFFF;
+						text-align: center;
+						font-size: 23px;
+						padding: 20px;
+						height: 150px;
+						width: 200px;
+						transition: all 0.5s;
+						cursor: pointer;
+						
+					}
+			
+					
+			
+					.button span {
+						cursor: pointer;
+						display: inline-block;
+						position: relative;
+						transition: 0.5s;
+					}
+			
+					.button span:after {
+						content: '\00bb';
+						position: absolute;
+						opacity: 0;
+						top: 0;
+						right: -20px;
+						transition: 0.5s;
+					}
+			
+					.button:hover span {
+						padding-right: 25px;
+					}
+			
+					.button:hover span:after {
+						opacity: 1;
+						right: 0;
+					}
+			
+					#buttons{
+						text-align: right;
+						margin-right: 85px;
+			
+					}
+			
+					#doneBtn{
+						margin-left: 35px;
+						margin-right: 40px;
+					}
+			
+					
+			
+				</style></head>
+<body>
+	<div class="space"></div>
+	<table  ontouchend="startTimer(event)" ontouchstart="myStopFunction(event)">
+		<tr>
+			<td>
+				<div ontouchmove ="coordinatesHb(event)" ontouchstart="solo(3)" ontouchend="solo(0)" id="hoverboardCircle" style="background-color: rgb(82, 184, 218);"></div>
+				Fleeting Board
+			</td>
+			<td>
+				<div ontouchstart="clearCoors(event)" id="gap">
+
+			</div>
+			</td>
+			<td>
+				<div ontouchmove="coordinatesWc(event)" ontouchstart="solo(2)" ontouchend="solo(0)" id="hangerCircle" style="background-color: #e3ee50;"></div>
+				Wheelchair
+			</td>
+			<td>
+				<div ontouchstart="clearCoors(event)" id="gap">
+			</div>
+			</td>
+			<td>
+				<div ontouchmove="coordinatesHf(event)" ontouchstart="solo(1)" ontouchend="solo(0)" id="wheelchairCircle" style="background-color: #eb686f;"></div>
+				Hang-flyer
+			</td>
+		</tr>
+		<!--tr>
+		<td>
+				<div ontouchmove ="mixerHb(event)" id="hoverboardBar" style="background-color: red;"></div>
+				
+			</td>
+			<td>
+				<div ontouchstart="clearCoors(event)" id="gap">
+
+			</div>
+			</td>
+			<td>
+				<div ontouchmove="mixerFh(event)" id="hangerBar" style="background-color: blue;"></div>
+			</td>
+			<td>
+				<div ontouchstart="clearCoors(event)" id="gap">
+			</div>
+			</td>
+			<td>
+				<div ontouchmove="mixerWc(event)" id="wheelchairBar" style="background-color: green;"></div>
+			</td>	
+		</tr>
+
+		<tr>
+			<td>Ambience
+			<div ontouchmove="ambienceLevel(event)" id="ambienceBar" style="background-color: grey;"></div>
+			</td>
+			<td></td>
+			<td></td>
+		</tr-->
+	</table>
+	<div style="height: 110px;"></div>
+		<div id="buttons">
+		<button class="button" id="doneBtn" ontouchstart="done(event, 'buttonPressed')" style="vertical-align:middle"><span>Klar</span></button> <!-- To be implemented -->
+		<button class="button" id="resetBtn" ontouchstart="reset(event);" style="vertical-align:middle"><span>Börja om</span></button>
+	<!--div>
+
+	h2>Coordinates</h2>
+	<ul>
+		<li> Hoverboard
+		<ul>
+			<li><span id="hbx" style="font-size: 20px;"></span></li>
+			<li><span id="hby" style="font-size: 20px;"></span></li>
+		</ul>
+		</li>
+		<li> Flying Hanger
+		<ul>
+			<li><span id="fhx" style="font-size: 20px;"></span></li>
+			<li><span id="fhy" style="font-size: 20px;"></span></li>
+		</ul>
+		</li>
+		<li> Wheelchair
+		<ul>
+			<li><span id="wcx" style="font-size: 20px;"></span></li>
+			<li><span id="wcy" style="font-size: 20px;"></span></li>
+		</ul>
+		</li>			
+	</ul>
+	</div-->
+
+	<script type="text/javascript" src="plugins/controller_data_log.js"></script> <!--Just erase get back to "controller.js" for having a function non-data-logging interface-->
+
+</body>
+</html>
