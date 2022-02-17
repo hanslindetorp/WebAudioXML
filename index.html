@@ -2,15 +2,23 @@
 <html>
 	<head>
 		<meta charset="UTF-8" />
-		<title>WebAudioXML - template</title>
+		<title>WebAudioXML - arpeggio demo</title>
 		<link href="style.css" rel="stylesheet" type="text/css" />
 	</head>
 
 
 	<body>
+		<h1>WebAudioXML - arpeggio DEMO</h1>
+		<p>This DEMO illustrates how the variable $currentTime can be used as a source for mapping
+			time to pitches and filter cutoff frequencies using the WebAudioXML syntax. WebAudioXML
+			is both an XML syntax and a javascript parser. Please, read more at
+			 <a href="https://github.com/hanslindetorp/WebAudioXML">https://github.com/hanslindetorp/WebAudioXML</a>
+			 and follow my reasearch blog at 
+			 <a href="https://hans.arapoviclindetorp.se/">https://hans.arapoviclindetorp.se/</a>
+		</p>
+		<p><a href="https://www.kth.se/profile/lindet">Hans Lindetorp</a> - PhD student at <a href="https://www.kmh.se">Royal College of Music</a> and <a href="https://www.kth.se">Royal Institute of Technology</a> in Stockholm</p>
 		<button id="playBtn">PLAY</button>
 		<button id="stopBtn">STOP</button>
-		<hr />
 		<textarea width="100%" height="80%">
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="s" gain="-6dB" controls="true">

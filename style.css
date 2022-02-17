@@ -3,8 +3,23 @@ html, body {
     height: 100%;
 }
 
+body {
+    padding: 1em 3em;
+}
+
 textarea {
     width: 90%;
-    height: 80%;
+    height: 70%;
     padding: 1em;
+    border: 0px;
+    border-top: 1px solid grey;
+    margin-top: 1em;
+}
+
+p {
+    width: 70%;
+}
+
+a {
+    text-decoration: none;
 }
