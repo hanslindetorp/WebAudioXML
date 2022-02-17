@@ -4,13 +4,34 @@
 		<meta charset="UTF-8" />
 		<title>WebAudioXML - template</title>
 		<link href="style.css" rel="stylesheet" type="text/css" />
-		<link href="finderjs/example/finderjs.css" rel="stylesheet" type="text/css" />
 	</head>
 
 
 	<body>
+		<button id="playBtn">PLAY</button>
+		<button id="stopBtn">STOP</button>
+		<hr />
+		<textarea width="100%" height="80%">
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="s" gain="-6dB" controls="true">
+		
+	<var name="p1" value="($currentTime * 8) % 4" mapin="0,3" mapout="60,63,65,67" curve="steps" convert="MIDI->frequency"></var>
+	<var name="p2" value="$currentTime % 4" mapin="0,3" mapout="36,39,41,43" curve="steps" convert="MIDI->frequency"></var>
+	
+	<var name="f1" value="($currentTime * 8) % 3" mapin="0,2" mapout="800,400,200" curve="steps"></var>
+	<var name="f2" value="($currentTime * 8) % 2" mapin="0,1" mapout="500,20" curve="steps"></var>    
 
+	<OscillatorNode type="sawtooth" frequency="$p1" output="next"></OscillatorNode>
+	<BiquadFilterNode frequency="$f1"></BiquadFilterNode>
+
+	<OscillatorNode type="sawtooth" frequency="$p2" output="next"></OscillatorNode>
+	<BiquadFilterNode frequency="$f2"></BiquadFilterNode>
+	
+</Audio>
+
+		</textarea>
 		<script src="WebAudioXML.js" data-source="audio-config.xml"></script>
+		<script src="script.js"></script>
 		
 	</body>
 </html>

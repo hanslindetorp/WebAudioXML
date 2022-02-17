@@ -6411,6 +6411,7 @@ class WebAudio {
 
 		// this.HL = new HL2(_ctx);
 
+		this.fps = 60; // used to update variable "currentTime"
 		this._ctx = _ctx;
 		this._listeners = [];
 		this.plugins = [];
@@ -6469,6 +6470,7 @@ class WebAudio {
 
 		this.ui = new InteractionManager(this);
 
+
 	}
 
 	/*
@@ -6482,6 +6484,10 @@ class WebAudio {
 			this.audioInited = true;
 			this._ctx.resume();
 			this.start("*[trig='auto'], *[start='auto']");
+
+			setInterval(e => {
+				this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
+			}, 1000/this.fps);
 		}
 	}
 
