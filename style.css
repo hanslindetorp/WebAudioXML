@@ -8,6 +8,7 @@ body {
 }
 
 textarea {
+    display: block;
     width: 90%;
     height: 70%;
     padding: 1em;
