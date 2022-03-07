@@ -1919,7 +1919,7 @@ class Connector {
 			break;
 
 			case "send":
-			let selector = xmlNode.obj.getParameter("bus");
+			let selector = xmlNode.obj.getParameter("outputBus");
 			targetElements = this.getTargetElements(xmlNode, selector);
 			targetElements.forEach(target => {
 				xmlNode.obj._bus.connect(target.obj.input);
@@ -6905,6 +6905,7 @@ WebAudio.prototype.stop = WebAudio.prototype.release;
 let webAudioXML = new WebAudio();
 
 window.webAudioXML = webAudioXML;
+window.waxml = webAudioXML;
 module.exports = WebAudio;
 
 

@@ -98,7 +98,7 @@ class Connector {
 			break;
 
 			case "send":
-			let selector = xmlNode.obj.getParameter("bus");
+			let selector = xmlNode.obj.getParameter("outputBus");
 			targetElements = this.getTargetElements(xmlNode, selector);
 			targetElements.forEach(target => {
 				xmlNode.obj._bus.connect(target.obj.input);

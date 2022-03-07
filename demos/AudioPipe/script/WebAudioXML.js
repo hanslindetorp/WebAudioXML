@@ -1919,7 +1919,7 @@ class Connector {
 			break;
 
 			case "send":
-			let selector = xmlNode.obj.getParameter("bus");
+			let selector = xmlNode.obj.getParameter("outputBus");
 			targetElements = this.getTargetElements(xmlNode, selector);
 			targetElements.forEach(target => {
 				xmlNode.obj._bus.connect(target.obj.input);
@@ -6411,6 +6411,7 @@ class WebAudio {
 
 		// this.HL = new HL2(_ctx);
 
+		this.fps = 60; // used to update variable "currentTime"
 		this._ctx = _ctx;
 		this._listeners = [];
 		this.plugins = [];
@@ -6469,6 +6470,7 @@ class WebAudio {
 
 		this.ui = new InteractionManager(this);
 
+
 	}
 
 	/*
@@ -6482,6 +6484,10 @@ class WebAudio {
 			this.audioInited = true;
 			this._ctx.resume();
 			this.start("*[trig='auto'], *[start='auto']");
+
+			setInterval(e => {
+				this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
+			}, 1000/this.fps);
 		}
 	}
 
@@ -6899,6 +6905,7 @@ WebAudio.prototype.stop = WebAudio.prototype.release;
 let webAudioXML = new WebAudio();
 
 window.webAudioXML = webAudioXML;
+window.waxml = webAudioXML;
 module.exports = WebAudio;
 
 

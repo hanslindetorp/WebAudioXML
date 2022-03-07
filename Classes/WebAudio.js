@@ -569,6 +569,7 @@ WebAudio.prototype.stop = WebAudio.prototype.release;
 let webAudioXML = new WebAudio();
 
 window.webAudioXML = webAudioXML;
+window.waxml = webAudioXML;
 module.exports = WebAudio;
 
 

@@ -154,16 +154,16 @@ Noise
         <GainNode gain="$gain"></GainNode>
         <DynamicsCompressorNode ratio="20" threshold="-35"></DynamicsCompressorNode>
         
-        <Send bus="#delay" gain="-6dB"></Send>
+        <Send outputBus="#delay" gain="-6dB"></Send>
 
         <PannerNode panningModel="HRTF" positionX="$pan" positionZ="-3"></PannerNode>
         
-        <Send bus="ConvolverNode" gain="+3dB"></Send>
+        <Send outputBus="ConvolverNode" gain="+3dB"></Send>
     </Chain>
 
     <Chain>
         <DelayNode id="delay" delayTime="500" maxDelayTime="500"></DelayNode>
-        <Send bus="#delay" gain="-6dB"></Send>
+        <Send outputBus="#delay" gain="-6dB"></Send>
     </Chain>
 
     <ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
