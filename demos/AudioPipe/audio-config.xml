@@ -1,36 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="+3dB" transitionTime="10">
-
-    <var name="frequency1" value="$hand_r4y" mapin="0.1,0.9" mapout="84,48" steps="0,2" convert="MIDI->frequency"></var>
-    <var name="lowpass" value="$hand_l8tol4" mapin="0,0.2" mapout="50,120" convert="MIDI->frequency"></var>
-    <var name="highpass" value="$hand_l8tol4" mapin="0,0.2" mapout="10, 120" convert="MIDI->frequency"></var>
-    
-    <var name="gain" value="$hand_r8tor4" mapin="0,0.05" mapout="1,0" curve="4"></var>
-    <var name="Q" value="$hand_l4y" mapin="0,1" mapout="50,5" curve="4"></var>
-    <var name="pan" value="$hand_r4x" mapin="0,1" mapout="-4,4"></var>
-    
-    <Chain>
-        <Noise></Noise>
-        <BiquadFilterNode type="bandpass" frequency="$frequency1" Q="$Q" transitionTime="200"></BiquadFilterNode>
-        <BiquadFilterNode type="lowpass" frequency="$lowpass"></BiquadFilterNode>
-        <BiquadFilterNode type="highpass" frequency="$highpass"></BiquadFilterNode>
-        
-        <GainNode gain="-6dB"></GainNode>
-        <GainNode gain="$gain"></GainNode>
-        <DynamicsCompressorNode ratio="20" threshold="-35"></DynamicsCompressorNode>
-        
-        <Send outputBus="#delay" gain="-6dB"></Send>
-
-        <PannerNode panningModel="HRTF" positionX="$pan" positionZ="-3"></PannerNode>
-        
-        <Send outputBus="ConvolverNode" gain="+3dB"></Send>
-    </Chain>
-
-    <Chain>
-        <DelayNode id="delay" delayTime="500" maxDelayTime="500"></DelayNode>
-        <Send outputBus="#delay" gain="-6dB"></Send>
-    </Chain>
-
-    <ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
-
+<Audio version="1.0" timeUnit="ms" gain="-3dB" transitionTime="10">
+    <var name="p" value="$hand_r8x" mapin="0,1" mapout="60,62,64,65,67,69,71,72" curve="step" convert="MIDI->frequency"></var>
+    <var name="g" value="$hand_r4tor8" mapin="0.1,0.2" mapout="1,0"></var>
+	
+    <OscillatorNode frequency="$p" output="next"></OscillatorNode>
+    <GainNode gain="$g"></GainNode>
 </Audio>
