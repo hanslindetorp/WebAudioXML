@@ -272,7 +272,7 @@ window.addEventListener("load", () => {
       elCnt += value;
     });
     elCnt--;
-    let otherCnt = elCnt - varsCount - so.OscillatorNode - so.BiquadFilterNode - so.GainNode || 0;
+    let otherCnt = elCnt - varsCount - so.oscillatornode - so.biquadfilternode - so.gainnode || 0;
     document.querySelector("#edit #elementCount").innerHTML = elCnt || 0;
     document.querySelector("#edit #varsCount").innerHTML = varsCount || 0;
     document.querySelector("#edit #oscCount").innerHTML = so.oscillatornode || 0;
