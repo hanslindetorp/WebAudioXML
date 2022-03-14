@@ -26,11 +26,56 @@
       </section>
       
       <section id="edit">
-        <input id="instrument-name" value="" placeholder="Intrument Name" />
-        <input id="author-name" value="" placeholder="Your Name" />
+        <table id="statistics">
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th>count</th>
+            </tr>
+          </thead>
+
+
+          <tbody>
+            <tr>
+              <td>Variables</td>
+              <td id="varsCount"></td>
+            </tr>
+            <tr>
+              <td>Oscillators</td>
+              <td id="oscCount"></td>
+            </tr>
+            <tr>
+              <td>Filters</td>
+              <td id="filterCount"></td>
+            </tr>
+            <tr>
+              <td>Gain</td>
+              <td id="gainCount"></td>
+            </tr>
+            <tr>
+              <td>Other</td>
+              <td id="otherCount"></td>
+            </tr>
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td id="elementCount"></td>
+              </tr>
+          </tfoot>
+          </tbody>
+        </table>
+
+
+        </table>
+        <input class="block" id="instrument-name" value="" placeholder="Intrument Name" />
+        <input class="block" id="author-name" value="" placeholder="Your Name" />
         <input id="demo-URL" placeholder="URL to demo video" />
-        <textarea id="xml-edit"></textarea>
+
+
+
         <a target="_blank" href="data.txt">Example code</a>
+        
+        <textarea id="xml-edit"></textarea>
       </section>
 
       <section id="share">

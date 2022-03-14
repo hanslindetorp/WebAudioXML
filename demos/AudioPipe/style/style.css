@@ -86,10 +86,13 @@ navigation > select {
 }
 
 #edit input {
-  display: block;
   width: 30em;
   padding: 3px;
   margin: 3px;
+}
+
+.block {
+  display: block;
 }
 
 textarea {
@@ -111,4 +114,28 @@ textarea {
   width: 300px;
   height: auto;
   display: block;
+}
+
+
+#edit #statistics {
+  position: absolute;
+  right: 1em;
+  font-size: 0.6em;
+}
+
+#edit #statistics tr {
+  border: 1px solid #999;
+}
+
+
+#edit #statistics thead, 
+#edit #statistics tfoot {
+  font-weight: bold;
+}
+
+#edit #statistics th:first-child {
+  text-align: left;
+}
+#edit #statistics tr > *:nth-child(2) {
+  text-align: right;
 }

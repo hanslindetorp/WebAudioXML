@@ -250,7 +250,10 @@ window.addEventListener("load", () => {
 
   let initCodeMirror = xml => {
     let myTextArea = document.querySelector("#xml-edit");
-    myCodeMirror = CodeMirror.fromTextArea(myTextArea);
+    myCodeMirror = CodeMirror.fromTextArea(myTextArea, {
+      lineNumbers: true,
+      mode: "xml"
+    });
 
     let scale = document.querySelector("main").dataset.scale;
     document.querySelectorAll(".CodeMirror-cursors, .CodeMirror-measure:nth-child(2) + div").forEach(cmObj => {
@@ -258,9 +261,26 @@ window.addEventListener("load", () => {
       cmObj.style.transformOrigin = "0 0";
     });
 
-
     str = XML.prettify(xml, true);
     myCodeMirror.setValue(str);
+
+    let stats = webAudioXML.statistics;
+    let so = stats.elementCount;
+    let elCnt = 0;
+    let varsCount = so.var || 0;
+    Object.entries(so).forEach(([key, value]) => {
+      elCnt += value;
+    });
+    elCnt--;
+    let otherCnt = elCnt - varsCount - so.OscillatorNode - so.BiquadFilterNode - so.GainNode || 0;
+    document.querySelector("#edit #elementCount").innerHTML = elCnt || 0;
+    document.querySelector("#edit #varsCount").innerHTML = varsCount || 0;
+    document.querySelector("#edit #oscCount").innerHTML = so.oscillatornode || 0;
+    document.querySelector("#edit #filterCount").innerHTML = so.biquadfilternode || 0;
+    document.querySelector("#edit #gainCount").innerHTML = so.gainnode || 0;
+    document.querySelector("#edit #otherCount").innerHTML = otherCnt || 0;
+
+
   }
 
   let data = dataFromURL();
@@ -346,3 +366,6 @@ function dataFromURL(){
   str = lzw_decode(str);
   return JSON.parse(str);
 }
+
+
+

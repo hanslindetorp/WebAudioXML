@@ -4613,8 +4613,14 @@ class Parser {
 			let parser = new DOMParser();
 			let xml = parser.parseFromString(str,"text/xml");
 			this._xml = xml.firstChild;
-			this.parseXML(this._xml);
-			resolve(this._xml);
+			if(this._xml.firstElementChild.tagName == "parsererror"){
+				alert(this._xml.firstElementChild.textContent);
+				reject(this._xml);
+			} else {
+				this.parseXML(this._xml);
+				resolve(this._xml);
+			}
+			
 		});
 	}
 
