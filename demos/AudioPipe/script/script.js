@@ -267,20 +267,25 @@ window.addEventListener("load", () => {
     let stats = webAudioXML.statistics;
     let so = stats.elementCount;
     let elCnt = 0;
-    let varsCount = so.var || 0;
+    let tbody = document.querySelector("#statistics tbody");
     Object.entries(so).forEach(([key, value]) => {
+      if(key == "audio"){return;}
+      
+      let tr = document.createElement("tr");
+      tbody.appendChild(tr);
+
+      let td = document.createElement("td");
+      td.innerHTML = key;
+      tr.appendChild(td);
+
+      td = document.createElement("td");
+      td.innerHTML = value;
+      tr.appendChild(td);
+
       elCnt += value;
     });
     elCnt--;
-    let otherCnt = elCnt - varsCount - so.oscillatornode - so.biquadfilternode - so.gainnode || 0;
     document.querySelector("#edit #elementCount").innerHTML = elCnt || 0;
-    document.querySelector("#edit #varsCount").innerHTML = varsCount || 0;
-    document.querySelector("#edit #oscCount").innerHTML = so.oscillatornode || 0;
-    document.querySelector("#edit #filterCount").innerHTML = so.biquadfilternode || 0;
-    document.querySelector("#edit #gainCount").innerHTML = so.gainnode || 0;
-    document.querySelector("#edit #otherCount").innerHTML = otherCnt || 0;
-
-
   }
 
   let data = dataFromURL();

@@ -116,9 +116,12 @@ textarea {
   display: block;
 }
 
+#edit #statistics-container {
+  float: right;
+  column-count: 3;
+}
 
 #edit #statistics {
-  position: absolute;
   right: 1em;
   font-size: 0.6em;
 }
