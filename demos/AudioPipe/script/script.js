@@ -284,7 +284,6 @@ window.addEventListener("load", () => {
 
       elCnt += value;
     });
-    elCnt--;
     document.querySelector("#edit #elementCount").innerHTML = elCnt || 0;
   }
 
