@@ -11,6 +11,8 @@ class InteractionManager {
 	constructor(waxml){
 		this.defineCustomElements();
 
+		
+
 		let initCall = e => {
 			this.waxml.init();
 			window.removeEventListener("pointerdown", initCall);
@@ -691,12 +693,24 @@ class InteractionManager {
 	}
 
 	setVariable(key, val, transistionTime){
-		if(this._variables[key] instanceof Variable){
+		// 2022-03-23
+		// This is really bad design. There is a global layer of "invisible"
+		// variable objects stored in this._variables and there are global
+		// variable objects created by XML stored in this.waxml.master.variables
+		// These really ought to be the same container, but for now, they aren't...
+		
+		let container;
+		if(this.waxml.master.variables[key] instanceof Variable){
+			container = this.waxml.master.variables;
+		} else if(this._variables[key] instanceof Variable){
+			container = this._variables;
+		}
+		if(container){
 			if(transistionTime){
 				// override transitionTime if specified
-				this._variables[key].setValue(val, transistionTime);
+				container[key].setValue(val, transistionTime);
 			} else {
-				this._variables[key].value = val;
+				container[key].value = val;
 			}
 			
 		} else {

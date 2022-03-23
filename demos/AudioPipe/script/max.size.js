@@ -12,7 +12,7 @@
 		height: 100%;
 	}
 
-	.max-size section{
+	.pages section{
 		position: absolute;
 		width: 100%;
 		height: 100%;
@@ -23,7 +23,7 @@
 		transition: 500ms;
 	}
 
-	.max-size section:target {
+	.pages section:target {
 		opacity: 1;
 		z-index: 0;
 	}

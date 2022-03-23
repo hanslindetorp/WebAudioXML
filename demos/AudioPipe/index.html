@@ -18,11 +18,93 @@
   </head>
 
   <body>
-    <main class="max-size">
+    <main class="xmax-size pages">
       <section id="play">
-        <video class="input_video"></video>
+        <div class="controllers">
+          <div class="sliders">
+            <div class="container">
+              <h3>slider1</h3>
+              <waxml-xy-area external-control="true">
+                <waxml-xy-handle
+                  direction="y"
+                  y="0.2"
+                  data-waxml-target="slider1"
+                ></waxml-xy-handle>
+              </waxml-xy-area>
+            </div>
+
+            <div class="container">
+              <h3>slider2</h3>
+              <waxml-xy-area external-control="true">
+                <waxml-xy-handle
+                  direction="y"
+                  y="0.2"
+                  data-waxml-target="slider2"
+                ></waxml-xy-handle>
+              </waxml-xy-area>
+            </div>
+
+            <div class="container">
+              <h3>slider3</h3>
+              <waxml-xy-area external-control="true">
+                <waxml-xy-handle
+                  direction="y"
+                  y="0.2"
+                  data-waxml-target="slider3"
+                ></waxml-xy-handle>
+              </waxml-xy-area>
+            </div>
+
+            <div class="container">
+              <h3>slider4</h3>
+              <waxml-xy-area external-control="true">
+                <waxml-xy-handle
+                  direction="y"
+                  y="0.2"
+                  data-waxml-target="slider4"
+                ></waxml-xy-handle>
+              </waxml-xy-area>
+            </div>
+          </div>
+
+          <div class="XY">
+
+            <div class="container">
+              <h3>XY-area</h3>
+              <waxml-xy-area rows="8" columns="8" external-control="true">
+                <waxml-xy-handle
+                  direction="xy"
+                  x="0.2"
+                  y="0.5"
+                  data-waxml-target="x1, y1"
+                >x1,y1</waxml-xy-handle>
+                <waxml-xy-handle
+                  direction="xy"
+                  x="0.4"
+                  y="0.5"
+                  data-waxml-target="x2, y2"
+                >x2,y2</waxml-xy-handle>
+                <waxml-xy-handle
+                  direction="xy"
+                  x="0.6"
+                  y="0.5"
+                  data-waxml-target="x3, y3"
+                >x3,y3</waxml-xy-handle>
+                <waxml-xy-handle
+                  direction="xy"
+                  x="0.8"
+                  y="0.5"
+                  data-waxml-target="x4, y4"
+                >x4,y4</waxml-xy-handle>
+              </waxml-xy-area>
+            </div>
+
+          </div>
+        </div>
+        <video class="input_video" width="1000" height="567.5"></video>
         <canvas class="output_canvas" width="1000" height="567.5"></canvas>
-        <waxml-xy-area background-color="rgba(0,0,0,0)" grid-color="rgba(255,255,255,0.4)" columns="8" rows="8"></waxml-xy-area>
+        <waxml-xy-area id="grid" background-color="rgba(0,0,0,0)" grid-color="rgba(255,255,255,0.4)" columns="8" rows="8"></waxml-xy-area>
+
       </section>
       
       <section id="edit">
@@ -119,7 +201,8 @@
       </section>
 
       <navigation>
-        <a id="playBtn" href="#play">Play</a>
+        <a id="playMusicBtn" href="#">Music on/off</a>
+        <a id="playBtn" href="#play">Run</a>
         <a id="editBtn" href="#edit">Edit</a>
         <a id="shareBtn" href="#share">Share</a>
         <a id="helpBtn" href="#help">Help</a>
@@ -136,8 +219,10 @@
           <option value="?data=%7B%22title%22%3A%229.%20Nois%C4%86%2C%22nam%C4%86%C4%88Hans%20Lindetorp%22%C4%92url%C4%87%22%C4%A7%22xm%C4%AB%C4%88%3C%3F%C4%B0l%20version%3D%5C%221.0%C5%81%20encod%C4%9Fg%C5%80%22UTF-8%C5%81%3F%3E%5Cn%3CAu%C5%8Co%C4%B8%C4%BA%C4%BC%C4%BE%C5%8F%C5%83%C5%85%22%20%C4%82%C4%96Un%C4%83%C5%8Fms%C5%86ga%C4%9F%C5%8F%2B3dB%C5%86tr%C4%9A%C4%BC%C4%82%C4%BETi%C4%96%C5%A4%C5%A6%C5%98n%C5%99%20%C6%89%20%3Cvar%20%C4%94%C6%83%C5%81frequ%C5%88cy1%C5%86%C6%8Dl%C6%98%C5%8F%24h%C4%9Ad_r4y%C5%86map%C5%B4%C5%810.1%2C%C6%B09%C6%AA%C6%ACout%C5%8F84%2C4%C5%95%C5%A7steps%C5%8F0%2C2%C5%86%C5%8An%C4%B9r%C6%BA%C5%81MIDI-%3E%C6%94%C6%96%C6%98%C5%89%C6%A9%22%3E%3C%2F%C6%8Dr%C6%86%C6%8A%C6%8B%C7%A1%C6%90%C4%95e%C5%8Flowpas%C5%B0%C5%A7%C6%9E%C6%A0%C5%81%C6%A2%C6%A4_l8%C4%A3l4%C6%B6%C6%AD%C4%BF%C6%AF%C6%B3.%C7%8A%C5%A7%C6%ABp%C6%B8%C7%90%225%C7%8812%C5%A6%20%C7%8C%C7%8E%C8%89%C7%92%C7%94%C7%96%C7%98%C6%97%C6%99%C7%9C%C7%9E%C7%A0%C6%8E%C7%A3%C6%8A%C6%8C%C6%8E%C7%A7%C6%92%22high%C7%AE%C7%B0%C6%9Da%C6%9F%C7%A9%C7%B5%C6%A3%C4%A0%C7%B8%C7%BAo%C7%BC%C7%BE%C6%AE%22%C7%88%C6%B0%C8%84%20%C8%86%C8%88%C6%84%2C%20%C8%8D%C8%8F%C8%91%C4%BA%C8%93%C7%93%C7%95%C7%97%C6%95%C8%98%C7%9B%C5%81%C8%9B%C7%A1%C8%9E%C6%89%C6%88%C8%9F%C7%A6%C6%91%C8%AE%22%C5%B2%C4%9F%C8%AB%C8%AD%C6%A1%C8%B0%C6%A5r%C8%B3%C6%A7%C8%B6%C8%80%C8%B8%C8%8205%C7%BE%C8%BE%C5%81%C6%B2%C9%83%C4%A9%C4%B9%C5%8F%C7%BD%C7%9D%C7%9F%C9%8F%C9%92%C6%89%C8%A0%C6%8F%C9%95%C5%8FQ%C9%9A%C7%B4%22%C7%B6%C8%B1%C7%BC%C7%9C%C8%BC%C6%AC%C8%B7%C8%8C%C9%A8%C6%B9%C5%8F%C8%8B%2C%C9%A7%C5%A7c%C9%AD%C9%96%C9%B0%C9%8E%C8%9D%C9%B4%C7%A5%C8%A1%C9%B8%C5%81%C7%AE%C6%87%C7%B2%C8%AC%C9%BC%C9%BE%C9%9E4x%C9%A2%C7%87%2C%C6%9C%C8%85%C6%B7%CA%87%C5%81-%C6%BD%CA%90%C9%B2%CA%92n%C7%A4%CA%93%3CC%C6%A3%C4%9F%C9%90%C7%A4%C6%8B%C4%8D%C4%8Fe%C8%9B%CA%B8%C4%90%CA%B5%C7%A4%3CBi%C6%97adFil%C7%83r%C4%8D%C4%A1%C5%A8yp%C9%96b%C6%A4%C8%A9%C7%B1%20%C8%97%C7%9A%C6%9A%C6%A1%CB%96%C8%99%CA%A4%20Q%C6%A1%C9%BA%C5%A7%C5%BB%C5%BD%C4%83%C4%BDn%C6%81%C8%A3%C8%8E%C6%85%C7%9F%CB%81%CB%83%CB%85%CB%87%CB%89%CB%8B%CA%BA%CA%93%CA%BF%CB%ACu%CB%84%CB%86%CB%88%C4%BA%CB%B1%CB%8D%CB%8F%C7%AA%C7%AC%CB%93%C5%86%CB%9A%C7%9B%C6%A1%C7%AB%C7%AD%C7%AF%C7%B1%C8%9B%CB%B5%CB%B7%CB%AF%CB%BA%C5%8B%CB%B2%CA%AE%CA%B6%C9%B5%CC%8A%CB%AE%CB%B9%CB%8A%CC%8E%CB%BC%C9%96%C8%A5%C8%A7%CC%80%C5%A7%CC%82%CB%98%C8%AF%C8%A6%C8%A8%CC%87%C9%8D%CB%AB%CB%82%CB%B6%CC%94%CB%B0%CC%8E%CA%BE%C6%8A%CB%B3%C8%9FG%C5%B3n%CB%BB%C9%98%C9%A3-6%C5%B8%CC%A4%2F%CC%AF%C4%9F%CB%B1%CC%AB%C9%B5%CC%BA%CC%B1%CC%97%CC%B3%C6%A1%CC%B3%CC%B8%CC%BF%CC%BC%CC%AD%C9%B5Dy%C6%91icsComp%C6%95%C7%B0%C4%A4%CB%BB%C5%BC%C5%BF%C5%8F%C8%8E%C5%BAh%CD%94h%C8%B4d%C5%8F-3%CA%8B%C8%9B%CD%8A%CD%8C%CD%8E%CD%90%CD%92%CD%94s%CD%96%CC%AA%CD%88%20%CD%B0%3CS%C5%88d%20bu%C7%86%C5%81%23%C4%A1la%CA%81%CD%82%CA%A8%CC%B6%C5%B9%C9%B1%2F%CD%B4%C4%A0%C6%86%CD%B2P%C4%9An%CC%8D%CB%8C%CA%98%C5%ACngM%CC%8El%C5%8FHR%C5%92%C5%86%C8%87%C5%BE%CB%A5X%C6%A1%CA%98%CE%9Bo%CE%9D%C4%BEZ%CD%A23%CC%B8%CE%8Bn%CE%8D%CC%96%C4%A1%CC%BD%CD%B1%CC%90%CC%91%CD%B3%CD%B5%CD%B7%CD%B9%C5%8F%CD%90%C7%8D%C8%B4%C7%8E%CB%B1%C5%B1%CC%B0%C5%B5%C5%B7%CE%84%C8%9B%CE%87d%CA%B5%C7%9F%CA%B2%CC%B0%CE%89%CE%B1%C6%8B%CF%87%CA%B4%CD%B2De%CD%BEy%CB%BBi%CD%A1%C5%81%CD%BD%CD%BF%C5%86%CF%97y%CB%A7%C9%96%C8%8B%C8%8F%C6%ABx%CF%8F%CF%91%CF%9C%CA%880%CB%AA%2F%CF%A2%CD%BF%CD%87%CF%8A%CA%BF%CF%83%CE%B5%CD%BA%22%CD%BC%CF%90%CF%98%C5%A7%CE%81%22%CC%B5%CC%B7%CE%85%CF%83%CF%85%2F%CF%8Cn%CF%89%CA%BF%CE%B8v%CE%BA%CE%8Ee%20src%C5%8Fa%C5%9D%C4%BD%2F%C8%91%C8%B4%C6%B9%CB%A5%C5%83wav%CC%B8%D0%82%D0%84%CE%AD%CC%8F%C5%99%C7%9F%C5%9C%C5%9E%3E%22%7D">9. Noise</option>
           <option value="?data=%7B%22title%22%3A%2210.%20Two%20Parts%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%97%22url%C4%87%22%C4%ADxm%C4%B1%C4%88%3C%3F%C4%B5l%20version%3D%5C%C4%89.0%C5%86%20encod%C4%A5g%C5%85%22UTF-8%C5%86%3F%3E%5Cn%3CAu%C5%90%C4%90%C4%BE%C5%80%C5%82%C5%84%C5%861%C5%88%C5%8A%C4%82%C4%9CUn%C4%83%C5%93ms%C5%8Aga%C4%A5%C5%93-12dB%C5%ABr%C4%A0%C5%81%C4%82%C5%83Ti%C4%9C%C5%932%C5%89%22%C5%9Cn%20%C6%8D%20%C5%9D%5Ct%3Cv%C4%93%20%C4%9A%C6%86%C5%86p%C4%83ch1%C5%8A%C6%94lue%C5%93%24h%C4%A0d_r4y%C5%8Ama%C6%9A%C5%A7%22%C4%8B1%2C%C4%8B%C5%99%22%20%C6%AEpout%C5%9377%2C65%C5%8Asteps%C5%930%2C2%2C4%2C5%2C%C7%819%2C1%C6%B4%C5%BA%C5%8A%C5%8En%C5%A4%C6%BE%C5%86MIDI-%3Efreq%C6%A2%C5%8D%C6%AC%C6%8A%3C%2F%C6%94r%C6%8B%C6%91%C6%93%C6%95%C6%97%C6%A3%C5%86c%C6%BDoff%C6%9E%C6%B8%C6%A0%C6%A2%C6%A4%C6%A6%C4%A6%C6%A98%C4%A9%C6%AA%C6%AD%C6%AF%C5%B7%C5%86%C4%8B0%C6%B4%C6%B3%C8%89%C6%BB%C6%BD%C5%93%C4%8A0%C7%8C%C6%89%20%C7%B9r%C4%BE%C5%933%C5%86%3E%C7%AE%C7%B0%C7%B2n%C7%B3Oscilla%C8%87N%C5%8Fe%20typ%C7%B7%22saw%C4%A9oth%C5%8A%C7%A6%C7%A8%C7%AAcy%C6%A4%C6%9At%C6%9C%C7%BE%20%C6%BCtp%C8%93%C5%86next%C8%9F%C7%AE%C8%A6%C8%A8%C8%AA%C8%AC%C4%AA%C8%AE%C4%A7%C7%B2%C6%92Bi%C7%A9adF%C8%A9%C7%87r%C9%9A%C8%B0%C8%B2%C8%B4%C5%93lowpas%C5%B3%C6%B8%C8%BF%C7%A9%C5%8C%C9%82%C6%A4%C7%B9%C4%A9%C7%BC%C9%88%C9%8A%C9%8C%C7%9E%C4%99%C9%90%C9%92%C7%AD%2F%C9%9E%C9%A0%C9%A2%C9%A4%C4%BF%C9%A7%C9%9C%3C%C4%92n%C9%8F%C9%A6%C8%AF%20%C9%AF%CA%8E%C5%91M%C8%AFl%C5%93HR%C5%96%C5%8A%C6%BB%C6%81%C5%A6X%C5%934%C5%8A%C9%BD%C9%8D%CA%80%C9%91%C9%93%2F%CA%8D%CA%8F%CA%8A%C6%90%C6%92S%C5%8Cd%20bu%C7%8A%C5%86C%C5%83vol%C5%A4%C9%A7%C5%B4%C5%B6%C6%B1-6%C5%BC%CA%A9%CA%B0%C4%A6%C6%8B%C6%8F%C6%8C%C6%8E%CA%AE%C7%B4r%C6%96%C4%9B%C8%B5%C9%85%C6%9C2%C6%9Fa%C6%A1%C8%B5%C6%A5%C6%A7_l%C6%AB%C8%91%C8%8B%C6%B2.%C8%8F.%C6%B7%C6%B9%C6%AF%C9%8A%C5%9353%C7%8F%C9%88%C7%86%C7%88%CA%B6%C6%B2%C7%8D%C7%8F%C7%91%C7%93%2C%C7%95%C7%97%C7%96%CB%94%C6%B8%C7%9B%C7%9D%C5%93%C7%A0%C7%A2%C7%A4%C9%B4%C9%81%C7%AC%C8%A0%C7%AF%C4%93%CA%8B%C7%B0%CB%8F%C6%98%22%C9%B9%C7%BBf%CB%B9%C4%BD%CB%96%C8%81%C5%86%CB%99%C8%84l%C8%86%CA%BB%CA%A3%C6%B8%C6%BA%CB%9F%C8%8D%CB%A2%C9%88%C6%BA%CB%A7%C5%864%C8%96%C6%B5%C7%9A%C4%AF%C8%9C%C5%86%C8%9E%CA%83%C8%A2%C6%90%C8%A4%C6%92%C9%95%C8%A9%C8%AB%C8%AD%CA%91%C9%A9%C8%B5%C8%B7%C8%B9o%C8%BB%C8%BD%C9%B3%C7%A7%C9%B5%C7%AB%C9%84%C6%9Bh%CC%8F%CA%A5%C9%BF%C9%8F%CA%A8%CA%83%CC%B0%C9%97%CC%B3%C9%9B%CB%8C%CA%85u%C9%A1%C9%A3l%C9%A5%C9%A7%C8%B1%C8%B3%C8%B5%C9%AC%C9%AE%C9%B0%C9%B2%20%CC%81%C9%B6%C9%83%CC%93%CC%8C%C7%BC%CD%83%C6%BD%C9%BE%C5%93%CD%86%CA%82%CC%84%CD%8E%CD%90%CA%88%CA%90%CD%8C%CC%AE%CA%8C%C4%A0%CA%AC%CA%91%CA%93%C5%AFng%CA%96%C4%A7%CA%98%C5%86%CA%9A%CA%9C%C6%B8%CA%9E%C4%83%CA%A0%C5%B8%CC%99%C9%89%CD%A4%CA%A6%CD%A7%CA%A9%CA%AB%CA%89%C8%AF%CA%8B%CB%86%CA%B2%CA%B4%CB%AF%CA%B8%C7%9C%CA%BB%CA%BD%C8%AF%CA%BF%CB%9F%CB%82%CB%84%CA%83%CE%8D%CB%88%CB%89%C6%8D%3C%CE%91%CA%BA%CA%BC%CE%8A%C4%A7%20src%C5%93a%C5%A1%C5%82%2F%CB%BB%CA%BB%C6%BD%C5%A6%C5%A9wav%CA%A9%CE%A0%CE%93%CE%A3e%CE%9C%C5%9D%C7%AE%C5%A0%C5%A2%3E%22%7D">10. Two parts</option>
           <option value="?data=%7B%22title%22%3A%2211.%20Speed%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%93%22url%C4%87%22%C4%A9xm%C4%AD%C4%88%3C%3F%C4%B1l%20version%3D%5C%C4%89.0%C5%82%20encod%C4%A1g%C5%81%22UTF-8%C5%82%3F%3E%5Cn%3CAu%C5%8Co%C4%B9%C4%BB%C4%BD%C4%BF%C5%8F%C4%8B%C5%85%22%20%C4%82%C4%98Un%C4%83%C5%8Fms%C5%86ga%C4%A1%C5%8F-9dB%C5%86tr%C4%9C%C4%BD%C4%82%C4%BFTi%C4%98%C5%8F3%C5%A6%C5%98n%C5%99%5Ct%3Cvar%20%C4%96%C6%83%C5%82p%C4%83ch%C5%86%C6%8Dlue%C5%8F%24h%C4%9Cd_l8y%C5%86ma%C6%94%C5%80%C5%820.2%2C%C6%AC%C5%95%C5%A7%C6%A7pout%C6%846%2C4%C6%B1%20steps%C5%8F0%2C%C6%AE4%2C5%2C7%2C9%2C%C4%8A%C7%8E2%C5%86%C5%8An%C4%BAr%C6%B7%C5%82MIDI-%3Efreq%C6%9B%C5%89%C6%A5%22%3E%3C%2F%C6%8Dr%C6%87%C6%8A%C6%8C%C6%8E%C6%90%C4%97%C6%9C%C5%82%C5%B2%C4%A1%C6%98a%C6%9A%C7%B2%22%C6%9E%C6%A0_r8x.s%C4%8F%C4%91%C6%A6%C6%A8%C5%B4%C6%AB%C5%8401%C6%AF%C5%84%C7%91%C6%B2%C6%A8%C6%B5%C7%97%22%C7%841%C5%82%C7%A7%C7%A9%C6%8E%C7%AC%C6%88%C6%8BOscilla%C4%A5rN%C5%8Be%C5%A8y%C4%8F%C5%8Fsaw%C4%A5ot%C6%97%C5%A7%C7%9F%C7%A1%C7%A3cy%C6%9D%C6%94t%C6%96%C5%86%C8%91p%C6%B6%C5%8Fnext%C8%96%C7%A8%C8%9D%C8%9F%C8%A1%C8%A3%C4%A6%C8%A6%C4%A3%C7%AC%C6%8BBi%C7%A2adF%C8%A0%C6%BF%C8%A5%C8%A7%C8%A9%C8%AB%C5%82lowpas%C5%B0%C8%B4%C7%A0%C7%A2%C5%88%C8%B8%C5%8F40%C5%A6%20%C8%BF%C9%81%C5%82%C9%83%C9%85%C9%87%2F%C9%92%C9%94%C9%96%C9%98%C4%BB%C9%8Ee%C9%90%3CG%C5%B3n%C9%BC%20%C7%B4%C6%AA%C7%BA%CA%85%C9%B5%CA%80%C4%A1%C9%BC%C8%9A%C7%A8%C5%9C%C5%9E%3E%22%7D">11. Speed</option>
+          <option value="?data=%7B%22title%22%3A%2212.%20Mixing%20and%20p%C4%95n%C4%91g%22%2C%22nam%C4%86%C4%88H%C4%95s%20L%C4%91detorp%C4%9E%22url%C4%87%22%C4%B2ct%C4%B5%C4%B71%C4%B2xm%C4%B6%C4%88%3CAudio%20vers%C5%88n%3D%5C%C4%89.0%C5%92%20%C4%82%C4%A3U%C4%9Bt%C5%91%22ms%C5%96ga%C4%91%C5%9D%2B3dB%C5%96local%C4%99th%C5%9D%C5%92%3E%5Cn%5Ct%3Cvar%20%C4%A1%C4%A3%C5%9Dsli%C4%ACr1%C5%96%C5%BBlue%C5%9D0.2%C5%96map%C5%A4%C5%920%2C%C6%87%22%20%C6%92pou%C5%9C%C6%96%2C-3%C5%95%C6%9Acon%C5%8Br%C6%A0%22%C5%A8-%3E%C6%9Dw%C5%8C%C5%96%2F%C5%B5%C5%B7%C5%B9%C5%BB%C5%BD%C5%BF%C6%8C%C5%92%C6%82%C6%84%C5%8C%C6%90%C6%9A%C6%89%C6%8B%C6%8D%C6%8F%C6%91%C6%93%C6%95%22%C6%97%C6%99%C6%9B%C6%93%C6%9E%C6%AC%C6%97%C6%A3%C6%A5%20%C6%A7%C6%A9%C5%8C%C6%AC%C6%AE%C6%B0o%C6%B2r%C6%B4%C6%B6%C5%B8%C5%BA%C5%BC%C5%BE%C4%A2%C6%BC%22%C6%BE%C6%853%C6%88%C5%AE%C7%84%C6%96%C7%86%C6%9A%C6%9C%C7%89%C7%8B%C7%87%C6%9D%C6%9F%C6%8D%C6%A2%C6%A4%C5%96%C7%95%C6%AA%C7%98B%C6%AF%C6%B1%C6%B3%C6%9A%C6%B5%C5%B6%C7%A0%C6%B9%C7%A3%C6%80%C6%BD%C6%83%C6%854%C7%AA%C6%8A%C7%A5%C6%8E%C7%81%C7%8D%C6%94%C5%90%C6%A1%C7%8C%C6%9C%C7%8F%C7%B6%C7%92%C7%B9%C6%A8%C7%BB%C5%9D%C7%99%C7%BF%C7%9D%C8%81%C7%9F%C6%B8%C7%A2%C6%BB%C5%9D%C4%99n%C7%8C%C7%83%C7%A5%24x%C8%95%C7%88%C8%93%C7%8A%C6%98%C7%B3%C8%97%C5%92-5%2C5%C7%9E%C8%83%C8%A3%C6%BA%C7%A4%C8%A6%C4%95%C8%90%C8%AA%C5%9D%C8%AC%C8%90%C7%B0%C8%B0%C7%B2%C7%AF%C7%8E%C7%B5%C8%B5%C8%B7%C8%B9%C8%A1%C8%BB%C7%A1%C8%BD%C8%87%22%C8%A7%C7%A9%C7%82%C7%AB%C8%ABx%C9%96%C8%91%C7%B1%C8%B2%C9%89%C7%B4%C6%AC%C8%B6%C8%B8%C8%BA%C6%B7%C9%91%C8%86%C7%A5%C8%A7%C8%8B%C9%97%C8%8D%C9%83x%C9%AA%C9%9C%C9%87%C9%9E%C8%91%C8%B4%22%C9%A2%C9%8E%20%C8%82%C9%A5%C8%85%C8%A5%C5%92%C6%9DsZ%C8%A9%C9%98%C9%83y%C8%AE%C8%92%C7%B6%CA%85%C9%B4-8%C6%A2%C8%90%C9%B9%C8%84%C8%A4%C8%BE%C9%BDo%C9%BF%C9%81%CA%82%C5%92%24y%C9%85%C8%AF%CA%87%C8%B3%C9%8B%C9%B5%CA%8B-%CA%8D%C8%A2%C9%A6%C9%BC%C9%94%CA%93Z%C9%9B%C9%82%CA%97y%C9%9B%C9%86%CA%9C%C9%9F%CA%89%CA%A0%CA%A2%C9%90%C9%BB%CA%91%CA%A6%C9%BF%C9%AF%CA%AA%22%CA%98%C9%AF%CA%AE%C8%94%CA%9D%C9%A1%CA%B2%C9%A4%C7%A0Ch%C5%A3n%C8%A2%C7%A0%C4%8Ex%C5%8C%CB%89t%C7%A0Obje%C4%BABased%C5%85%C5%87%C5%89cl%CB%97s%C8%BF%C4%97%C6%94%C4%95o%C5%A1%CB%87%C9%83%C7%A7%C5%8C%C7%8C%C9%BE%C4%83%C5%8FX%C9%83%C8%A7%CB%AC%CA%93%CB%AE%C6%A8Z%CB%B1%CA%A7%C7%8C%CA%8E%CB%8F%CB%BC%3C%CB%91%CB%93%CB%95%CB%97%CB%99%CB%9B%C5%88%C7%94%CB%9Fs%CB%A1%C5%92rho%C4%AC%C4%A8%CB%9Eav%20%C4%AF%C5%A2%C5%B7%C6%9A%C5%A2%C7%89%24%CB%AAr%C8%90%CB%AD%C4%82%C6%A8%CB%B0%CA%97%C8%A7%CC%9D%CB%B4%CC%9Fn%CB%B7%CC%A2%CA%A7%CA%B3%C6%B7%C5%B8%CB%90%CB%92%CB%94t%CB%96%CB%98%CB%9A%C5%86%CC%85%CC%90%CC%88%C5%9Db%CB%A02%20dru%C5%9F%C8%90%CC%98%C8%B0%CC%9A%C8%89%C5%8C%C9%9B%CC%9E%CB%AF%CB%B1%C4%95%CD%88%CC%A5%C5%8F%CC%A8%CA%BB%C9%BE%CA%A8%CB%83%CB%BC%CC%AE%CC%80%CC%B1%CC%82%CC%B4%CB%9C%CC%86%CB%A0%C6%81%CB%86k%C8%80%20%CD%83%CB%A9%CD%86r%C9%AF%CD%89%CC%A0%CD%8Bn%CD%A7%CD%8E%CB%B6%CB%B8%CA%B8%CD%94%C7%A0%2F%CB%8B%CB%8D%C9%90%2F%CB%85%CB%87%C6%B6%3C%2F%CC%84o%C6%B6%22%7D">12. Mixing and panning</option>
         </select>
         <h1>AudioPipe - Gesture Controlled Musical Instrument</h1>
+        <a id="ctrlBtn" href="#">Controllers</a>
       </navigation>
       
     </main>

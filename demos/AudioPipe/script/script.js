@@ -4,6 +4,7 @@
 const videoElement = document.getElementsByClassName('input_video')[0];
 const canvasElement = document.getElementsByClassName('output_canvas')[0];
 const canvasCtx = canvasElement.getContext('2d');
+const controllers = document.querySelector(".controllers");
 
 function handleError(error) {
   console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
@@ -12,19 +13,55 @@ function handleError(error) {
 
 
 
-class HandController {
+class HandController extends EventTarget {
 
-  constructor(){
+  constructor(canvas){
+    super();
+
+    this.canvas = canvas;
     this.threshold = 0.07;
     this.fingersUp = Array(10).fill(0);
     this._variables = {};
     this._triggers = {};
     this._newTriggers = {};
     this.storedLandmarks = {};
+    this._listeners = {};
   }
+
 
   get numberOfFingersUp(){
     return this.fingersUp.reduce((accumulator, curr) => accumulator + curr);
+  }
+
+  setVariable(key, val){
+    this.variables[key] = val;
+  }
+
+  jointToVarName(hand1, joint1, axis1=""){
+    return `hand_${hand1+joint1+axis1}`;
+  }
+
+  jointToPoint(hand1, joint1){
+    let varName = this.jointToVarName(hand1, joint1);
+    return this.variables[varName];
+  }
+
+  pointBetween(point1, point2){
+    return {x: (point1.x + point2.x)/2, y: (point1.y + point2.y)/2}
+  }
+
+  distanceToVarName(hand1, joint1, hand2, joint2){
+    return `hand_${hand1+joint1}to${hand2+joint2}`;
+  }
+
+  jointsToDistance(hand1, joint1, hand2, joint2){
+    let varName = this.distanceToVarName(hand1, joint1, hand2, joint2);
+    return this.variables[varName];
+  }
+
+  isNear(hand1, joint1, hand2, joint2){
+    let varName = this.distanceToVarName(hand1, joint1, hand2, joint2);
+    return this._triggers[varName];
   }
 
   update(hand, landmarks){
@@ -35,8 +72,15 @@ class HandController {
     
     landmarks.forEach((point, i) => {
       let pointTarget = hand+i;
+      this.setVariable(`hand_${pointTarget}`, point);
+
       Object.entries(point).forEach(([key, val]) => {
-        this._variables[`hand_${pointTarget+key}`] = val;
+        let varName;
+
+
+
+        this.setVariable(`hand_${pointTarget+key}`, val);
+        
 
         // store distances to each other point
         this.storedLandmarks[hand] = landmarks;
@@ -48,10 +92,11 @@ class HandController {
             let dist = this.hypotenuse(distX, distY);
 
             let point2Target = hand2+i2;
-            let varName;
+            
 
             varName = `hand_${pointTarget}xto${point2Target}x`;
-            this._variables[varName] = distX;
+            this.setVariable(varName, distX);
+
             if(!this._triggers[varName] && distX < this.threshold){
               this._triggers[varName] = true;
               this._newTriggers[varName] = true;
@@ -61,7 +106,8 @@ class HandController {
             }
 
             varName = `hand_${pointTarget}yto${point2Target}y`;
-            this._variables[varName] = distY;
+            this.setVariable(varName, distY);
+            
             if(!this._triggers[varName] && distY < this.threshold){
               this._triggers[varName] = true;
               this._newTriggers[varName] = true;
@@ -71,7 +117,8 @@ class HandController {
             }
 
             varName = `hand_${pointTarget}to${point2Target}`;
-            this._variables[varName] = dist;
+            this.setVariable(varName, dist);
+
             if(!this._triggers[varName] && dist < this.threshold){
               this._triggers[varName] = true;
               this._newTriggers[varName] = true;
@@ -128,7 +175,8 @@ class HandController {
     this._variables["hand_fingersUpR"] = rightCnt;
     this._variables["hand_fingersUp"] = leftCnt + rightCnt;
 
-    // distances
+    
+    this.dispatchEvent(new CustomEvent("update", {target: this}));
 
 
 
@@ -151,6 +199,21 @@ class HandController {
     return this.hypotenuse(deltaX, deltaY);   
   }
 
+  variableToCoordinate(varName, axis){
+    let v = this.variables[varName] || 0;
+    let factor = axis == "x" ? this.canvas.width : this.canvas.height;
+    let br = this.canvas.getBoundingClientRect();
+    let offset = axis = "x" ? br.left : br.top;
+    return offset + v * axis;
+  }
+
+  valueToCoordinates(point){
+    let br = this.canvas.getBoundingClientRect();
+    let x = br.left + point.x * br.width;
+    let y = br.top + point.y * br.height;
+    return {x: x, y: y};
+  }
+
   get variables(){
     return this._variables;
   }
@@ -166,7 +229,7 @@ class HandController {
 
 
 
-var handController = new HandController();
+var handController = new HandController(canvasElement);
 
 
 function onResults(results) {
@@ -197,7 +260,10 @@ function onResults(results) {
     if(classification.score > 0.7){     
       let vars = handController.update(classification.label, landmarks);
       Object.entries(vars).forEach(([key, val]) => {
-        webAudioXML.setVariable(key, val);
+        if(typeof val == "number"){
+          webAudioXML.setVariable(key, val);
+        }
+        
       });
       Object.entries(handController.newTriggers).forEach(([selector, state]) => {
         if(state){
@@ -294,32 +360,45 @@ window.addEventListener("load", () => {
     document.querySelector("#instrument-name").value = data.title || "";
     document.querySelector("#author-name").value = data.name || "";
     document.querySelector("#demo-URL").value = data.demoURL || "";
+    controllers.style.zIndex = data.ctrl || 0;
+    controllers.style.opacity = data.ctrl || 0;
 
     webAudioXML.updateFromString(data.xml)
     .then(xml => initCodeMirror(xml));
 
   } else {
-
+    controllers.style.zIndex = 0;
     webAudioXML.updateFromFile("audio-config.xml")
     .then(xml => initCodeMirror(xml));
   }
-
-
-  document.querySelectorAll("navigation > a:not([id='playBtn'])").forEach(el => {
-    el.addEventListener("click", e => {
-      webAudioXML.mute();
-      iMusic.stop();
-    });
+  
+  document.querySelector("navigation > #editBtn").addEventListener("click", e => {
+    webAudioXML.mute();
   });
+
 
   document.querySelector("navigation > #playBtn").addEventListener("click", e => {
     webAudioXML.updateFromString(myCodeMirror.getValue());
-    iMusic.play();
+    
     webAudioXML.init();
     webAudioXML.unmute();
   });
 
+  document.querySelector("navigation > #playMusicBtn").addEventListener("click", e => {
+    if(iMusic.isPlaying()){
+      iMusic.stop();
+      e.target.style.backgroundColor = "#fff";
+    } else {
+      iMusic.play();
+      e.target.style.backgroundColor = "#ccf";
+    }
+    e.preventDefault();
+  });
+
   document.querySelector("navigation > #shareBtn").addEventListener("click", e => {
+
+    webAudioXML.mute();
+
     let url = getSharedLink();  
     let outputText = document.querySelector("#shareURL");
     outputText.innerHTML = url;
@@ -342,6 +421,50 @@ window.addEventListener("load", () => {
     window.location = e.target.value;
   });
 
+  document.querySelector("navigation #ctrlBtn").addEventListener("click", e => {
+    controllers.style.zIndex = controllers.style.zIndex * -1 + 1;
+    controllers.style.opacity = 1;
+    e.preventDefault();
+  });
+
+
+  // remote control waxml_xy_handles with closed thumb+pointing finger on any hand
+  document.querySelectorAll("waxml-xy-area[external-control]").forEach(el => {
+
+    handController.addEventListener("update", e => {
+
+
+      let overCoordinates = [];
+      let remoteCoordinates = [];
+
+      ["l","r"].forEach(h => {
+        let point1 = e.target.jointToPoint(h, 4);
+        let point2 = e.target.jointToPoint(h, 8);
+
+        if(point1 && point2){
+          let pointBetween = e.target.pointBetween(point1, point2);
+          let coordinates = e.target.valueToCoordinates(pointBetween);
+          coordinates.id = h;
+          overCoordinates.push(coordinates);
+  
+          if(e.target.isNear(h, 4, h, 8)){
+            remoteCoordinates.push(coordinates);
+          }
+        }
+
+        if(remoteCoordinates.length){
+          el.remoteControl(remoteCoordinates);
+        } else if(overCoordinates.length){
+          el.pointsOver(overCoordinates);
+        }
+
+      });
+      
+    });
+    
+  });
+
+
 
   window.location = "#play";
 
@@ -352,6 +475,7 @@ function getSharedLink(){
     title: document.querySelector("#instrument-name").value,
     name: document.querySelector("#author-name").value,
     url: document.querySelector("#demo-URL").value,
+    ctrl: document.querySelector(".controllers").style.zIndex,
     xml: myCodeMirror.getValue()
   }
   let str = JSON.stringify(data);
@@ -370,6 +494,3 @@ function dataFromURL(){
   str = lzw_decode(str);
   return JSON.parse(str);
 }
-
-
-

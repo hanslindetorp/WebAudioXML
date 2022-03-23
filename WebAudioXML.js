@@ -2838,6 +2838,8 @@ class InteractionManager {
 	constructor(waxml){
 		this.defineCustomElements();
 
+		
+
 		let initCall = e => {
 			this.waxml.init();
 			window.removeEventListener("pointerdown", initCall);
@@ -3518,12 +3520,24 @@ class InteractionManager {
 	}
 
 	setVariable(key, val, transistionTime){
-		if(this._variables[key] instanceof Variable){
+		// 2022-03-23
+		// This is really bad design. There is a global layer of "invisible"
+		// variable objects stored in this._variables and there are global
+		// variable objects created by XML stored in this.waxml.master.variables
+		// These really ought to be the same container, but for now, they aren't...
+		
+		let container;
+		if(this.waxml.master.variables[key] instanceof Variable){
+			container = this.waxml.master.variables;
+		} else if(this._variables[key] instanceof Variable){
+			container = this._variables;
+		}
+		if(container){
 			if(transistionTime){
 				// override transitionTime if specified
-				this._variables[key].setValue(val, transistionTime);
+				container[key].setValue(val, transistionTime);
 			} else {
-				this._variables[key].value = val;
+				container[key].value = val;
 			}
 			
 		} else {
@@ -5650,7 +5664,7 @@ class Variable {
 		// 		}
 		// 	});
 		// }
-		if(typeof params.default != undefined){
+		if(typeof params.default != "undefined"){
 			this.value = params.default;
 		} else if(typeof params.value != "undefined"){
 			this.value = params.value.valueOf();
@@ -5941,10 +5955,16 @@ class VariableContainer {
 
 	constructor(){
 		this._props = {};
+		this._listeners = {}
 	}
 
 	setVariable(key, val){
 		this[key] = val;
+		if(this._listeners[key]){
+			this._listeners[key].array.forEach(element => {
+				element.update(key, val);
+			});
+		}
 	}
 	getVariable(key){
 		return this[key];
@@ -5954,6 +5974,10 @@ class VariableContainer {
 		return this._props[key];
 	}
 
+	addListener(key, listener){
+		if(!this._listeners[key]) this._listeners[key] = [];
+		this._listeners[key].push(listener);
+	}
 }
 
 
@@ -6493,7 +6517,7 @@ class WebAudio {
 			this.start("*[trig='auto'], *[start='auto']");
 
 			setInterval(e => {
-				this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
+				//this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
 			}, 1000/this.fps);
 		}
 	}
@@ -6518,6 +6542,9 @@ class WebAudio {
 				this._xml = xml;
 				this.initGUI(xml);
 				this.initAudio(xml);
+
+				this.dispatchEvent(new CustomEvent("inited"));
+				this.dispatchEvent(new CustomEvent("init"));
 				resolve(xml);
 			});
 		});
@@ -6532,6 +6559,9 @@ class WebAudio {
 				this._xml = xml;
 				this.initGUI(xml);
 				this.initAudio(xml);
+
+				this.dispatchEvent(new CustomEvent("inited"));
+				this.dispatchEvent(new CustomEvent("init"));
 				resolve(xml);
 			});
 
@@ -7605,25 +7635,115 @@ class XY_area extends HTMLElement {
 
 	constructor(){
 		super();
-		this.style.position = "relative";
-		this.style.backgroundColor = this.getAttribute("background-color") || "#555";
+		// this.style.backgroundColor = this.getAttribute("background-color") || "#555";
 
 		// grid
-		let columns = parseInt(this.getAttribute("columns") || 10);
-		let rows = parseInt(this.getAttribute("rows") || 10);
-		let gridColor = this.getAttribute("grid-color") || "black";
+		let columns = parseInt(this.getAttribute("columns") || 1);
+		let rows = parseInt(this.getAttribute("rows") || 1);
 
-		let colWidth = 100 / columns;
-		let rowHeight = 100 / rows;
+		if(columns * rows > 1){
+			let gridColor = this.getAttribute("grid-color") || "black";
 
-		this.style.backgroundImage = `linear-gradient(${gridColor} 1px, transparent 0),
-		linear-gradient(90deg, ${gridColor} 1px, transparent 0)`;
-		this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
+			let colWidth = 100 / columns;
+			let rowHeight = 100 / rows;
+	
+			this.style.backgroundImage = `linear-gradient(${gridColor} 1px, transparent 0),
+			linear-gradient(90deg, ${gridColor} 1px, transparent 0)`;
+			this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
+		}
 
 		this.style.touchAction = "none";
 		this.style.display = "block";
 
 	}
+
+
+
+	rectOffset(rect, pix = 0){
+		return new DOMRectReadOnly(rect.x-pix, rect.y-pix, rect.width+pix*2, rect.height+pix*2);
+	}
+
+	insideRect(point, rect){
+		return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+	}
+
+	pointsOver(points){
+		this.querySelectorAll("waxml-xy-handle").forEach(handle => {
+			let br = handle.getBoundingClientRect();
+			br = this.rectOffset(br, 25);
+			let inside = false;
+			points.forEach(point => inside = this.insideRect(point, br) || inside);
+
+			if(inside) handle.classList.add("remoteOver");
+			else handle.classList.remove("remoteOver");	
+
+			// extra safety to stop handles from beeing controlled
+			handle.remoteID = 0;
+			handle.classList.remove("remoteControl");
+		});	
+		
+	}
+
+	remoteControl(points){
+
+		let handles = [...this.querySelectorAll("waxml-xy-handle")];
+		handles.forEach(handle => {
+			let br, point;
+
+			if(handle.remoteID){
+				br = this.getBoundingClientRect();
+				point = points.filter(point => this.insideRect(point, br) && point.id == handle.remoteID).pop();
+			} else {
+				br = handle.getBoundingClientRect();
+				br = this.rectOffset(br, 25);
+				point = points.filter(point => {
+					let pointIsInUse = handles.filter(h => h.remoteID == point.id).length > 0;
+					let isInside = this.insideRect(point, br);
+					// if(isInside && pointIsInUse > 0){
+					// 	console.log("colliding");
+					// }
+					return isInside && pointIsInUse == 0;
+				}).pop();
+			}
+			
+			if(point){
+				//points = points.filter(point => !this.insideRect(point, br));
+
+				handle.remoteID = point.id;
+
+				let val = this.coordinateTovalue(point);
+				handle.value = val;
+
+				if(handle.direction.x){
+					handle.style.left = `${handle.x * handle.boundRect.width}px`;
+				}
+				if(handle.direction.y){
+					handle.style.top = `${handle.y * handle.boundRect.height}px`;
+				}
+				handle.dispatchEvent(new CustomEvent("input"));
+
+				handle.classList.add("remoteControl");
+				
+			} else {
+				handle.remoteID = 0;
+				handle.classList.remove("remoteControl");
+			}	
+		});	
+		
+	}
+
+	coordinateTovalue(point){
+
+		let br = this.getBoundingClientRect();
+		let x = (point.x-br.left)/br.width;
+		let y = (point.y-br.top)/br.height;
+		x = Math.max(0, Math.min(1, x));
+		y = Math.max(0, Math.min(1, y));
+		return {x: x, y: y}
+	}
+
+
+
 	connectedCallback() {
 	}
 }
@@ -7650,10 +7770,20 @@ class XY_handle extends HTMLElement {
 		this.style.verticalAlign = "middle";
 		this.style.lineHeight = "1.3em";
 		this.style.padding = "3px";
+		this.style.cursor = "pointer";
+
+		// ensure that the XY_area has a specified position
+		this.parentElement.style.position = this.parentElement.style.position || "relative";
 
 		this.initRects();
 
-		this.direction = this.getAttribute("direction") || "xy";
+		let dir = this.getAttribute("direction");
+		this.direction = {
+			x: dir.includes("x"),
+			y: dir.includes("y")
+		}
+
+
 
 		let x =  this.getAttribute("x") || 0;
 		let y = this.getAttribute("y") || 0;
@@ -7663,6 +7793,12 @@ class XY_handle extends HTMLElement {
 
 		this.move(this.x, this.y);
 
+		let extCtrl = this.getAttribute("external-control");
+		if(extCtrl){
+			extCtrl = extCtrl.split(",");
+			extCtrl.forEach((str, i) => extCtrl[i] = str.trim());
+			this.externalControl = {x:extCtrl[0], y:extCtrl[1]};
+		}
 
 
 		this.addEventListener("pointerdown", e => {
@@ -7680,14 +7816,14 @@ class XY_handle extends HTMLElement {
 			//event.preventDefault();
 			if(this.dragged){
 
-				if(this.direction.includes("x")){
+				if(this.direction.x){
 					let x = e.clientX-this.clickOffset.x-this.boundRect.left;
 					x = Math.max(0, Math.min(x, this.boundRect.width));
 					this.x = x / this.boundRect.width;
 					this.style.left = `${x}px`;
 				}
 
-				if(this.direction.includes("y")){
+				if(this.direction.y){
 					let y = e.clientY-this.clickOffset.y-this.boundRect.top;
 					y = Math.max(0, Math.min(y, this.boundRect.height));
 					this.y = y / this.boundRect.height;
@@ -7699,8 +7835,95 @@ class XY_handle extends HTMLElement {
 
 	}
 
+	rectOffset(rect, pix = 0){
+		return new DOMRectReadOnly(rect.x-pix, rect.y-pix, rect.width+pix*2, rect.height+pix*2);
+	}
+
+	insideRect(point, rect){
+		return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+	}
+
+	pointsOver(points){
+		let br = this.getBoundingClientRect();
+		br = this.rectOffset(br, 30);
+		let inside = false;
+		points.forEach(point => inside = this.insideRect(point, br) || inside);
+
+		if(inside) this.classList.add("remoteOver");
+		else this.classList.remove("remoteOver");		
+	}
+
+	remoteControl(points){
+		
+		let br;
+
+		if(this.isRemoteControlled){
+			br = this.parentElement.getBoundingClientRect();
+		} else {
+			br = this.getBoundingClientRect();
+			br = this.rectOffset(br, 25);
+		}
+
+		let point = points.filter(point => this.insideRect(point, br)).pop();
+		
+		if(point){
+			// inside area
+			let val = this.coordinateTovalue(point);
+			this.value = val;
+			this.isRemoteControlled = true;
+
+			if(this.direction.x){
+				this.style.left = `${this.x * this.boundRect.width}px`;
+			}
+			if(this.direction.y){
+				this.style.top = `${this.y * this.boundRect.height}px`;
+			}
+			this.dispatchEvent(new CustomEvent("input"));
+
+			this.classList.add("remoteControl");
+		} else {
+			this.classList.remove("remoteControl");
+			this.isRemoteControlled = false;
+		}
+		
+	}
+
+	coordinateTovalue(point){
+
+		let br = this.parentElement.getBoundingClientRect();
+		let x = (point.x-br.left)/br.width;
+		let y = (point.y-br.top)/br.height;
+		return {x: x, y: y}
+	}
+
+	update(key, val){
+		
+		if(key == "x" && this.direction.x){
+			this.x = x;
+			this.style.left = `${x * this.boundRect.width}px`;
+		}
+		if(key == "y" && this.direction.y){
+			this.y = y;
+			this.style.top = `${y * this.boundRect.height}px`;
+		}
+		this.dispatchEvent(new CustomEvent("input"));
+
+	}
+
 	get value(){
-		return [this.x, this.y];
+		if(this.direction.x && this.direction.y){
+			return [this.x, this.y];
+		} else if(this.direction.x){
+			return this.x;
+		} else if(this.direction.y){
+			return this.y;
+		}
+		
+	}
+
+	set value(point){
+		this.x = Math.max(0, Math.min(1, point.x));
+		this.y = Math.max(0, Math.min(1, point.y));
 	}
 
 	initRects(){
@@ -7716,8 +7939,8 @@ class XY_handle extends HTMLElement {
 	}
 
 	move(x, y){
-		this.style.left = x * this.boundRect.width + "px";
-		this.style.top = y * this.boundRect.height + "px";
+		if(this.direction.x)this.style.left = x * this.boundRect.width + "px";
+		if(this.direction.y)this.style.top = y * this.boundRect.height + "px";
 	}
 	connectedCallback() {
 

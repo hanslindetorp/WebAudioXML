@@ -25,15 +25,15 @@ main {
 .input_video {
   display: none;
   position: absolute;
-  top: 0;
+  width: 100%;
+  height: auto;
+  top: 32px;
   left: 0;
-  right: 0;
-  bottom: 0;
 
 }
 
 
-.output_canvas, waxml-xy-area {
+.output_canvas, waxml-xy-area#grid {
   /*
   max-width: 100% ;
   display: block;
@@ -44,8 +44,8 @@ main {
 
   display: block;
   position: absolute;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 56.75vw;
 }
 
 navigation {
@@ -141,4 +141,81 @@ textarea {
 }
 #edit #statistics tr > *:nth-child(2) {
   text-align: right;
+}
+
+
+.controllers {
+  position: absolute;
+  z-index: 0;
+  opacity: 0;
+}
+
+.sliders {
+  position: relative;
+  display: inline-block;
+  margin-top: 200px;
+  margin-left: 100px;
+}
+
+.sliders .container {
+  display: inline-block;
+  margin-right: 60px;
+  width: 70px;
+  height: 3500px;
+}
+
+.sliders waxml-xy-area {
+  position: relative;
+  display: inline-block;
+  background-color: rgba(51, 51, 51, 0.303);
+  height: 300px;
+}
+
+.sliders waxml-xy-handle {
+  width: 70px;
+}
+
+waxml-xy-handle.remoteOver {
+  background-color: rgb(255, 201, 84) !important;
+}
+waxml-xy-handle.remoteControl {
+  background-color: rgb(0, 255, 13) !important;
+}
+
+.sliders h3, .sliders waxml-xy-area {
+  border: 1px solid black;
+  border-radius: 5px;
+  width: 70px;
+}
+
+
+.sliders h3, .XY h3 {
+  height: 23px;
+  text-align: center;
+  background-color: rgba(51, 51, 51, 0.7);
+  border: 1px solid black;
+  border-radius: 5px;
+  color: white;
+  margin-bottom: 2px;
+}
+
+
+.XY {
+  position: relative;
+  display: inline-block;
+  margin-top: 200px;
+}
+
+.XY waxml-xy-area {
+  background-color: rgba(51, 51, 51, 0.303);
+  border: 1px solid black;
+  border-radius: 5px;
+  height: 300px;
+  width: 600px;
+}
+.XY waxml-xy-handle {
+  width: 60px;
+  height: 30px;
+  border-radius: 20px !important;
+  color: white;
 }

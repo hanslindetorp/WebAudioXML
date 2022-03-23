@@ -38,7 +38,7 @@ class Variable {
 		// 		}
 		// 	});
 		// }
-		if(typeof params.default != undefined){
+		if(typeof params.default != "undefined"){
 			this.value = params.default;
 		} else if(typeof params.value != "undefined"){
 			this.value = params.value.valueOf();

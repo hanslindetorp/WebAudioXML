@@ -2,15 +2,15 @@
 
 <imusic version="1.0" tempo="100" timeSign="4/4" loopLength="8" showGUI="false">
   <arrangement>
-    <track src="pad" output="#pad"></track>
-    <track src="piano" output="#piano"></track>
-    <track src="rhodes" output="#rhodes"></track>
-    <track src="clav" output="#clav"></track>
-    <track src="organ" output="#organ"></track>
-    <track src="bass1" output="#bass1"></track>
-    <track src="bass2" output="#bass2"></track>
-    <track src="drums1" output="#drums1"></track>
-    <track src="drums2" output="#drums2"></track>
-    <track src="shaker" output="#shaker"></track>
+    <track src="pad" output=".pad"></track>
+    <track src="piano" output=".piano"></track>
+    <track src="rhodes" output=".rhodes"></track>
+    <track src="clav" output=".clav"></track>
+    <track src="organ" output=".organ"></track>
+    <track src="bass1" output=".bass1"></track>
+    <track src="bass2" output=".bass2"></track>
+    <track src="drums1" output=".drums1"></track>
+    <track src="drums2" output=".drums2"></track>
+    <track src="shaker" output=".shaker"></track>
   </arrangement>
 </imusic>

@@ -150,7 +150,7 @@ class WebAudio {
 			this.start("*[trig='auto'], *[start='auto']");
 
 			setInterval(e => {
-				this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
+				//this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
 			}, 1000/this.fps);
 		}
 	}
@@ -175,6 +175,9 @@ class WebAudio {
 				this._xml = xml;
 				this.initGUI(xml);
 				this.initAudio(xml);
+
+				this.dispatchEvent(new CustomEvent("inited"));
+				this.dispatchEvent(new CustomEvent("init"));
 				resolve(xml);
 			});
 		});
@@ -189,6 +192,9 @@ class WebAudio {
 				this._xml = xml;
 				this.initGUI(xml);
 				this.initAudio(xml);
+
+				this.dispatchEvent(new CustomEvent("inited"));
+				this.dispatchEvent(new CustomEvent("init"));
 				resolve(xml);
 			});
 

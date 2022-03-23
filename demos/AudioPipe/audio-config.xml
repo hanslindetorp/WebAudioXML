@@ -1,8 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="-3dB" transitionTime="10">
-    <var name="p" value="$hand_r8x" mapin="0,1" mapout="60,62,64,65,67,69,71,72" curve="step" convert="MIDI->frequency"></var>
-    <var name="g" value="$hand_r4tor8" mapin="0.1,0.2" mapout="1,0"></var>
-	
-    <OscillatorNode frequency="$p" output="next"></OscillatorNode>
-    <GainNode gain="$g"></GainNode>
+<Audio version="1.0" timeUnit="ms" gain="+3dB">
+
+    <var name="slider1" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+    <var name="slider2" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+    <var name="slider3" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+    <var name="slider4" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+
+    <var name="pan1" value="$x1" mapin="0,1" mapout="-5,5"></var>
+    <var name="pan2" value="$x2" mapin="0,1" mapout="-5,5"></var>
+    <var name="pan3" value="$x3" mapin="0,1" mapout="-5,5"></var>
+    <var name="pan4" value="$x4" mapin="0,1" mapout="-5,5"></var>
+
+    <var name="posZ1" value="$y1" mapin="0,1" mapout="-8,-2"></var>
+    <var name="posZ2" value="$y2" mapin="0,1" mapout="-8,-2"></var>
+    <var name="posZ3" value="$y3" mapin="0,1" mapout="-8,-2"></var>
+    <var name="posZ4" value="$y4" mapin="0,1" mapout="-8,-2"></var>
+    
+	<Chain>
+
+		<Mixer>
+			<ObjectBasedAudio class="pad piano" gain="$slider1" positionX="$pan1" positionZ="$posZ1"></ObjectBasedAudio>
+			<ObjectBasedAudio class="rhodes clav organ" gain="$slider2" positionX="$pan2" positionZ="$posZ2"></ObjectBasedAudio>
+			<ObjectBasedAudio class="bass2 drums2" gain="$slider3" positionX="$pan3" positionZ="$posZ3"></ObjectBasedAudio>
+			<ObjectBasedAudio class="shaker" gain="$slider4" positionX="$pan4" positionZ="$posZ4"></ObjectBasedAudio>
+		</Mixer>
+
+	</Chain>
+
 </Audio>
