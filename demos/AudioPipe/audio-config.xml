@@ -6,24 +6,30 @@
     <var name="slider3" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
     <var name="slider4" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
 
-    <var name="pan1" value="$x1" mapin="0,1" mapout="-5,5"></var>
-    <var name="pan2" value="$x2" mapin="0,1" mapout="-5,5"></var>
-    <var name="pan3" value="$x3" mapin="0,1" mapout="-5,5"></var>
-    <var name="pan4" value="$x4" mapin="0,1" mapout="-5,5"></var>
+    <var name="x1" mapin="0,1" mapout="-5,5"></var>
+    <var name="x2" mapin="0,1" mapout="-5,5"></var>
+    <var name="x3" mapin="0,1" mapout="-5,5"></var>
+    <var name="x4" mapin="0,1" mapout="-5,5"></var>
 
-    <var name="posZ1" value="$y1" mapin="0,1" mapout="-8,-2"></var>
-    <var name="posZ2" value="$y2" mapin="0,1" mapout="-8,-2"></var>
-    <var name="posZ3" value="$y3" mapin="0,1" mapout="-8,-2"></var>
-    <var name="posZ4" value="$y4" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y1" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y2" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y3" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y4" mapin="0,1" mapout="-8,-2"></var>
+
+    <var name="x5" default="1" mapin="0.1,0.7" mapout="100,20000" curve="2"></var>
+    <var name="y5" default="1" mapin="0.3,0.9" mapout="8000,20" curve="2"></var>
     
 	<Chain>
 
 		<Mixer>
-			<ObjectBasedAudio class="pad piano" gain="$slider1" positionX="$pan1" positionZ="$posZ1"></ObjectBasedAudio>
-			<ObjectBasedAudio class="rhodes clav organ" gain="$slider2" positionX="$pan2" positionZ="$posZ2"></ObjectBasedAudio>
-			<ObjectBasedAudio class="bass2 drums2" gain="$slider3" positionX="$pan3" positionZ="$posZ3"></ObjectBasedAudio>
-			<ObjectBasedAudio class="shaker" gain="$slider4" positionX="$pan4" positionZ="$posZ4"></ObjectBasedAudio>
+			<ObjectBasedAudio class="pad piano" gain="$slider1" positionX="$x1" positionZ="$y1"></ObjectBasedAudio>
+			<ObjectBasedAudio class="rhodes clav organ" gain="$slider2" positionX="$x2" positionZ="$y2"></ObjectBasedAudio>
+			<ObjectBasedAudio class="bass2 drums2" gain="$slider3" positionX="$x3" positionZ="$y3"></ObjectBasedAudio>
+			<ObjectBasedAudio class="shaker" gain="$slider4" positionX="$x4" positionZ="$y4"></ObjectBasedAudio>
 		</Mixer>
+
+        <BiquadFilterNode type="lowpass" frequency="$x5"></BiquadFilterNode>
+        <BiquadFilterNode type="highpass" frequency="$y5"></BiquadFilterNode>
 
 	</Chain>
 

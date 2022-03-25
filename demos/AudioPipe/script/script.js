@@ -21,7 +21,7 @@ class HandController extends EventTarget {
     this.canvas = canvas;
     this.threshold = 0.07;
     this.fingersUp = Array(10).fill(0);
-    this._variables = {};
+    this.variables = {};
     this._triggers = {};
     this._newTriggers = {};
     this.storedLandmarks = {};
@@ -165,15 +165,15 @@ class HandController extends EventTarget {
     for(let i = 0; i < 5; i++){
       leftCnt += this.fingersUp[i];
     }
-    this._variables["hand_fingersUpL"] = leftCnt;
+    this.variables["hand_fingersUpL"] = leftCnt;
 
     // right hand
     let rightCnt = 0;
     for(let i = 5; i < 10; i++){
       rightCnt += this.fingersUp[i];
     }
-    this._variables["hand_fingersUpR"] = rightCnt;
-    this._variables["hand_fingersUp"] = leftCnt + rightCnt;
+    this.variables["hand_fingersUpR"] = rightCnt;
+    this.variables["hand_fingersUp"] = leftCnt + rightCnt;
 
     
     this.dispatchEvent(new CustomEvent("update", {target: this}));
@@ -211,11 +211,15 @@ class HandController extends EventTarget {
     let br = this.canvas.getBoundingClientRect();
     let x = br.left + point.x * br.width;
     let y = br.top + point.y * br.height;
-    return {x: x, y: y};
+    return {x: x, y: y, id:point.id};
   }
 
   get variables(){
     return this._variables;
+  }
+
+  set variables(v){
+    this._variables = v;
   }
 
   get newTriggers(){
@@ -433,7 +437,14 @@ window.addEventListener("load", () => {
 
     handController.addEventListener("update", e => {
 
+      // direct pointOver->remoteControl
+      let vars = el.pointsWithMatchingID(e.target.variables);
+      let points = vars.map(v => e.target.valueToCoordinates(v));
+      el.remoteControl(points);
 
+
+
+      // grip control
       let overCoordinates = [];
       let remoteCoordinates = [];
 
@@ -444,7 +455,7 @@ window.addEventListener("load", () => {
         if(point1 && point2){
           let pointBetween = e.target.pointBetween(point1, point2);
           let coordinates = e.target.valueToCoordinates(pointBetween);
-          coordinates.id = h;
+          coordinates.id = e.target.distanceToVarName(h,4,h,8);
           overCoordinates.push(coordinates);
   
           if(e.target.isNear(h, 4, h, 8)){

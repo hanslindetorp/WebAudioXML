@@ -40,12 +40,6 @@ class XY_handle extends HTMLElement {
 
 		this.move(this.x, this.y);
 
-		let extCtrl = this.getAttribute("external-control");
-		if(extCtrl){
-			extCtrl = extCtrl.split(",");
-			extCtrl.forEach((str, i) => extCtrl[i] = str.trim());
-			this.externalControl = {x:extCtrl[0], y:extCtrl[1]};
-		}
 
 
 		this.addEventListener("pointerdown", e => {
@@ -79,6 +73,8 @@ class XY_handle extends HTMLElement {
 				this.dispatchEvent(new CustomEvent("input"));
 			}
 		}, false);
+
+		this.style.touchAction = "none";
 
 	}
 

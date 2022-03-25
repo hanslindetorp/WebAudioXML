@@ -146,6 +146,8 @@ textarea {
 
 .controllers {
   position: absolute;
+  top: 40vh;
+  left: 9vw;
   z-index: 0;
   opacity: 0;
 }
@@ -153,26 +155,24 @@ textarea {
 .sliders {
   position: relative;
   display: inline-block;
-  margin-top: 200px;
-  margin-left: 100px;
 }
 
 .sliders .container {
   display: inline-block;
-  margin-right: 60px;
-  width: 70px;
-  height: 3500px;
+  margin-right: 2vw;
+  width: 4vw;
+  height: 50vh;
 }
 
 .sliders waxml-xy-area {
   position: relative;
   display: inline-block;
   background-color: rgba(51, 51, 51, 0.303);
-  height: 300px;
+  height: 40vh;
 }
 
 .sliders waxml-xy-handle {
-  width: 70px;
+  width: 100%;
 }
 
 waxml-xy-handle.remoteOver {
@@ -185,37 +185,45 @@ waxml-xy-handle.remoteControl {
 .sliders h3, .sliders waxml-xy-area {
   border: 1px solid black;
   border-radius: 5px;
-  width: 70px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 
 .sliders h3, .XY h3 {
-  height: 23px;
+  font-size: 1vw;
   text-align: center;
   background-color: rgba(51, 51, 51, 0.7);
   border: 1px solid black;
   border-radius: 5px;
   color: white;
-  margin-bottom: 2px;
+  margin-bottom: 0.5vh;    
+  padding: 0.3vw;
+  box-sizing: border-box;
 }
 
 
 .XY {
   position: relative;
   display: inline-block;
-  margin-top: 200px;
+}
+.XY .container {
+  display: inline-block;
 }
 
 .XY waxml-xy-area {
+  font-size: 1vw;
+  padding: 0.3vw;
+  box-sizing: border-box;
   background-color: rgba(51, 51, 51, 0.303);
   border: 1px solid black;
   border-radius: 5px;
-  height: 300px;
-  width: 600px;
+  height: 40vh;
+  width: 30vw;
 }
 .XY waxml-xy-handle {
-  width: 60px;
-  height: 30px;
+  width: 4vw;
+  height: 2vw;
   border-radius: 20px !important;
   color: white;
 }

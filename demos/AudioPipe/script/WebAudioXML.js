@@ -7652,8 +7652,18 @@ class XY_area extends HTMLElement {
 			this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
 		}
 
+
+		let extCtrl = this.getAttribute("external-control");
+		if(extCtrl){
+			extCtrl = extCtrl.split(",");
+			extCtrl.forEach((str, i) => extCtrl[i] = str.trim());
+			this.externalControl = extCtrl;
+		}
+
+
+
 		this.style.touchAction = "none";
-		this.style.display = "block";
+		this.style.display = "block"; // not good
 
 	}
 
@@ -7667,7 +7677,35 @@ class XY_area extends HTMLElement {
 		return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
 	}
 
+	pointsWithMatchingID(points){
+
+		let arr = [];
+
+		if(points instanceof Array){
+			points.forEach(point => {
+				if(point instanceof Object){
+					if(this.externalControl.filter(id => point.id == id || id == "true").length > 0){
+						arr.push(point);
+					}
+				}
+			});
+		} else if(points instanceof Object){
+			Object.entries(points).forEach(([pointID, point]) => {
+				if(point instanceof Object){
+					if(this.externalControl.filter(id => pointID == id || id == "true").length > 0){
+						point.id = pointID;
+						arr.push(point);
+					}
+				}
+			});
+		}
+		
+		return arr;
+	}
+
 	pointsOver(points){
+		points = this.pointsWithMatchingID(points);
+
 		this.querySelectorAll("waxml-xy-handle").forEach(handle => {
 			let br = handle.getBoundingClientRect();
 			br = this.rectOffset(br, 25);
@@ -7685,26 +7723,35 @@ class XY_area extends HTMLElement {
 	}
 
 	remoteControl(points){
+		points = this.pointsWithMatchingID(points);
 
 		let handles = [...this.querySelectorAll("waxml-xy-handle")];
 		handles.forEach(handle => {
 			let br, point;
 
-			if(handle.remoteID){
-				br = this.getBoundingClientRect();
-				point = points.filter(point => this.insideRect(point, br) && point.id == handle.remoteID).pop();
+			if(handles.length > 1){
+				// select corresponding handle
+				if(handle.remoteID){
+					br = this.getBoundingClientRect();
+					point = points.filter(point => this.insideRect(point, br) && point.id == handle.remoteID).pop();
+				} else {
+					br = handle.getBoundingClientRect();
+					br = this.rectOffset(br, 25);
+					point = points.filter(point => {
+						let pointIsInUse = handles.filter(h => h.remoteID == point.id).length > 0;
+						let isInside = this.insideRect(point, br);
+						// if(isInside && pointIsInUse > 0){
+						// 	console.log("colliding");
+						// }
+						return isInside && pointIsInUse == 0;
+					}).pop();
+				}
 			} else {
-				br = handle.getBoundingClientRect();
-				br = this.rectOffset(br, 25);
-				point = points.filter(point => {
-					let pointIsInUse = handles.filter(h => h.remoteID == point.id).length > 0;
-					let isInside = this.insideRect(point, br);
-					// if(isInside && pointIsInUse > 0){
-					// 	console.log("colliding");
-					// }
-					return isInside && pointIsInUse == 0;
-				}).pop();
+				// move the only one if inside XY-area
+				br = this.getBoundingClientRect();
+				point = points.filter(point => this.insideRect(point, br)).pop();
 			}
+			
 			
 			if(point){
 				//points = points.filter(point => !this.insideRect(point, br));
@@ -7793,12 +7840,6 @@ class XY_handle extends HTMLElement {
 
 		this.move(this.x, this.y);
 
-		let extCtrl = this.getAttribute("external-control");
-		if(extCtrl){
-			extCtrl = extCtrl.split(",");
-			extCtrl.forEach((str, i) => extCtrl[i] = str.trim());
-			this.externalControl = {x:extCtrl[0], y:extCtrl[1]};
-		}
 
 
 		this.addEventListener("pointerdown", e => {
@@ -7832,6 +7873,8 @@ class XY_handle extends HTMLElement {
 				this.dispatchEvent(new CustomEvent("input"));
 			}
 		}, false);
+
+		this.style.touchAction = "none";
 
 	}
 
