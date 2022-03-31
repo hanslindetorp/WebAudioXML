@@ -7,6 +7,9 @@ class WebAudioUtils {
 
 var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_.]*)|var[(]([a-z0-9_]+)[)]/gi;
 var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
+var ENVrxp = /[€]([a-z0-9_.]*)/gi;
+
+
 WebAudioUtils.rxp = rxp;
 WebAudioUtils.rxpVal = rxpVal;
 
@@ -22,6 +25,9 @@ WebAudioUtils.typeFixParam = (param, value) => {
 	// Watcher här. Tänk istället igenom ordningen för hur hela XML-trädet
 	// ska parsas så att allt sker i rätt ordning.
 	if(typeof value == "object" && value.type == "watcher"){
+		return value;
+	}
+	if(WebAudioUtils.getEnvelopeName(value)){
 		return value;
 	}
 	if(WebAudioUtils.nrOfVariableNames(value)){
@@ -159,6 +165,9 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "times":
 		case "values":
 		case "channel":
+		case "dynamictimes":
+		case "dynamicvalues":
+		case "targetvariables":
 		value = WebAudioUtils.split(value);
 		break;
 
@@ -215,31 +224,37 @@ WebAudioUtils.attributesToObject = attributes => {
 	var obj = {};
 
 	if(!attributes){return obj}
-	if(!attributes.length){return obj}
+	// if(!attributes.length){return obj}
 
 
+	[...attributes].forEach(attribute => {
+		param = WebAudioUtils.caseFixParameter(attribute.name);
+		let value = WebAudioUtils.typeFixParam(param, attribute.value);
+		obj[param] = value;
+	});
 
-	for (let i in attributes){
-		if(attributes.hasOwnProperty(i)){
+	// for (let i in attributes){
+	// 	if(attributes.hasOwnProperty(i)){
 
-			// XML parser is inconsistent with the document
-			// When the XML DOM is embeded inside HTML some
-			// browsers interpret all attributes as written
-			// with capital letters
-			let param = attributes[i].name.toLowerCase();
+	// 		// XML parser is inconsistent with the document
+	// 		// When the XML DOM is embeded inside HTML some
+	// 		// browsers interpret all attributes as written
+	// 		// with capital letters
+	// 		let param = attributes[i].name.toLowerCase();
 
-		  	param = WebAudioUtils.caseFixParameter(param);
+	// 	  	param = WebAudioUtils.caseFixParameter(param);
 
-			let value = WebAudioUtils.typeFixParam(param, attributes[i].value);
-			obj[param] = value;
-		}
+	// 		let value = WebAudioUtils.typeFixParam(param, attributes[i].value);
+	// 		obj[param] = value;
+	// 	}
 
-	}
+	// }
 	return obj;
 }
 
 WebAudioUtils.caseFixParameter = param => {
 
+	param = param.toLowerCase();
 
 	switch(param){
 		case "q":
@@ -365,6 +380,9 @@ WebAudioUtils.dbToPower = value => {
 	return Math.pow(2, parseFloat(value) / 3);
 }
 WebAudioUtils.split = (str, separator) => {
+	if(typeof str != "string"){
+		console.log(str);
+	}
 	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : " ";
 	let arr = str.split(separator).map(item => {
 		item = item.trim();
@@ -517,6 +535,17 @@ WebAudioUtils.convertUsingMath = (x, conv) => {
 
 }
 
+WebAudioUtils.getEnvelopeName = (str = "") => {
+	if(typeof str != "string"){
+		return false;
+	} else {
+		return [...str.matchAll(ENVrxp)].map(match => match[1]).pop();
+	}
+}
+WebAudioUtils.replaceEnvelopeName = (str = "") => {
+	return str.replaceAll(ENVrxp, () => "x");
+}
+
 WebAudioUtils.getVariableNames = (str = "") => {
 	if(typeof str != "string"){
 		return [];
@@ -582,6 +611,18 @@ WebAudioUtils.getVariableContainer = (variable, callerNode, variableType) => {
 		curNode = curNode.parentNode;
 	}
 	return target;
+}
+
+
+WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
+	let targets = [];
+	let curNode = callerNode.parentNode;
+	let rootNode = curNode.getRootNode();
+	while(!targets.length && curNode != rootNode){
+		targets = curNode.querySelectorAll(`:scope > Envelope[${attrName}='${str}']`);
+		curNode = curNode.parentNode;
+	}
+	return [...targets];
 }
 
 module.exports = WebAudioUtils;

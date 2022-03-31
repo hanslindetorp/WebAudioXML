@@ -322,7 +322,9 @@ class AudioObject{
 
 
 		  	// audio parameters
-        // these should really be separate classes!
+        // these should really be separate classes or maybe be removed
+        // completely as elements. It would be cleaner to stay with 
+        // audioNodes as elements and properties as attributes
 		  	default:
 		  	this.mapper = new Mapper(this._params);
 
@@ -418,9 +420,11 @@ class AudioObject{
 
 	  	// set parameters
 	  	if(this._params){
+        let envName;
         Object.entries(this._params).forEach(entry => {
           const [key, value] = entry;
           if(typeof this[key] !== "function"){
+            // make sure we're not overwriting a function with a custom attribute...
 
             if(WebAudioUtils.nrOfVariableNames(value)){
               new Watcher(xmlNode, value, {
@@ -456,8 +460,18 @@ class AudioObject{
                   this.setTargetAtTime(key, val, 0, time, true);
                  }
                });
+            } else if(envName = WebAudioUtils.getEnvelopeName(value)){
+
+              // make connection to controlling Envelope
+              let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+              if(envNode){
+                envNode.obj.addListener(this._node[key], value);
+              } else {
+                console.error(`No envelope matches the name '${envName}'`);
+              }
             }
 
+            
             // varning!! Super dangerous feature. Must be changed
             // so that attributes don't overwrite any class functions
             // typeof this[key] !== "function" was added to save from
@@ -684,6 +698,7 @@ class AudioObject{
 
 
 		  	case "envelope":
+          console.log("ENV.start");
         let delay = this.getParameter("delay");
         let fn = () => {};
         let loopFn = () => {};
@@ -822,7 +837,7 @@ class AudioObject{
         value = Math.max(value, param.minValue);
 
   	  	if(transitionTime && param.setTargetAtTime){
-  		  	param.setTargetAtTime(value, startTime, transitionTime);
+  		  	param.setTargetAtTime(value, startTime, transitionTime/3);
   	  	} else if(param.setValueAtTime){
   		  	param.setValueAtTime(value, startTime);
   	  	}

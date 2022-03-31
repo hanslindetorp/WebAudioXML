@@ -3,6 +3,7 @@ var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
 var AudioObject = require('./AudioObject.js');
 var Variable = require('./Variable.js');
+var Envelope = require('./Envelope.js');
 var Watcher = require('./Watcher.js');
 var Synth = require('./Synth.js');
 
@@ -255,7 +256,7 @@ class Parser {
 			let param = params[key];
 			if(typeof param == "string"){
 				if(WebAudioUtils.nrOfVariableNames(param)){
-					//variableObj = new Variable({waxml: this.waxml});
+					//variableObj = new Variable(xmlNode, {waxml: this.waxml});
 					params[key] = new Watcher(xmlNode, param, {
 						waxml: this.waxml,
 						callBack: (val, time) => {
@@ -290,7 +291,7 @@ class Parser {
 				param.forEach((value, i) => {
 					if(typeof value == "string"){
 						if(WebAudioUtils.nrOfVariableNames(value)){
-							//variableObj = new Variable({waxml: this.waxml});
+							//variableObj = new Variable(xmlNode, {waxml: this.waxml});
 							params[key][i] = new Watcher(xmlNode, value, {
 								waxml: this.waxml,
 								callBack: (val, time) => {
@@ -306,7 +307,7 @@ class Parser {
 						value.forEach((item, j) => {
 							if(typeof item == "string"){
 								if(WebAudioUtils.nrOfVariableNames(item)){
-									//variableObj = new Variable({waxml: this.waxml});
+									//variableObj = new Variable(xmlNode, {waxml: this.waxml});
 									params[key][i][j] = new Watcher(xmlNode, item, {
 										waxml: this.waxml,
 										callBack: (val, time) => {
@@ -355,7 +356,7 @@ class Parser {
 			break;
 
 			case "var":
-			variableObj = new Variable(params);
+			variableObj = new Variable(xmlNode, params);
 			if(params.follow){
 
 				this.watcher = new Watcher(xmlNode, params.follow, {
@@ -385,6 +386,10 @@ class Parser {
 			// }
 			target = parentNode.obj;
 			target.setVariable(params.name, variableObj);
+			break;
+
+			case "envelope":
+			xmlNode.obj = new Envelope(xmlNode, this.waxml, params);
 			break;
 
 			default:

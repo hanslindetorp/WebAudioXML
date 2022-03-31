@@ -5,18 +5,22 @@ var WebAudioUtils = require('./WebAudioUtils.js');
 
 class Variable {
 
-	constructor(params){
+	constructor(xmlNode, params){
 		this._params = params;
 		this._callBackList = [];
 		this.waxml = params.waxml;
-		this.lastUpdate = this.time;
+		this.lastUpdate = 0;
+		this._polarity = 0;
 		this._derivative = 0;
+		this._derivativePolarity = 0;
 		this._derivative2 = 0;
+		this._derivative2Polarity = 0;
+		this._xml = xmlNode;
 		this.name = params.name;
 
 		this.derivativeValues = [0];
 		// this.derivative2Values = [0];
-		this.smoothDerivative = 6;
+		this.smoothDerivative = 2;
 
 
 		this._mapper = new Mapper(params);
@@ -66,25 +70,38 @@ class Variable {
 		if(this._value != val){
 			// this.setDerivative(val);
 
-
+			let now = this.time;
 
 			this._value = val;
 			this.mappedValue = this._mapper.getValue(this._value);
 
 			if(typeof this.lastMappedValue == "undefined"){
 				this.lastMappedValue = this.mappedValue;
+				this.lastUpdate = now;
 			} else {
 				let diff = this.mappedValue - this.lastMappedValue;
 				this.lastMappedValue = this.mappedValue;
-				let now = this.time;
+				
 				let time = 1; // now - this.lastUpdate;
 			
 				if(time){
+					if(diff >= 0 && this._polarity <= 0){
+						this._polarity = 1;
+						this.broadCastEvent("trough");
+						this.broadCastEvent("polarityChange");
+					} else if(diff <= 0 && this._polarity >= 0){
+						this._polarity = -1;
+						this.broadCastEvent("crest");
+						this.broadCastEvent("polarityChange");
+					}
+
+
 					let newDerivative = diff; // / time;
 					this.lastUpdate = now;
 	
 					let lastAVG = this._derivative;
 					let newAVG = this.setDerivative(newDerivative);
+
 					this._derivative = newAVG;
 					
 					this._derivative2 = newAVG - lastAVG;
@@ -174,6 +191,13 @@ class Variable {
 		} else {
 			return Date.now();
 		}
+	}
+
+	broadCastEvent(eventName){
+		let selector = `[start="${this.name}.${eventName}"]`;
+		this._xml.parentElement.querySelectorAll(selector).forEach(xmlNode => {
+			xmlNode.obj.start();
+		});
 	}
 
 	// setDerivative(newVal){

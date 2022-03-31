@@ -172,6 +172,7 @@ class Connector {
 
 			switch (xmlNode.nodeName.toLowerCase()) {
 				case "var":
+				case "envelope":
 					// don't connect
 					break;
 				default:

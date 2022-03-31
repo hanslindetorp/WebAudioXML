@@ -143,15 +143,34 @@ class WebAudio {
 		this.variableRouter.addVariableWatcher(variable, callBack);
 	}
 	*/
+	// init(){
+	// 	if(!this.audioInited){
+	// 		this._ctx.resume().then(() => {
+	// 			this.audioInited = true;
+	// 			this.start("*[trig='auto'], *[start='auto']");
+	
+	// 			setInterval(e => {
+	// 				//this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
+	// 			}, 1000/this.fps);
+	// 		}, () => console.log("Web Audio API cannot be initialized"));
+			
+	// 	}
+	// }
+
+
 	init(){
 		if(!this.audioInited){
-			this.audioInited = true;
-			this._ctx.resume();
-			this.start("*[trig='auto'], *[start='auto']");
-
-			setInterval(e => {
+			this._ctx.resume().then(result => {
+				this.audioInited = true;
+				this.start("*[trig='auto'], *[start='auto']");
+				setInterval(e => {
 				//this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
-			}, 1000/this.fps);
+				}, 1000/this.fps);
+			}, result => {
+				// failure
+				console.log("Web Audio API cannot be inited");
+			});
+		
 		}
 	}
 
@@ -266,8 +285,13 @@ class WebAudio {
 		return this.inputBusses.getBus(selector, destinations);
 	}
 
-	start(selector = "*", options){
+	start(selector, options){
 
+		if(!selector){
+			selector = "*";
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
+			selector = `*[start='${selector}']`;
+		}
 		if(this._ctx.state != "running"){
 			this.init();
 		}
@@ -303,6 +327,9 @@ class WebAudio {
 		});
 	}
 
+	stop(selector, options){
+		this.release(selector, options);
+	}
 	
 
 	// stop(selector = "*"){
