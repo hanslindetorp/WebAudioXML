@@ -77,6 +77,10 @@ class BufferSourceObject {
 		}
 	}
 
+	get buffer(){
+		return this._node.buffer;
+	}
+
 	get output(){
 		return this._node;
 	}

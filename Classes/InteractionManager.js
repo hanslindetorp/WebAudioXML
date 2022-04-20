@@ -6,6 +6,8 @@ var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
 var Variable = require("./Variable.js");
 var KeyboardManager = require("./KeyboardManager.js");
+var MidiManager = require("./MidiManager.js");
+
 
 class InteractionManager {
 
@@ -59,6 +61,7 @@ class InteractionManager {
 		this.waxml.addEventListener("inited", e => {
 			this.connectToHTMLelements();
 			this.keyboardManager = new KeyboardManager(this.waxml);
+			this.midiManager = new MidiManager(this.waxml);
 		});
 
 	}

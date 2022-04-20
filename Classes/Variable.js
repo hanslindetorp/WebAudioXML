@@ -194,10 +194,13 @@ class Variable {
 	}
 
 	broadCastEvent(eventName){
-		let selector = `[start="${this.name}.${eventName}"]`;
-		this._xml.parentElement.querySelectorAll(selector).forEach(xmlNode => {
-			xmlNode.obj.start();
-		});
+		if(this._xml){
+			let selector = `[start="${this.name}.${eventName}"]`;
+			this._xml.parentElement.querySelectorAll(selector).forEach(xmlNode => {
+				xmlNode.obj.start();
+			});
+		}
+		
 	}
 
 	// setDerivative(newVal){

@@ -477,7 +477,8 @@ class AudioObject{
             // typeof this[key] !== "function" was added to save from
             // a disaster
             let v = this._params[key].valueOf();
-            if(typeof v !== "undefined")this[key] = v;
+            // if(typeof v !== "undefined")this[key] = v;
+            if(typeof v == typeof this[key] || typeof this[key] == "undefined")this[key] = v;
           }
 
   			});
@@ -663,6 +664,9 @@ class AudioObject{
 
 
 		  	case "audiobuffersourcenode":
+        // this._node.start();
+
+        // sort this out!!
         if(this._node._buffer){
           this._node.start();
         } else {
@@ -938,11 +942,12 @@ class AudioObject{
 
 		  	case "audiobuffersourcenode":
 		  	case "convolvernode":
+        case "objectbasedaudio":
+        case "ambientaudio":
 		  	return this._src;
 		  	break;
 
 		  	default:
-		  	return false;
 		  	break;
 
 	  	}
@@ -1130,6 +1135,30 @@ class AudioObject{
   	get value(){
 	  	return this._node.value;
   	}
+
+    set crossFade(val){
+
+      val = Math.max(0, Math.min(val, 1));
+      this._params.crossfade = val;
+      let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
+        
+      val *= (targets.length - 1); // 0 - nr of children or channelCount
+
+      // Det vore kanske bättre att lägga ut detta i Mapper-objektet
+      // Och att ha en extra GainNode mellan child-objekt och input
+      targets.forEach((target, i) => {
+        let input = target.output ? target.output : target;
+        let dist = Math.abs(i - val);
+        let reduction = Math.min(dist, 1);
+        reduction = Math.pow(reduction, 2); // +3dB for equal power
+        let gain = 1 - reduction;
+        input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
+      });
+    }
+
+    get crossFade(){
+      return this._params.crossfade || 0;
+    }
 
   	set pan(val){
       val = Math.max(-1, Math.min(val, 1));

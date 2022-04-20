@@ -19,18 +19,6 @@ class Watcher {
 
 		this.type = "watcher";
 
-		let env = this.strToEnvelope(arr);
-		if(env){
-			// envelopes operates directly on the audio parameter
-			// rather than on a variable
-			// "arr" might contain a Math expression to map the output
-			// of the envelope (originally between 0-1)
-			// i.e. $env1*2400-1200 to map the envelope to a range of 
-			// -1200 to +1200 which might be suitable for the detune
-			// parameter.
-			env.addListener(arr, params.target);
-			return;
-		}
 		
 		this._variables = this.strToVariables(arr, xmlNode, Variable, params);
 		if(Object.keys(this._variables).length > 0){

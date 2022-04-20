@@ -46,6 +46,7 @@ class Envelope {
 		expression = WebAudioUtils.replaceEnvelopeName(expression);
 		let values = this._params.values.map(x => this.mapValue(x, expression));
 
+		param.setTargetAtTime(values[values.length-1], this._ctx.currentTime, 0.001);
 		this._listeners.push(
 			{
 				obj: param,
@@ -70,7 +71,8 @@ class Envelope {
 		});
 
 		this.running = true;
-		console.log("New ENV.start");
+
+
 
 		let delay = this.getParameter("delay");
         let startTime = delay * this.timeScale + this._ctx.currentTime;
@@ -78,21 +80,26 @@ class Envelope {
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
 		let times = this._params.times.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
 		
-		this._listeners.forEach(target => {
-			target.obj.cancelScheduledValues(startTime);
-			let timeOffset = 0;
-			let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
-		
-			// remove release value
-			values.pop();
-			values.forEach((value, index) => {
-				let time = times[index % this.timeModVal];
-				// See info about timeConstant and reaching the target value:
-				// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
-				target.obj.setTargetAtTime(value, startTime + timeOffset, time/3);
-				timeOffset += time;
+		if(this._params.mode == "mono" && args[2] == 0){
+			// don't retrigger if legato
+		} else {
+			this._listeners.forEach(target => {
+				target.obj.cancelScheduledValues(startTime);
+				let timeOffset = 0;
+				let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
+			
+				// remove release value
+				values.pop();
+				values.forEach((value, index) => {
+					let time = times[index % this.timeModVal];
+					// See info about timeConstant and reaching the target value:
+					// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
+					target.obj.setTargetAtTime(value, startTime + timeOffset, time/3);
+					timeOffset += time;
+				});
 			});
-		});
+		}
+		
 
 		if(this._params.loop){
 			// let loopLength = times.reduce((a, b) => a + b, 0);
@@ -100,9 +107,9 @@ class Envelope {
 			this.nextStartTime = startTime + loopLength;
 			let timeToNextLoop = this.nextStartTime - this._ctx.currentTime;
 			setTimeout(() => {
-				this.start(factor);
+				this.start(args);
 			}, timeToNextLoop * 1000-20);
-		  }
+		}
 
 	}
 
@@ -119,7 +126,10 @@ class Envelope {
 		return f * val;
 	}
 
-	stop(factor = 1){
+	stop(args = []){
+
+		args = [...args];
+		let factor = typeof args[0] == "undefined" ? 1 : args[0];
 
 		this.running = false;
 		this.nextStartTime = 0;
@@ -134,16 +144,21 @@ class Envelope {
 		let t = this._params.times[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
-		this._listeners.forEach(target => {
+		if(this._params.mode == "mono" && args[2] == 0){
+			// Don't release if mono mode and still keys down
+		} else {
+			this._listeners.forEach(target => {
 
-			let v = target.values[vIndex];
-			let value = this.mapDynamicValue(v, factor, this._params.dynamicvalues, vIndex)
-		
-			// See info about timeConstant and reaching the target value:
-			// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
+				let v = target.values[vIndex];
+				let value = this.mapDynamicValue(v, factor, this._params.dynamicvalues, vIndex)
 			
-			target.obj.setTargetAtTime(value, releaseTime, time/3);
-		});
+				// See info about timeConstant and reaching the target value:
+				// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
+				
+				target.obj.setTargetAtTime(value, releaseTime, time/3);
+			});
+		}
+		
 	}
 
 

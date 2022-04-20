@@ -45,7 +45,7 @@ class Parser {
 		return new Promise((resolve, reject) => {
 			let parser = new DOMParser();
 			let xml = parser.parseFromString(str,"text/xml");
-			this._xml = xml.firstChild;
+			this._xml = xml.firstElementChild;
 			if(this._xml.firstElementChild.tagName == "parsererror"){
 				alert(this._xml.firstElementChild.textContent);
 				reject(this._xml);

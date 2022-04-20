@@ -11,29 +11,47 @@ class KeyboardManager {
 	}
 
 	keyDown(e){
-		this.keysPressed[e.key] = true;
-		event.preventDefault();
+		if(!this.keysPressed[e.key]){
 
-		// 1 is factor (eg velocity)
-		// e.key is key (eg note)
-		this.waxml.start(`keydown`, [1, e.key]);
-		this.waxml.stop(`keydown`, [1, e.key]);
-
-		this.waxml.start(`keydown\\/${e.key}`);
-		this.waxml.stop(`keydown\\/${e.key}`);
+			let monoTrig = false;
+			if(!Object.entries(this.keysPressed).find(([key, state]) => state)){
+				monoTrig = true;
+			}
+			
+			this.keysPressed[e.key] = true;
+			//event.preventDefault();
+	
+			// 1 is factor (eg velocity)
+			// e.key is key (eg note)
+			this.waxml.start(`keydown`, [1, e.key, monoTrig]);
+			this.waxml.stop(`keydown`, [1, e.key, monoTrig]);
+	
+			this.waxml.start(`keydown:${e.key}`);
+			this.waxml.stop(`keydown:${e.key}`);
+		}
+		
 	}
 
 	keyUp(e){
-		this.keysPressed[e.key] = false;
-		event.preventDefault();	
-	
-		// 1 is factor (eg velocity)
-		// e.key is key (eg note)
-		this.waxml.start(`keyup`, [1, e.key]);
-		this.waxml.stop(`keyup`, [1, e.key]);
+		if(this.keysPressed[e.key]){
 
-		this.waxml.start(`keyup/${e.key}`);
-		this.waxml.stop(`keyup/${e.key}`);
+			this.keysPressed[e.key] = false;
+			//event.preventDefault();	
+			let monoTrig = false;
+			if(!Object.entries(this.keysPressed).find(([key, state]) => state)){
+				monoTrig = true;
+			}
+		
+			// 1 is factor (eg velocity)
+			// e.key is key (eg note)
+			this.waxml.start(`keyup`, [1, e.key, monoTrig]);
+			this.waxml.stop(`keyup`, [1, e.key, monoTrig]);
+	
+			this.waxml.start(`keyup:${e.key}`);
+			this.waxml.stop(`keyup:${e.key}`);
+		}
+
+		
 	}
 
 }

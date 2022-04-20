@@ -5,9 +5,9 @@ class WebAudioUtils {
 
 }
 
-var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_.]*)|var[(]([a-z0-9_]+)[)]/gi;
-var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
-var ENVrxp = /[€]([a-z0-9_.]*)/gi;
+var rxp = /[$][{]([a-z0-9:_]+)[}]|[$]([a-z0-9:_.]*)|var[(]([a-z0-9:_]+)[)]/gi;
+var rxpVal = /([a-z0-9:_\+\-\$\*\/\ \.]+)/gi;
+var ENVrxp = /[€]([a-z0-9:_.]*)/gi;
 
 
 WebAudioUtils.rxp = rxp;

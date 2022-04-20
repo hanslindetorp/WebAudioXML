@@ -88,7 +88,7 @@ Loader.loadXML = (url) => {
 			.then(xml => {
 				let parser = new DOMParser();
 				let xmlDoc = parser.parseFromString(xml,"text/xml");
-				resolve(xmlDoc.firstChild);
+				resolve(xmlDoc.firstElementChild);
 			},
 			e => {
 					let errMess = "WebAudioXML error. File not found: " + src;

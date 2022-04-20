@@ -26,7 +26,8 @@ html, body {
   top: 80px;
   width: 80px;
   height: 240px;
-  background-color: blue;
+  border: 2px solid black;
+  background-color: white;
   margin: 10px;
   display: inline-block;
   position: absolute;

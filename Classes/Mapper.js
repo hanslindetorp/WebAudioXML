@@ -99,12 +99,32 @@ class Mapper{
 
 		// truncate x if needed
 		if(typeof x == "undefined")return x;
-		
-		x = x.valueOf();
-		x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
-		x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
 
-		return this.mapValue(x);
+		switch(typeof x){
+			case "undefined":
+			return x;
+			break;
+
+			case "string":
+			let i = this.mapin.indexOf(x);
+			if(i == -1){
+				return 0;
+			} else {
+				x = this.mapout[i];
+				x = this.convert(x, i);
+				return x;
+			}
+			break;
+
+			default:
+			x = x.valueOf();
+			x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
+			x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
+			return this.mapValue(x);
+			break;
+
+		}
+		
 	}
 
 

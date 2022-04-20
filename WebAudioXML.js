@@ -695,7 +695,8 @@ class AudioObject{
             // typeof this[key] !== "function" was added to save from
             // a disaster
             let v = this._params[key].valueOf();
-            if(typeof v !== "undefined")this[key] = v;
+            // if(typeof v !== "undefined")this[key] = v;
+            if(typeof v == typeof this[key] || typeof this[key] == "undefined")this[key] = v;
           }
 
   			});
@@ -881,6 +882,9 @@ class AudioObject{
 
 
 		  	case "audiobuffersourcenode":
+        // this._node.start();
+
+        // sort this out!!
         if(this._node._buffer){
           this._node.start();
         } else {
@@ -1156,11 +1160,12 @@ class AudioObject{
 
 		  	case "audiobuffersourcenode":
 		  	case "convolvernode":
+        case "objectbasedaudio":
+        case "ambientaudio":
 		  	return this._src;
 		  	break;
 
 		  	default:
-		  	return false;
 		  	break;
 
 	  	}
@@ -1348,6 +1353,30 @@ class AudioObject{
   	get value(){
 	  	return this._node.value;
   	}
+
+    set crossFade(val){
+
+      val = Math.max(0, Math.min(val, 1));
+      this._params.crossfade = val;
+      let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
+        
+      val *= (targets.length - 1); // 0 - nr of children or channelCount
+
+      // Det vore kanske bättre att lägga ut detta i Mapper-objektet
+      // Och att ha en extra GainNode mellan child-objekt och input
+      targets.forEach((target, i) => {
+        let input = target.output ? target.output : target;
+        let dist = Math.abs(i - val);
+        let reduction = Math.min(dist, 1);
+        reduction = Math.pow(reduction, 2); // +3dB for equal power
+        let gain = 1 - reduction;
+        input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
+      });
+    }
+
+    get crossFade(){
+      return this._params.crossfade || 0;
+    }
 
   	set pan(val){
       val = Math.max(-1, Math.min(val, 1));
@@ -1694,7 +1723,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":14,"./Mapper.js":15,"./Noise.js":16,"./ObjectBasedAudio.js":17,"./Variable.js":23,"./VariableContainer.js":24,"./Watcher.js":25,"./WebAudioUtils.js":27}],3:[function(require,module,exports){
+},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":14,"./Mapper.js":15,"./Noise.js":17,"./ObjectBasedAudio.js":18,"./Variable.js":24,"./VariableContainer.js":25,"./Watcher.js":26,"./WebAudioUtils.js":28}],3:[function(require,module,exports){
 var Loader = require('./Loader.js');
 
 
@@ -1772,6 +1801,10 @@ class BufferSourceObject {
 			let fn = this.callBackList.pop();
 			fn();
 		}
+	}
+
+	get buffer(){
+		return this._node.buffer;
 	}
 
 	get output(){
@@ -2234,6 +2267,7 @@ class Envelope {
 		expression = WebAudioUtils.replaceEnvelopeName(expression);
 		let values = this._params.values.map(x => this.mapValue(x, expression));
 
+		param.setTargetAtTime(values[values.length-1], this._ctx.currentTime, 0.001);
 		this._listeners.push(
 			{
 				obj: param,
@@ -2258,7 +2292,8 @@ class Envelope {
 		});
 
 		this.running = true;
-		console.log("New ENV.start");
+
+
 
 		let delay = this.getParameter("delay");
         let startTime = delay * this.timeScale + this._ctx.currentTime;
@@ -2266,21 +2301,26 @@ class Envelope {
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
 		let times = this._params.times.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
 		
-		this._listeners.forEach(target => {
-			target.obj.cancelScheduledValues(startTime);
-			let timeOffset = 0;
-			let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
-		
-			// remove release value
-			values.pop();
-			values.forEach((value, index) => {
-				let time = times[index % this.timeModVal];
-				// See info about timeConstant and reaching the target value:
-				// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
-				target.obj.setTargetAtTime(value, startTime + timeOffset, time/3);
-				timeOffset += time;
+		if(this._params.mode == "mono" && args[2] == 0){
+			// don't retrigger if legato
+		} else {
+			this._listeners.forEach(target => {
+				target.obj.cancelScheduledValues(startTime);
+				let timeOffset = 0;
+				let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
+			
+				// remove release value
+				values.pop();
+				values.forEach((value, index) => {
+					let time = times[index % this.timeModVal];
+					// See info about timeConstant and reaching the target value:
+					// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
+					target.obj.setTargetAtTime(value, startTime + timeOffset, time/3);
+					timeOffset += time;
+				});
 			});
-		});
+		}
+		
 
 		if(this._params.loop){
 			// let loopLength = times.reduce((a, b) => a + b, 0);
@@ -2288,9 +2328,9 @@ class Envelope {
 			this.nextStartTime = startTime + loopLength;
 			let timeToNextLoop = this.nextStartTime - this._ctx.currentTime;
 			setTimeout(() => {
-				this.start(factor);
+				this.start(args);
 			}, timeToNextLoop * 1000-20);
-		  }
+		}
 
 	}
 
@@ -2307,7 +2347,10 @@ class Envelope {
 		return f * val;
 	}
 
-	stop(factor = 1){
+	stop(args = []){
+
+		args = [...args];
+		let factor = typeof args[0] == "undefined" ? 1 : args[0];
 
 		this.running = false;
 		this.nextStartTime = 0;
@@ -2322,16 +2365,21 @@ class Envelope {
 		let t = this._params.times[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
-		this._listeners.forEach(target => {
+		if(this._params.mode == "mono" && args[2] == 0){
+			// Don't release if mono mode and still keys down
+		} else {
+			this._listeners.forEach(target => {
 
-			let v = target.values[vIndex];
-			let value = this.mapDynamicValue(v, factor, this._params.dynamicvalues, vIndex)
-		
-			// See info about timeConstant and reaching the target value:
-			// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
+				let v = target.values[vIndex];
+				let value = this.mapDynamicValue(v, factor, this._params.dynamicvalues, vIndex)
 			
-			target.obj.setTargetAtTime(value, releaseTime, time/3);
-		});
+				// See info about timeConstant and reaching the target value:
+				// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
+				
+				target.obj.setTargetAtTime(value, releaseTime, time/3);
+			});
+		}
+		
 	}
 
 
@@ -2386,7 +2434,7 @@ class Envelope {
 
 module.exports = Envelope;
 
-},{"./WebAudioUtils.js":27}],7:[function(require,module,exports){
+},{"./WebAudioUtils.js":28}],7:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -2527,7 +2575,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":20}],8:[function(require,module,exports){
+},{"./Sequence.js":21}],8:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -2963,7 +3011,7 @@ module.exports = GUI;
 
 
 
-},{"./Mapper.js":15,"./WebAudioUtils.js":27}],9:[function(require,module,exports){
+},{"./Mapper.js":15,"./WebAudioUtils.js":28}],9:[function(require,module,exports){
 
 
 
@@ -3050,6 +3098,8 @@ var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
 var Variable = require("./Variable.js");
 var KeyboardManager = require("./KeyboardManager.js");
+var MidiManager = require("./MidiManager.js");
+
 
 class InteractionManager {
 
@@ -3103,6 +3153,7 @@ class InteractionManager {
 		this.waxml.addEventListener("inited", e => {
 			this.connectToHTMLelements();
 			this.keyboardManager = new KeyboardManager(this.waxml);
+			this.midiManager = new MidiManager(this.waxml);
 		});
 
 	}
@@ -3792,7 +3843,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./Variable.js":23,"./VariableContainer.js":24,"./WebAudioUtils.js":27,"./XY_area.js":28,"./XY_handle.js":29}],13:[function(require,module,exports){
+},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./MidiManager.js":16,"./Variable.js":24,"./VariableContainer.js":25,"./WebAudioUtils.js":28,"./XY_area.js":29,"./XY_handle.js":30}],13:[function(require,module,exports){
 
 
 class KeyboardManager {
@@ -3806,29 +3857,47 @@ class KeyboardManager {
 	}
 
 	keyDown(e){
-		this.keysPressed[e.key] = true;
-		event.preventDefault();
+		if(!this.keysPressed[e.key]){
 
-		// 1 is factor (eg velocity)
-		// e.key is key (eg note)
-		this.waxml.start(`keydown`, [1, e.key]);
-		this.waxml.stop(`keydown`, [1, e.key]);
-
-		this.waxml.start(`keydown\\/${e.key}`);
-		this.waxml.stop(`keydown\\/${e.key}`);
+			let monoTrig = false;
+			if(!Object.entries(this.keysPressed).find(([key, state]) => state)){
+				monoTrig = true;
+			}
+			
+			this.keysPressed[e.key] = true;
+			//event.preventDefault();
+	
+			// 1 is factor (eg velocity)
+			// e.key is key (eg note)
+			this.waxml.start(`keydown`, [1, e.key, monoTrig]);
+			this.waxml.stop(`keydown`, [1, e.key, monoTrig]);
+	
+			this.waxml.start(`keydown:${e.key}`);
+			this.waxml.stop(`keydown:${e.key}`);
+		}
+		
 	}
 
 	keyUp(e){
-		this.keysPressed[e.key] = false;
-		event.preventDefault();	
-	
-		// 1 is factor (eg velocity)
-		// e.key is key (eg note)
-		this.waxml.start(`keyup`, [1, e.key]);
-		this.waxml.stop(`keyup`, [1, e.key]);
+		if(this.keysPressed[e.key]){
 
-		this.waxml.start(`keyup/${e.key}`);
-		this.waxml.stop(`keyup/${e.key}`);
+			this.keysPressed[e.key] = false;
+			//event.preventDefault();	
+			let monoTrig = false;
+			if(!Object.entries(this.keysPressed).find(([key, state]) => state)){
+				monoTrig = true;
+			}
+		
+			// 1 is factor (eg velocity)
+			// e.key is key (eg note)
+			this.waxml.start(`keyup`, [1, e.key, monoTrig]);
+			this.waxml.stop(`keyup`, [1, e.key, monoTrig]);
+	
+			this.waxml.start(`keyup:${e.key}`);
+			this.waxml.stop(`keyup:${e.key}`);
+		}
+
+		
 	}
 
 }
@@ -3926,7 +3995,7 @@ Loader.loadXML = (url) => {
 			.then(xml => {
 				let parser = new DOMParser();
 				let xmlDoc = parser.parseFromString(xml,"text/xml");
-				resolve(xmlDoc.firstChild);
+				resolve(xmlDoc.firstElementChild);
 			},
 			e => {
 					let errMess = "WebAudioXML error. File not found: " + src;
@@ -4078,12 +4147,32 @@ class Mapper{
 
 		// truncate x if needed
 		if(typeof x == "undefined")return x;
-		
-		x = x.valueOf();
-		x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
-		x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
 
-		return this.mapValue(x);
+		switch(typeof x){
+			case "undefined":
+			return x;
+			break;
+
+			case "string":
+			let i = this.mapin.indexOf(x);
+			if(i == -1){
+				return 0;
+			} else {
+				x = this.mapout[i];
+				x = this.convert(x, i);
+				return x;
+			}
+			break;
+
+			default:
+			x = x.valueOf();
+			x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
+			x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
+			return this.mapValue(x);
+			break;
+
+		}
+		
 	}
 
 
@@ -4431,7 +4520,131 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":19,"./WebAudioUtils.js":27}],16:[function(require,module,exports){
+},{"./Range.js":20,"./WebAudioUtils.js":28}],16:[function(require,module,exports){
+
+class MidiManager {
+
+	constructor(waxml){
+		this.waxml = waxml;
+		this.keysPressed = Array(16).fill(Array(127).fill(false));
+
+		if (navigator.requestMIDIAccess) {
+			console.log('This browser supports WebMIDI!');
+			navigator.requestMIDIAccess()
+			.then(midiAccess => {
+				// If the user accepts MIDI input
+				// connect incoming MIDI messages from all potential MIDI inputs to getMIDIMessage()
+				for (var input of midiAccess.inputs.values()) {
+					input.onmidimessage = e => this.getMIDIMessage(e);
+				}
+			}, () => {
+				console.error('Could not access your MIDI devices.');
+			});
+		} else {
+			console.error('WebMIDI is not supported in this browser.');
+		}
+
+	}
+
+	getMIDIMessage(event) {
+	
+		// the MIDI event contains the property "data" which is
+		// actual MIDI data
+		
+		
+		// example
+		// MIDI NoteOn, channel 1, Middle C, velocity 127
+		// event.data = [144, 60, 127]
+		let status = event.data[0]; 
+		let data1 = event.data[1];
+		let data2 = event.data[2]; 
+		
+		
+		
+		// to remove the channel information (accepting input from all MIDI channels)
+		// then perform this magic line
+		// (read more: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators	
+		let channel = status % 0x10;
+		status = status >> 4;
+		
+		let val;
+		switch (status) {
+			case 9: // NoteOn
+			if (data2 > 0) {
+				this.noteOn(channel, data1, data2);
+			} else {
+				this.noteOff(channel, data1);
+			}
+			break;
+
+
+			case 8: // NoteOff
+			this.noteOff(channel, data1, data2);
+			break;
+
+
+			case 11: // control change (volyme, pan, etc)
+			val = data2/127;
+			this.waxml.setVariable(`MIDI:CC:${data1}`, val);
+			this.waxml.setVariable(`MIDI:ControlChange:${data1}`, val);
+			break;
+				
+			case 14: // pitch bend
+			val = (data2 + data1/128)/64 - 1;
+			this.waxml.setVariable(`MIDI:PB`, val);
+			this.waxml.setVariable(`MIDI:PitchBend`, val);
+			break;
+
+			default:
+			return;
+			break;
+		}
+		console.log({status: status, channel: channel, data1: data1, data2: data2});
+	}
+
+	noteOn(ch, key, vel){
+
+		if(!this.keysPressed[ch][key]){
+
+			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			this.keysPressed[ch][key] = true;
+
+			this.waxml.start(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
+			this.waxml.start(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
+			this.waxml.start(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
+			this.waxml.start(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+
+			this.waxml.stop(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
+			this.waxml.stop(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
+			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
+			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+
+		}
+	}
+
+	noteOff(ch, key, vel = 127){
+
+		if(this.keysPressed[ch][key]){
+
+			this.keysPressed[ch][key] = false;
+			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+	
+			this.waxml.start(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
+			this.waxml.start(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
+			this.waxml.start(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
+			this.waxml.start(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+
+			this.waxml.stop(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
+			this.waxml.stop(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
+			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
+			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+		}
+	}
+
+}
+
+module.exports = MidiManager;
+},{}],17:[function(require,module,exports){
 
 var processorName = 'white-noise-processor';
 var _noise;
@@ -4494,7 +4707,7 @@ class Noise {
 module.exports = Noise;
 
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 
@@ -4844,7 +5057,7 @@ class ObjectBasedAudio {
 
 module.exports = ObjectBasedAudio;
 
-},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],18:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],19:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -4892,7 +5105,7 @@ class Parser {
 		return new Promise((resolve, reject) => {
 			let parser = new DOMParser();
 			let xml = parser.parseFromString(str,"text/xml");
-			this._xml = xml.firstChild;
+			this._xml = xml.firstElementChild;
 			if(this._xml.firstElementChild.tagName == "parsererror"){
 				alert(this._xml.firstElementChild.textContent);
 				reject(this._xml);
@@ -5265,7 +5478,7 @@ class Parser {
 
 module.exports = Parser;
 
-},{"./AudioObject.js":2,"./Envelope.js":6,"./Loader.js":14,"./Synth.js":21,"./Variable.js":23,"./Watcher.js":25,"./WebAudioUtils.js":27}],19:[function(require,module,exports){
+},{"./AudioObject.js":2,"./Envelope.js":6,"./Loader.js":14,"./Synth.js":22,"./Variable.js":24,"./Watcher.js":26,"./WebAudioUtils.js":28}],20:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -5399,7 +5612,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":27}],20:[function(require,module,exports){
+},{"./WebAudioUtils.js":28}],21:[function(require,module,exports){
 
 
 
@@ -5526,7 +5739,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -5784,7 +5997,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":22,"./Watcher.js":25,"./WebAudioUtils.js":27}],22:[function(require,module,exports){
+},{"./Trigger.js":23,"./Watcher.js":26,"./WebAudioUtils.js":28}],23:[function(require,module,exports){
 
 
 
@@ -5893,7 +6106,7 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -6090,10 +6303,13 @@ class Variable {
 	}
 
 	broadCastEvent(eventName){
-		let selector = `[start="${this.name}.${eventName}"]`;
-		this._xml.parentElement.querySelectorAll(selector).forEach(xmlNode => {
-			xmlNode.obj.start();
-		});
+		if(this._xml){
+			let selector = `[start="${this.name}.${eventName}"]`;
+			this._xml.parentElement.querySelectorAll(selector).forEach(xmlNode => {
+				xmlNode.obj.start();
+			});
+		}
+		
 	}
 
 	// setDerivative(newVal){
@@ -6241,7 +6457,7 @@ class Variable {
 
 module.exports = Variable;
 
-},{"./Mapper.js":15,"./WebAudioUtils.js":27}],24:[function(require,module,exports){
+},{"./Mapper.js":15,"./WebAudioUtils.js":28}],25:[function(require,module,exports){
 
 
 
@@ -6277,7 +6493,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -6299,18 +6515,6 @@ class Watcher {
 
 		this.type = "watcher";
 
-		let env = this.strToEnvelope(arr);
-		if(env){
-			// envelopes operates directly on the audio parameter
-			// rather than on a variable
-			// "arr" might contain a Math expression to map the output
-			// of the envelope (originally between 0-1)
-			// i.e. $env1*2400-1200 to map the envelope to a range of 
-			// -1200 to +1200 which might be suitable for the detune
-			// parameter.
-			env.addListener(arr, params.target);
-			return;
-		}
 		
 		this._variables = this.strToVariables(arr, xmlNode, Variable, params);
 		if(Object.keys(this._variables).length > 0){
@@ -6671,7 +6875,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":23,"./WebAudioUtils.js":27}],26:[function(require,module,exports){
+},{"./Variable.js":24,"./WebAudioUtils.js":28}],27:[function(require,module,exports){
 /*
 MIT License
 
@@ -7373,7 +7577,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":8,"./HL2.js":10,"./InputBusses.js":11,"./InteractionManager.js":12,"./Parser.js":18,"./Variable.js":23,"./WebAudioUtils.js":27}],27:[function(require,module,exports){
+},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":8,"./HL2.js":10,"./InputBusses.js":11,"./InteractionManager.js":12,"./Parser.js":19,"./Variable.js":24,"./WebAudioUtils.js":28}],28:[function(require,module,exports){
 
 class WebAudioUtils {
 
@@ -7381,9 +7585,9 @@ class WebAudioUtils {
 
 }
 
-var rxp = /[$][{]([a-z0-9_]+)[}]|[$]([a-z0-9_.]*)|var[(]([a-z0-9_]+)[)]/gi;
-var rxpVal = /([a-z0-9_\+\-\$\*\/\ \.]+)/gi;
-var ENVrxp = /[€]([a-z0-9_.]*)/gi;
+var rxp = /[$][{]([a-z0-9:_]+)[}]|[$]([a-z0-9:_.]*)|var[(]([a-z0-9:_]+)[)]/gi;
+var rxpVal = /([a-z0-9:_\+\-\$\*\/\ \.]+)/gi;
+var ENVrxp = /[€]([a-z0-9:_.]*)/gi;
 
 
 WebAudioUtils.rxp = rxp;
@@ -8003,7 +8207,7 @@ WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
 
 module.exports = WebAudioUtils;
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
@@ -8172,7 +8376,7 @@ class XY_area extends HTMLElement {
 
 module.exports = XY_area;
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 
 
 
@@ -8367,4 +8571,4 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{}]},{},[26]);
+},{}]},{},[27]);
