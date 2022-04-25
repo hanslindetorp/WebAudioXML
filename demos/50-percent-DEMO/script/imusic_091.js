@@ -3183,7 +3183,7 @@ class GUI {
 				// and not be disconnected
 				// BUT if timeToLegalBreak is shorter than the remaining part of the region
 				// (set by partLength) it will be faded and disconnected anyway
-
+				return;
 				let remainingTime = 0;
 				this.playingParts.forEach(part => {
 					let remainingPartTime = (part.lastTriggedTime + part.length) - (audioContext.currentTime + timeToLegalBreak);
@@ -6170,6 +6170,7 @@ class GUI {
 	}
 
 	iMus.next = function(){
+		console.log("next");
 		if(!defaultInstance.currentSection){
 			iMus.play();
 		} else {

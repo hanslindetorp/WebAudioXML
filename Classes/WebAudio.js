@@ -311,7 +311,8 @@ class WebAudio {
 	}
 
 	trig(selector, options){
-		
+		if(!this._xml){return}
+
 		this._xml.querySelectorAll(`*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
@@ -323,6 +324,8 @@ class WebAudio {
 	
 
 	release(selector, options){
+		if(!this._xml){return}
+		
 		this._xml.querySelectorAll(`*[noteoff='${selector}'], *[stop='${selector}']`).forEach(XMLnode => {
 			if(XMLnode.obj.stop){
 				XMLnode.obj.stop(options);

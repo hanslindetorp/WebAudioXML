@@ -3856,7 +3856,7 @@ class InteractionManager {
 		// These really ought to be the same container, but for now, they aren't...
 		
 		let container;
-		if(this.waxml.master.variables[key] instanceof Variable){
+		if(this.waxml.master && this.waxml.master.variables[key] instanceof Variable){
 			container = this.waxml.master.variables;
 		} else if(this._variables[key] instanceof Variable){
 			container = this._variables;
@@ -7254,7 +7254,8 @@ class WebAudio {
 	}
 
 	trig(selector, options){
-		
+		if(!this._xml){return}
+
 		this._xml.querySelectorAll(`*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
@@ -7266,6 +7267,8 @@ class WebAudio {
 	
 
 	release(selector, options){
+		if(!this._xml){return}
+		
 		this._xml.querySelectorAll(`*[noteoff='${selector}'], *[stop='${selector}']`).forEach(XMLnode => {
 			if(XMLnode.obj.stop){
 				XMLnode.obj.stop(options);

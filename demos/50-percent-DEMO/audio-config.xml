@@ -35,16 +35,32 @@ Read more: https://github.com/hanslindetorp/WebAudioXML/wiki -->
         <Send bus="#reverb" gain="-3dB" />
         <Send bus=".delay" gain="-6dB" />
     </Chain>
+ 
+    <Mixer>
+        <Chain>
+            <DelayNode class="delay" id="delayL" delayTime="320" />
+            <Send bus="#delayL" gain="-6dB" />
+            <StereoPannerNode pan="-1" />
+        </Chain>
+        <Chain>
+            <DelayNode class="delay" id="delayR" delayTime="479" />
+            <Send bus="#delayR" gain="-6dB" />
+            <StereoPannerNode pan="1" />
+        </Chain>
+    </Mixer>
+
+
+
 
 
     <Mixer mix="$intensity" crossFadeRange="0">
-        <GainNode id="rhythm-section-1" />
-        <GainNode id="rhythm-section-2" />
-        <GainNode id="rhythm-section-3" />
-        <GainNode id="rhythm-section-4" />
-        <GainNode id="rhythm-section-5" />
-        <GainNode id="rhythm-section-6" />
-        <GainNode id="rhythm-section-6" />
+        <GainNode id="bass-keys-1" />
+        <GainNode id="bass-keys-2" />
+        <GainNode id="bass-keys-3" />
+        <GainNode id="bass-keys-4" />
+        <GainNode id="bass-keys-5" />
+        <GainNode id="bass-keys-6" />
+        <GainNode id="bass-keys-6" />
     </Mixer>
 
     <Mixer mix="$intensity" crossFadeRange="0.4">
@@ -61,23 +77,9 @@ Read more: https://github.com/hanslindetorp/WebAudioXML/wiki -->
     <Mixer mix="$intensity" crossFadeRange="0">
         <GainNode id="brass" peak="0.9,1" />
     </Mixer>
-
     
     <Chain>
         <ConvolverNode id="reverb" src="audio/convolution1.wav" />
     </Chain>
-        
-    <Mixer>
-        <Chain>
-            <DelayNode class="delay" id="delayL" delayTime="320" />
-            <Send bus="#delayL" gain="-6dB" />
-            <StereoPannerNode pan="-1" />
-        </Chain>
-        <Chain>
-            <DelayNode class="delay" id="delayR" delayTime="479" />
-            <Send bus="#delayR" gain="-6dB" />
-            <StereoPannerNode pan="1" />
-        </Chain>
-    </Mixer>
 
 </Audio>

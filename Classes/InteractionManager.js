@@ -708,7 +708,7 @@ class InteractionManager {
 		// These really ought to be the same container, but for now, they aren't...
 		
 		let container;
-		if(this.waxml.master.variables[key] instanceof Variable){
+		if(this.waxml.master && this.waxml.master.variables[key] instanceof Variable){
 			container = this.waxml.master.variables;
 		} else if(this._variables[key] instanceof Variable){
 			container = this._variables;

@@ -41,12 +41,12 @@ The first element contains various global settings.-->
 		</track>
 
 		
-		<track src="rhythm-section-1" output="#rhythm-section-1" />
-		<track src="rhythm-section-1" output="#rhythm-section-2" />
-		<track src="rhythm-section-3" output="#rhythm-section-3" />
-		<track src="rhythm-section-4" output="#rhythm-section-4" />
-		<track src="rhythm-section-5" output="#rhythm-section-5" />
-		<track src="rhythm-section-6" output="#rhythm-section-6" />
+		<track src="bass-keys-1" output="#bass-keys-1" />
+		<track src="bass-keys-1" output="#bass-keys-2" />
+		<track src="bass-keys-3" output="#bass-keys-3" />
+		<track src="bass-keys-4" output="#bass-keys-4" />
+		<track src="bass-keys-5" output="#bass-keys-5" />
+		<track src="bass-keys-6" output="#bass-keys-6" />
 
 		<track src="lead-1" output="#lead-1" />
 		<track src="lead-2" output="#lead-2" upbeat="2/4" />
