@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This WebAudioXML-document describes a virtual mixing console. The root-element
+shall be named "Audio". There is only one element in this element - the Mixer.
+Read more: https://github.com/hanslindetorp/WebAudioXML/wiki -->
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+
+    <var name="f1" value="$hand_fingersUpL" mapin="1,4" mapout="44, 41, 46, 39" curve="step" convert="MIDI->frequency" />
+    <var name="f2" value="$hand_fingersUpL" mapin="1,4" mapout="60, 56, 61, 60" curve="step" convert="MIDI->frequency" />
+    <var name="f3" value="$hand_fingersUpL" mapin="1,4" mapout="63, 63, 65, 64" curve="step" convert="MIDI->frequency" />
+    <var name="f4" value="$hand_fingersUpL" mapin="1,4" mapout="67, 67, 68, 67" curve="step" convert="MIDI->frequency" />
+    <var name="f5" value="$hand_fingersUpL" mapin="1,4" mapout="70, 70, 72, 71" curve="step" convert="MIDI->frequency" />
+
+    <var name="Q" value="$hand_l8y" mapin="0,0.8" mapout="30,0" curve="0.5" />
+    <var name="LP" value="$hand_l8y" mapin="0,0.8" mapout="100,10000" curve="0.5" />
+    <var name="intensity" value="$hand_r8y" mapin="0,0.7" mapout="1,0" />
+
+    <var name="breath_mix" value="$intensity" curve="3" />
+
+    <StereoPannerNode id="breath-1" pan="-0.5" output=".root" />
+    <Mixer gain="$breath_mix" output=".chord">
+        <StereoPannerNode id="breath-2" pan="0.5" />
+    </Mixer>
+
+    <Chain>
+        <Mixer transitionTime="500" gain="-15dB">
+            <BiquadFilterNode class="root chord" type="lowpass" frequency="$LP"></BiquadFilterNode>
+            <BiquadFilterNode class="root" type="bandbass" Q="$Q*2" frequency="$f1" />
+            <BiquadFilterNode class="chord" type="bandbass" Q="$Q" frequency="$f2" />
+            <BiquadFilterNode class="chord" type="bandbass" Q="$Q" frequency="$f3" />
+            <BiquadFilterNode class="chord" type="bandbass" Q="$Q" frequency="$f4" />
+            <BiquadFilterNode class="chord" type="bandbass" Q="$Q" frequency="$f5" />
+        </Mixer>
+        <BiquadFilterNode type="highpass" frequency="300" />
+        <Send bus="#reverb" gain="-3dB" />
+        <Send bus=".delay" gain="-6dB" />
+    </Chain>
+
+
+    <Mixer mix="$intensity" crossFadeRange="0">
+        <GainNode id="rhythm-section-1" />
+        <GainNode id="rhythm-section-2" />
+        <GainNode id="rhythm-section-3" />
+        <GainNode id="rhythm-section-4" />
+        <GainNode id="rhythm-section-5" />
+        <GainNode id="rhythm-section-6" />
+        <GainNode id="rhythm-section-6" />
+    </Mixer>
+
+    <Mixer mix="$intensity" crossFadeRange="0.4">
+        <GainNode id="lead-1" peak="0.15, 0.2" />
+        <GainNode id="lead-2" peak="0.3, 0.4" />
+        <GainNode id="lead-3" peak="0.6, 0.7" />
+        <GainNode id="lead-4" peak="0.9, 1" />
+    </Mixer>
+
+    <Mixer mix="$intensity" crossFadeRange="0.2">
+        <GainNode id="strings" peak="0.8, 1" />
+    </Mixer>
+
+    <Mixer mix="$intensity" crossFadeRange="0">
+        <GainNode id="brass" peak="0.9,1" />
+    </Mixer>
+
+    
+    <Chain>
+        <ConvolverNode id="reverb" src="audio/convolution1.wav" />
+    </Chain>
+        
+    <Mixer>
+        <Chain>
+            <DelayNode class="delay" id="delayL" delayTime="320" />
+            <Send bus="#delayL" gain="-6dB" />
+            <StereoPannerNode pan="-1" />
+        </Chain>
+        <Chain>
+            <DelayNode class="delay" id="delayR" delayTime="479" />
+            <Send bus="#delayR" gain="-6dB" />
+            <StereoPannerNode pan="1" />
+        </Chain>
+    </Mixer>
+
+</Audio>

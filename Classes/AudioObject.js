@@ -129,6 +129,8 @@ class AudioObject{
 			    this._node = this._ctx.createPanner();
 			    this._node.panningModel = 'equalpower';
 			  }
+        this._output = new GainNode(this._ctx);
+        this._node.connect(this._output);
         break;
 
         case "pannernode":
@@ -567,12 +569,12 @@ class AudioObject{
   	}
 
     get output(){
-      return this._node;
+      return this._output || this._node;
     }
 
     set output(destination){
       if(destination instanceof GainNode){
-        this._node.connect(destination);
+        this.output.connect(destination);
       }
       
     }
@@ -592,8 +594,9 @@ class AudioObject{
 
   	connect(destination){
 
-	  	if(this._node){
-		  	if(this._node.connect){
+      let source = this.output;
+	  	if(source){
+		  	if(source.connect){
 			  	if(!destination){
             destination = this._ctx.destination;
           }
@@ -602,7 +605,7 @@ class AudioObject{
           }
           destination.forEach(d => {
             d = d.input || d;
-            this._node.connect(d);
+            source.connect(d);
           });
 		  	}
 	  	}
@@ -1119,6 +1122,12 @@ class AudioObject{
 	  	return this._node.type;
   	}
 
+    update(){
+      // update some settings. Typically executed to set init parameters after the whole
+      // audio graph is initialized
+      this.mix = this.mix.valueOf();
+
+    }
 
   	get delayTime(){
 	  	return this._node.delayTime.value / this._params.timescale;
@@ -1136,28 +1145,75 @@ class AudioObject{
 	  	return this._node.value;
   	}
 
-    set crossFade(val){
+
+
+    set mix(val){
 
       val = Math.max(0, Math.min(val, 1));
-      this._params.crossfade = val;
+      this._params.mix = val;
       let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
         
-      val *= (targets.length - 1); // 0 - nr of children or channelCount
+      val *= targets.length; // 0 - nr of children or channelCount
+
+      let crossFadeRange = this._params.crossfaderange;
+      crossFadeRange = typeof crossFadeRange == "undefined" ? 1 : crossFadeRange;
+      crossFadeRange = crossFadeRange || 0.000001;
+      let frameWidth = 1 - crossFadeRange;
 
       // Det vore kanske bättre att lägga ut detta i Mapper-objektet
       // Och att ha en extra GainNode mellan child-objekt och input
       targets.forEach((target, i) => {
         let input = target.output ? target.output : target;
-        let dist = Math.abs(i - val);
-        let reduction = Math.min(dist, 1);
-        reduction = Math.pow(reduction, 2); // +3dB for equal power
+        let fw;
+        let peak = target.getParameter("peak");
+        let peakRange = false;
+        if(peak){
+          peakRange = peak.length > 1;
+          let min = Math.min(...peak) * targets.length;
+          let max = Math.max(...peak) * targets.length;
+          fw = max-min;
+          peak = (min + max) / 2;
+        } else {
+          peak = i + 0.5;
+          fw = frameWidth;
+        }
+        let dist;
+        let reduction;
+
+        // no reduction far left or far right
+        // if not specified with peak range
+        let toTheLeft = i == 0 && val <= peak;
+        let toTheRight = i == targets.length-1 && val >= peak;
+        if((toTheLeft || toTheRight) && !peakRange){
+          reduction = 0;
+        } else {
+
+          // calculate distance to peak of this node
+          if(val < peak){
+            // if val is to the left of node
+            dist = (peak - fw/2) - val;
+          } else {
+            // if val is to the right of node
+            dist = val - (peak + fw/2);
+          }
+          dist /= crossFadeRange;
+          dist = Math.max(0, Math.min(dist, 1));
+
+
+          reduction = Math.min(dist, 1);
+          reduction = Math.pow(reduction, 2); // +3dB for equal power
+        }
+
         let gain = 1 - reduction;
+        if(isNaN(gain)){
+          console.log(gain);
+        }
         input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
       });
     }
 
-    get crossFade(){
-      return this._params.crossfade || 0;
+    get mix(){
+      return this._params.mix || 0;
     }
 
   	set pan(val){

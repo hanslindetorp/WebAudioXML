@@ -276,7 +276,16 @@ class Parser {
 									if(typeof time == "undefined"){
 										time = xmlNode.obj.getParameter("transitionTime");
 									}
-									xmlNode.obj.setTargetAtTime(key, val, 0, time);
+									switch(key){
+										case "mix":
+										xmlNode.obj[key] = val;
+										break;
+
+										default:
+										xmlNode.obj.setTargetAtTime(key, val, 0, time);
+										break;
+									}
+									
 									break;
 								}
 								

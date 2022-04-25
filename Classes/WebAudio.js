@@ -262,8 +262,13 @@ class WebAudio {
 		});
 
 		// make all variable elements broadcast their init values
-		this.querySelectorAll("var").forEach(el => {
-			el.update();
+		this.querySelectorAll("var").forEach(obj => {
+			obj.update();
+		});
+
+		// set mix attributes (needs all children to be inited before execution)
+		this.querySelectorAll("*[mix]").forEach(obj => {
+			obj.update();
 		});
 
 		this.convolvers.forEach(entry => {
@@ -533,6 +538,17 @@ class WebAudio {
 		}
 		
 		this.ui.setVariable(key, val, transitionTime);
+
+		// this REALLY need to be worked through
+		// at the moment I just pass the variable "hand_r8y"
+		if(key == "hand_r8y"){
+			this.plugins.forEach(plugin => {
+				if(plugin.setVariable){
+					plugin.setVariable(key, val);
+				}
+			});
+		}
+		
 	}
 	getVariable(key){
 		return this.ui.getVariable(key);

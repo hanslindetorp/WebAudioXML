@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>iMusic - WebAudioXML</title>
+		<link href="script/mystyle.css" rel="stylesheet" type="text/css" />
+		<link rel="shortcut icon" href="favicon.ico" />
+	</head>
+
+
+	<body>
+
+
+		<h1>iMusic - WebAudioXML</h1>
+		<!-- The buttons trigger iMusic using the data-imusic attribute -->
+		<button data-imusic-pointerdown-play="A">A</button>
+		<button data-imusic-pointerdown-play="B">B</button>
+		<button data-imusic-pointerdown-play="C">C</button>
+		<button data-imusic-pointerdown-stop>STOP</button>
+
+		<div>
+			<label>
+				Chord: <input type="range" value="0" min="0" max="3" data-waxml-input-chord="this.value" />
+			</label>
+			<label>
+				Q: <input type="range" value="0" step="0.01" min="0" max="1" data-waxml-input-q="this.value" />
+			</label>
+			<label>
+				Intensity: <input type="range" value="0" step="0.01" min="0" max="1" data-waxml-input-intensity="this.value" />
+			</label>
+		</div>
+
+		<script src="script/WebAudioXML.js" data-source="audio-configuration.xml"></script>
+		<script src="script/imusic_091.js" data-music-structure="music-configuration.xml"></script>
+
+	</body>
+
+</html>

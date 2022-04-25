@@ -1,36 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="+3dB">
-
-    <var name="slider1" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
-    <var name="slider2" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
-    <var name="slider3" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
-    <var name="slider4" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
-
-    <var name="x1" mapin="0,1" mapout="-5,5"></var>
-    <var name="x2" mapin="0,1" mapout="-5,5"></var>
-    <var name="x3" mapin="0,1" mapout="-5,5"></var>
-    <var name="x4" mapin="0,1" mapout="-5,5"></var>
-
-    <var name="y1" mapin="0,1" mapout="-8,-2"></var>
-    <var name="y2" mapin="0,1" mapout="-8,-2"></var>
-    <var name="y3" mapin="0,1" mapout="-8,-2"></var>
-    <var name="y4" mapin="0,1" mapout="-8,-2"></var>
-
-    <var name="x5" default="1" mapin="0.1,0.7" mapout="100,20000" curve="2"></var>
-    <var name="y5" default="1" mapin="0.3,0.9" mapout="8000,20" curve="2"></var>
+<Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
     
-	<Chain>
+	<var name="pitch1" value="$hand_r4y" mapin="0.1,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="cutoff1" value="$hand_r8tor4" mapin="0.01,0.1" mapout="1000,0" curve="3"></var>
 
-		<Mixer>
-			<ObjectBasedAudio class="pad piano" gain="$slider1" positionX="$x1" positionZ="$y1"></ObjectBasedAudio>
-			<ObjectBasedAudio class="rhodes clav organ" gain="$slider2" positionX="$x2" positionZ="$y2"></ObjectBasedAudio>
-			<ObjectBasedAudio class="bass2 drums2" gain="$slider3" positionX="$x3" positionZ="$y3"></ObjectBasedAudio>
-			<ObjectBasedAudio class="shaker" gain="$slider4" positionX="$x4" positionZ="$y4"></ObjectBasedAudio>
-		</Mixer>
+	<OscillatorNode type="sawtooth" frequency="$pitch1" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="$cutoff1" output="next"></BiquadFilterNode>
+	<PannerNode panningModel="HRTF" positionX="4" output="next"></PannerNode>
+	<Send bus="ConvolverNode" gain="-6dB"></Send>
+ 
+    
+	<var name="pitch2" value="$hand_l4y" mapin="0.1,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="cutoff2" value="$hand_l8tol4" mapin="0.01,0.1" mapout="400,0" curve="3"></var>
 
-        <BiquadFilterNode type="lowpass" frequency="$x5"></BiquadFilterNode>
-        <BiquadFilterNode type="highpass" frequency="$y5"></BiquadFilterNode>
-
-	</Chain>
-
+	<OscillatorNode type="sawtooth" frequency="$pitch2" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="$cutoff2" output="next"></BiquadFilterNode>
+	<PannerNode panningModel="HRTF" positionX="-4" output="next"></PannerNode>
+	<Send bus="ConvolverNode" gain="-6dB"></Send>
+  
+  <ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
+  
 </Audio>

@@ -168,6 +168,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "dynamictimes":
 		case "dynamicvalues":
 		case "targetvariables":
+		case "peak":
 		value = WebAudioUtils.split(value);
 		break;
 

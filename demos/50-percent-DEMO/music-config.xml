@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This is an XML document speciying iMusic content.
+Read more about iMusic: https://github.com/hanslindetorp/iMusicXML
+The first element contains various global settings.-->
+<imusic showGUI="true" version="1.0" tempo="94" timeSign="4/4" loopLength="16" changeOnNext="bar" suffix="wav">
+
+	<arrangement class="A">
+		<track src="audio/breath-1" upbeat="1/16" loopLength="2" output="#breath-1" />
+		<track src="audio/breath-2" upbeat="1/16" loopLength="1" output="#breath-2" />
+	</arrangement>
+
+
+	<arrangement class="B">
+
+		<track src="dr2" follow-hand_r8y="0.6...0.75" loopLength="1" fadeTime="0" />
+		<track src="dr3" follow-hand_r8y="0.4...0.6" loopLength="1" fadeTime="0" />
+		<track follow-hand_r8y="0.2...0.4" loopLength="4" fadeTime="0">
+			<region src="dr4" />	
+			<region src="dr4b" />
+			<region src="dr4b" />
+			<region src="dr4fill" />
+		</track>
+		<track follow-hand_r8y="0...0.2" loopLength="16" fadeTime="0">
+			<region src="dr5a" />	
+			<region src="dr5b" />
+			<region src="dr5b" />
+			<region src="dr5fill1" />
+			<region src="dr5a" />	
+			<region src="dr5b" />
+			<region src="dr5b" />
+			<region src="dr5fill1" />
+			<region src="dr5a" />	
+			<region src="dr5b" />
+			<region src="dr5b" />
+			<region src="dr5fill1" />
+			<region src="dr5a" />	
+			<region src="dr5b" />
+			<region src="dr5b" />
+			<region src="dr5fill2" />
+		</track>
+
+		
+		<track src="rhythm-section-1" output="#rhythm-section-1" />
+		<track src="rhythm-section-1" output="#rhythm-section-2" />
+		<track src="rhythm-section-3" output="#rhythm-section-3" />
+		<track src="rhythm-section-4" output="#rhythm-section-4" />
+		<track src="rhythm-section-5" output="#rhythm-section-5" />
+		<track src="rhythm-section-6" output="#rhythm-section-6" />
+
+		<track src="lead-1" output="#lead-1" />
+		<track src="lead-2" output="#lead-2" upbeat="2/4" />
+		<track src="lead-3" output="#lead-3" />
+		<track src="lead-4" output="#lead-4" />
+
+		<track src="strings" output="#strings" />
+		<track src="brass" output="#brass" />
+
+	</arrangement>
+
+	<arrangement class="C">
+		<track src="ending" loopLength="off" />
+	</arrangement>
+
+</imusic>
