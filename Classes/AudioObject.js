@@ -840,8 +840,10 @@ class AudioObject{
   	  	}
         transitionTime =  transitionTime || this.getParameter("transitionTime") || 0.001;
         
-        value = Math.min(value, param.maxValue);
-        value = Math.max(value, param.minValue);
+        if(typeof param.minValue != "undefined" && typeof param.maxValue != "undefined"){
+          value = Math.min(value, param.maxValue);
+          value = Math.max(value, param.minValue);
+        }
 
   	  	if(transitionTime && param.setTargetAtTime){
   		  	param.setTargetAtTime(value, startTime, transitionTime/3);

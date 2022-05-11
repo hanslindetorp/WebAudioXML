@@ -1,4 +1,5 @@
 var Loader = require('./Loader.js');
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class BufferSourceObject {
@@ -6,7 +7,7 @@ class BufferSourceObject {
 	constructor(obj, params){
 		this._ctx = obj._ctx;
 		this._node = new AudioBufferSourceNode(this._ctx);
-		this._params = params;
+		this._params = {...params};
 		this._parentAudioObj = obj;
 		this.callBackList = [];
 	}
@@ -17,12 +18,13 @@ class BufferSourceObject {
 		return destination;
 	}
 	
-	start(){
+	start(time, offset, duration){
 		let params = {}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
 		if(typeof this._params.loopStart != "undefined"){params.loopStart = this._params.loopStart * this._params.timescale}
 		if(typeof this._params.loopEnd != "undefined"){params.loopEnd = this._params.loopEnd * this._params.timescale}
-		if(typeof this._params.playBackRate != "undefined"){params.playBackRate = this._params.playBackRate}
+		if(typeof this._params.playbackRate != "undefined"){params.playbackRate = this._params.playbackRate}
+		if(typeof this._params.randomDetune != "undefined"){params.playbackRate *= WebAudioUtils.centToPlaybackRate(this._params.randomDetune)}
 
 		this._node.disconnect();
 		this._node = new AudioBufferSourceNode(this._ctx, params);
@@ -40,8 +42,9 @@ class BufferSourceObject {
 		// if(typeof this._params.playbackRate != "undefined"){
 		// 	this.playbackRate = this._params.playbackRate;
 		// }
+		let factor = Math.abs(this._params.playbackRate || 1)
 		this._node.connect(this.destination);	
-		this._node.start();
+		this._node.start(time, offset * factor, duration * factor);
 
 	}
 
@@ -129,6 +132,11 @@ class BufferSourceObject {
 		this._node.playbackRate.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
 
 	}
+
+	set randomDetune(val){
+        val = Math.max(0, Math.min(val, 1));
+        this._params.randomDetune = val;
+    }
 
 	// funkar inte på loop
 	set onended(fn){

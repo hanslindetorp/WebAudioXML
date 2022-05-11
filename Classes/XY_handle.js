@@ -1,5 +1,4 @@
-
-
+var WebAudioUtils = require('./WebAudioUtils.js');
 
 class XY_handle extends HTMLElement {
 
@@ -24,13 +23,20 @@ class XY_handle extends HTMLElement {
 
 		this.initRects();
 
-		let dir = this.getAttribute("direction");
+		let dir = this.getAttribute("direction") || "xy";
 		this.direction = {
 			x: dir.includes("x"),
 			y: dir.includes("y")
 		}
 
 
+		let sources = this.getAttribute("sources") || "x, y, angle, radius, dragged";
+		this.sources = WebAudioUtils.split(sources).map(item => item.trim());
+
+		let targets = this.getAttribute("targets") || this.dataset.waxmlTargets || "x, y, angle, radius, dragged";
+		this.targets = WebAudioUtils.split(targets).map(item => {
+			return item.split("$").join("").trim();
+		});
 
 		let x =  this.getAttribute("x") || 0;
 		let y = this.getAttribute("y") || 0;
@@ -42,40 +48,64 @@ class XY_handle extends HTMLElement {
 
 
 
-		this.addEventListener("pointerdown", e => {
-			this.initRects();
-			this.dragged = true;
-			this.clickOffset = {x: e.offsetX, y:e.offsetY};
-			this.setPointerCapture(e.pointerId);
-		}, false);
+		this.addEventListener("pointerdown", e => this.pointerDown(e), false);
 
 		this.addEventListener("pointerup", e => {
 			this.dragged = false;
+			this.dispatchEvent(new CustomEvent("input"));
+			this.classList.remove("dragged");
 		}, false);
 
-		this.addEventListener("pointermove", e => {
-			//event.preventDefault();
-			if(this.dragged){
-
-				if(this.direction.x){
-					let x = e.clientX-this.clickOffset.x-this.boundRect.left;
-					x = Math.max(0, Math.min(x, this.boundRect.width));
-					this.x = x / this.boundRect.width;
-					this.style.left = `${x}px`;
-				}
-
-				if(this.direction.y){
-					let y = e.clientY-this.clickOffset.y-this.boundRect.top;
-					y = Math.max(0, Math.min(y, this.boundRect.height));
-					this.y = y / this.boundRect.height;
-					this.style.top = `${y}px`;
-				}
-				this.dispatchEvent(new CustomEvent("input"));
-			}
-		}, false);
+		this.addEventListener("pointermove", e => this.pointerMove(e), false);
 
 		this.style.touchAction = "none";
 
+	}
+
+	pointerDown(e){
+		this.initRects();
+		this.dragged = true;
+		this.clickOffset = {x: e.offsetX, y:e.offsetY};
+		this.setPointerCapture(e.pointerId);
+		this.dispatchEvent(new CustomEvent("input"));
+
+		this.classList.add("changed");
+		this.classList.add("dragged");
+	}
+
+	pointerMove(e){
+		//event.preventDefault();
+		if(this.dragged){
+
+			if(this.direction.x){
+				let x = e.clientX-this.clickOffset.x-this.boundRect.left;
+				x = Math.max(0, Math.min(x, this.boundRect.width));
+				this.x = x / this.boundRect.width;
+				this.style.left = `${x}px`;
+			}
+
+			if(this.direction.y){
+				let y = e.clientY-this.clickOffset.y-this.boundRect.top;
+				y = Math.max(0, Math.min(y, this.boundRect.height));
+				this.y = y / this.boundRect.height;
+				this.style.top = `${y}px`;
+			}
+
+			if(this.parentElement.type == "circle"){
+				// make sure handle is inside circle boundaries
+				let radius = this.getProperty("radius");
+				if(radius > 1){
+					let angle = this.getProperty("angle");
+					this.x = (1 - Math.cos(Math.PI * 2 * angle)) / 2;
+					this.y = (1 - Math.sin(Math.PI * 2 * angle)) / 2;
+					this.style.left = `${this.x * this.boundRect.width}px`;
+					this.style.top = `${this.y * this.boundRect.height}px`;
+				}
+				
+
+			}
+			this.dispatchEvent(new CustomEvent("input"));
+		}
 	}
 
 	rectOffset(rect, pix = 0){
@@ -154,19 +184,68 @@ class XY_handle extends HTMLElement {
 	}
 
 	get value(){
-		if(this.direction.x && this.direction.y){
-			return [this.x, this.y];
-		} else if(this.direction.x){
-			return this.x;
-		} else if(this.direction.y){
-			return this.y;
-		}
+		// if(this.direction.x && this.direction.y){
+		// 	return [this.x, this.y];
+		// } else if(this.direction.x){
+		// 	return this.x;
+		// } else if(this.direction.y){
+		// 	return this.y;
+		// }
+		
+		let values = this.sources.map(source => {
+			return this.getProperty(source);
+		});
+		return values;
 		
 	}
+
+	getProperty(prop, x = this.x, y = this.y){
+		let deltaX, deltaY, rad, angle;
+		switch(prop){
+			case "x":
+			return x;
+			break;
+
+			case "y":
+			return y; 
+			break;
+
+			case "angle":
+			deltaX = (x * 2)-1;
+			deltaY = (y * 2)-1;
+			rad = Math.atan2(deltaY, deltaX);
+			// convert to 0-1
+			angle = (rad / Math.PI + 1) / 2;
+			// offset with stored value
+			angle = (angle + this.angleOffset) % 1;
+			return angle;
+			break;
+
+			case "radius":
+			deltaX = (x * 2)-1;
+			deltaY = (y * 2)-1;
+			return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+			break;
+
+			case "dragged":
+			return this.dragged ? 1 : 0;
+			break;
+
+		}
+	}	
 
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
+	}
+
+	set angleOffset(val){
+		val = Math.max(0, Math.min(val, 1));
+		this._angleOffset = val;
+	}
+
+	get angleOffset(){
+		return this._angleOffset || 0;
 	}
 
 	initRects(){

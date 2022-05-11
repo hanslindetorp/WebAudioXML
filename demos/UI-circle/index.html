@@ -1,0 +1,56 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, user-scalable=no" />
+		<title>WebAudioXML template - by Hans Lindetorp</title>
+		<script>
+
+			window.addEventListener("load", e => {
+				document.querySelector("waxml-xy-handle").addEventListener("input", e => {
+					document.querySelector("#output").innerHTML = 
+					`x: ${e.target.value[0]} <br />
+					y: ${e.target.value[1]} <br />
+					angle: ${e.target.value[2]} <br />
+					radius: ${e.target.value[3]} <br />
+					dragged: ${e.target.value[4]}`;
+				});
+			});
+
+		</script>
+
+		<style>
+
+			waxml-xy-handle {
+				opacity: 0;
+			}
+			waxml-xy-handle.changed {
+				opacity: 1;
+			}
+			waxml-xy-handle.dragged {
+				background-color: green !important;
+			}
+		</style>
+	</head>
+
+
+	<body>
+
+		
+		<waxml-xy-area type="circle">
+			<waxml-xy-handle
+				catch="true"
+				direction="xy"
+				sources="x, y, angle, radius, dragged"
+				targets="x, y, angle, radius, dragged"
+				x="0.5"
+				y="0.5"
+			></waxml-xy-handle>
+		</waxml-xy-area>
+
+		<div id="output"></div>
+
+		<script src="WebAudioXML.js" data-source="audio-config.xml"></script>
+	</body>
+</html>

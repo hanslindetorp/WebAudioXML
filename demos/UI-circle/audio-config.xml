@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-10dB">
+
+	<var name="f1" value="$angle" mapin="0, 1" mapout="36, 60, 36" steps="0,3,5,7,10,12" convert="MIDI->frequency" />
+	<var name="f2" value="$radius" mapin="0, 1" mapout="100, 3000" curve="3" />
+
+	<Chain gain="$dragged">
+		<OscillatorNode type="sawtooth" frequency="$f1" />
+		<BiquadFilterNode type="lowpass" frequency="$f2" />
+	</Chain>
+	
+
+</Audio>

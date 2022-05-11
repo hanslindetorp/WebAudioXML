@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Granular Synthesis</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+  </head>
+
+  <body>
+    <p>Octave</p>
+    <button 
+      data-waxml-pointerdown-gain="1"
+      data-waxml-pointerup-gain="0"
+      data-waxml-pointerdown-detune="-1200"
+    >-1</button>
+
+    <button 
+      data-waxml-pointerdown-gain="1"
+      data-waxml-pointerup-gain="0"
+      data-waxml-pointerdown-detune="0"
+    >0</button>
+
+    <button 
+      data-waxml-pointerdown-gain="1"
+      data-waxml-pointerup-gain="0"
+      data-waxml-pointerdown-detune="1200"
+    >+1</button>
+
+    <p>LoopStart</p>
+    <input type="range" min="0" max="12000" step="1" data-waxml-input-loopstart="this.value" />
+
+    <script src="script/WebAudioXML.js" data-source="audio-config.xml"></script>
+
+  </body>
+</html>

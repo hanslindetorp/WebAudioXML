@@ -1,0 +1,11 @@
+label {
+    display: block;
+    position: relative;
+    width: 300px;
+}
+
+label input {
+    position: absolute;
+    width: 200px;
+    left: 100px;
+}

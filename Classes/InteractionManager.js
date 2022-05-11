@@ -238,19 +238,17 @@ class InteractionManager {
 		});
 
 
-		// add waxml commands to HTML input and waxml-xy-handle elements
-		let filter = "[data-waxml-target]:not([data-waxml-target=''])";
-		[...document.querySelectorAll(`input${filter}, waxml-xy-handle${filter}`)].forEach( el => {
-			let targets = el.dataset.waxmlTarget.split(",");
-			// remove dollar sign from variables
+		// add waxml commands HTML input and waxml-xy-handle elements
+		// I earlier supported to HTML input elements with this syntax but it's now 
+		// included in the generic listener using data-waxml-input syntax
+		//let filter = "[data-waxml-target]:not([data-waxml-target=''])";
+		[...document.querySelectorAll(`waxml-xy-handle[targets]`)].forEach( el => {
+			
 			
 			el.addEventListener("input", e => {
-				// double parenthesis allows for single values (sliders)
-				// and double values (XY-handles)
 				let values = e.target.value;
 				values = values instanceof Array ? values : [values];
-				targets.forEach((target, i) => {
-					target = target.split("$").join("").trim();
+				el.targets.forEach((target, i) => {
 					this.waxml.setVariable(target, values[i % values.length], 0.001);
 				});
 				

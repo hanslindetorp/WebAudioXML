@@ -266,12 +266,20 @@ WebAudioUtils.caseFixParameter = param => {
 		param = "delayTime";
 		break;
 
+		case "fadetime":
+		param = "fadeTime";
+		break;
+
 		case "loopend":
 		param = "loopEnd";
 		break;
 
 		case "loopstart":
 		param = "loopStart";
+		break;
+
+		case "looplength":
+		param = "loopLength";
 		break;
 
 		case "playbackrate":
@@ -354,6 +362,19 @@ WebAudioUtils.caseFixParameter = param => {
 		param = "crossFade";
 		break;
 
+		// Ambient Audio / Granular
+		case "randomposition":
+		param = "randomPosition";
+		break;
+
+		case "randomduration":
+		param = "randomDuration";
+		break;
+
+		case "randomdetune":
+		param = "randomDetune";
+		break;
+
   	}
 
 
@@ -376,6 +397,13 @@ WebAudioUtils.widthEndingSlash = (str) => {
 WebAudioUtils.MIDInoteToFrequency = note => {
 	return 440 * Math.pow(2, (note - 69) / 12);
 }
+WebAudioUtils.centToPlaybackRate = val => {
+	return Math.pow(2, val / 1200);
+}
+
+WebAudioUtils.playbackRateToCent = val => {
+	return Math.log2(val) * 1200;
+}
 
 WebAudioUtils.dbToPower = value => {
 	return Math.pow(2, parseFloat(value) / 3);
@@ -384,7 +412,7 @@ WebAudioUtils.split = (str, separator) => {
 	if(typeof str != "string"){
 		console.log(str);
 	}
-	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : " ";
+	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : str.includes("...") ? "..." : " ";
 	let arr = str.split(separator).map(item => {
 		item = item.trim();
 		let i = parseFloat(item);

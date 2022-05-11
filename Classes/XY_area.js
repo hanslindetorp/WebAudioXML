@@ -4,7 +4,6 @@ class XY_area extends HTMLElement {
 
 	constructor(){
 		super();
-		// this.style.backgroundColor = this.getAttribute("background-color") || "#555";
 
 		// grid
 		let columns = parseInt(this.getAttribute("columns") || 1);
@@ -32,8 +31,41 @@ class XY_area extends HTMLElement {
 
 
 		this.style.touchAction = "none";
-		this.style.display = "block"; // not good
+		this.style.display = "inline-block"; // not good
+		this.style.width = "200px";
+		this.style.height = "200px";
+		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
 
+		this.type = this.getAttribute("type") || "square";
+		switch(this.type){
+			case "square":
+			break;
+
+			case "circle":
+			this.style.borderRadius = `${parseFloat(this.style.width) / 2}px`;
+			break;
+		}
+
+
+		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch='true']");
+		if(catchHandles.length){
+			this.style.cursor = "pointer";
+			this.addEventListener("pointerdown", e => {
+				let data = {
+					clientX: e.clientX,
+					clientY: e.clientY,
+					pointerId: e.pointerId
+				}
+				catchHandles.forEach(handle => {
+					let br = handle.getBoundingClientRect();
+					data.offsetX = br.width / 2;
+					data.offsetY = br.height / 2;
+					handle.pointerDown(data);
+					handle.pointerMove(data);
+				});
+			});
+		}
+		
 	}
 
 

@@ -3504,17 +3504,19 @@ class InteractionManager {
 		});
 
 
-		// add waxml commands HTML input and waxml-xy-handle elements
-		// I earlier supported to HTML input elements with this syntax but it's now 
-		// included in the generic listener using data-waxml-input syntax
-		//let filter = "[data-waxml-target]:not([data-waxml-target=''])";
-		[...document.querySelectorAll(`waxml-xy-handle[targets]`)].forEach( el => {
-			
+		// add waxml commands to HTML input and waxml-xy-handle elements
+		let filter = "[data-waxml-target]:not([data-waxml-target=''])";
+		[...document.querySelectorAll(`input${filter}, waxml-xy-handle${filter}`)].forEach( el => {
+			let targets = el.dataset.waxmlTarget.split(",");
+			// remove dollar sign from variables
 			
 			el.addEventListener("input", e => {
+				// double parenthesis allows for single values (sliders)
+				// and double values (XY-handles)
 				let values = e.target.value;
 				values = values instanceof Array ? values : [values];
-				el.targets.forEach((target, i) => {
+				targets.forEach((target, i) => {
+					target = target.split("$").join("").trim();
 					this.waxml.setVariable(target, values[i % values.length], 0.001);
 				});
 				
@@ -8192,7 +8194,7 @@ WebAudioUtils.split = (str, separator) => {
 	if(typeof str != "string"){
 		console.log(str);
 	}
-	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : str.includes("...") ? "..." : " ";
+	separator = separator || str.includes(";") ? ";" : str.includes(",") ? "," : " ";
 	let arr = str.split(separator).map(item => {
 		item = item.trim();
 		let i = parseFloat(item);
@@ -8443,6 +8445,7 @@ class XY_area extends HTMLElement {
 
 	constructor(){
 		super();
+		// this.style.backgroundColor = this.getAttribute("background-color") || "#555";
 
 		// grid
 		let columns = parseInt(this.getAttribute("columns") || 1);
@@ -8470,41 +8473,8 @@ class XY_area extends HTMLElement {
 
 
 		this.style.touchAction = "none";
-		this.style.display = "inline-block"; // not good
-		this.style.width = "200px";
-		this.style.height = "200px";
-		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
+		this.style.display = "block"; // not good
 
-		this.type = this.getAttribute("type") || "square";
-		switch(this.type){
-			case "square":
-			break;
-
-			case "circle":
-			this.style.borderRadius = `${parseFloat(this.style.width) / 2}px`;
-			break;
-		}
-
-
-		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch='true']");
-		if(catchHandles.length){
-			this.style.cursor = "pointer";
-			this.addEventListener("pointerdown", e => {
-				let data = {
-					clientX: e.clientX,
-					clientY: e.clientY,
-					pointerId: e.pointerId
-				}
-				catchHandles.forEach(handle => {
-					let br = handle.getBoundingClientRect();
-					data.offsetX = br.width / 2;
-					data.offsetY = br.height / 2;
-					handle.pointerDown(data);
-					handle.pointerMove(data);
-				});
-			});
-		}
-		
 	}
 
 
@@ -8638,7 +8608,8 @@ class XY_area extends HTMLElement {
 module.exports = XY_area;
 
 },{}],30:[function(require,module,exports){
-var WebAudioUtils = require('./WebAudioUtils.js');
+
+
 
 class XY_handle extends HTMLElement {
 
@@ -8663,20 +8634,13 @@ class XY_handle extends HTMLElement {
 
 		this.initRects();
 
-		let dir = this.getAttribute("direction") || "xy";
+		let dir = this.getAttribute("direction");
 		this.direction = {
 			x: dir.includes("x"),
 			y: dir.includes("y")
 		}
 
 
-		let sources = this.getAttribute("sources") || "x, y, angle, radius, dragged";
-		this.sources = WebAudioUtils.split(sources).map(item => item.trim());
-
-		let targets = this.getAttribute("targets") || this.dataset.waxmlTargets || "x, y, angle, radius, dragged";
-		this.targets = WebAudioUtils.split(targets).map(item => {
-			return item.split("$").join("").trim();
-		});
 
 		let x =  this.getAttribute("x") || 0;
 		let y = this.getAttribute("y") || 0;
@@ -8688,64 +8652,40 @@ class XY_handle extends HTMLElement {
 
 
 
-		this.addEventListener("pointerdown", e => this.pointerDown(e), false);
+		this.addEventListener("pointerdown", e => {
+			this.initRects();
+			this.dragged = true;
+			this.clickOffset = {x: e.offsetX, y:e.offsetY};
+			this.setPointerCapture(e.pointerId);
+		}, false);
 
 		this.addEventListener("pointerup", e => {
 			this.dragged = false;
-			this.dispatchEvent(new CustomEvent("input"));
-			this.classList.remove("dragged");
 		}, false);
 
-		this.addEventListener("pointermove", e => this.pointerMove(e), false);
+		this.addEventListener("pointermove", e => {
+			//event.preventDefault();
+			if(this.dragged){
+
+				if(this.direction.x){
+					let x = e.clientX-this.clickOffset.x-this.boundRect.left;
+					x = Math.max(0, Math.min(x, this.boundRect.width));
+					this.x = x / this.boundRect.width;
+					this.style.left = `${x}px`;
+				}
+
+				if(this.direction.y){
+					let y = e.clientY-this.clickOffset.y-this.boundRect.top;
+					y = Math.max(0, Math.min(y, this.boundRect.height));
+					this.y = y / this.boundRect.height;
+					this.style.top = `${y}px`;
+				}
+				this.dispatchEvent(new CustomEvent("input"));
+			}
+		}, false);
 
 		this.style.touchAction = "none";
 
-	}
-
-	pointerDown(e){
-		this.initRects();
-		this.dragged = true;
-		this.clickOffset = {x: e.offsetX, y:e.offsetY};
-		this.setPointerCapture(e.pointerId);
-		this.dispatchEvent(new CustomEvent("input"));
-
-		this.classList.add("changed");
-		this.classList.add("dragged");
-	}
-
-	pointerMove(e){
-		//event.preventDefault();
-		if(this.dragged){
-
-			if(this.direction.x){
-				let x = e.clientX-this.clickOffset.x-this.boundRect.left;
-				x = Math.max(0, Math.min(x, this.boundRect.width));
-				this.x = x / this.boundRect.width;
-				this.style.left = `${x}px`;
-			}
-
-			if(this.direction.y){
-				let y = e.clientY-this.clickOffset.y-this.boundRect.top;
-				y = Math.max(0, Math.min(y, this.boundRect.height));
-				this.y = y / this.boundRect.height;
-				this.style.top = `${y}px`;
-			}
-
-			if(this.parentElement.type == "circle"){
-				// make sure handle is inside circle boundaries
-				let radius = this.getProperty("radius");
-				if(radius > 1){
-					let angle = this.getProperty("angle");
-					this.x = (1 - Math.cos(Math.PI * 2 * angle)) / 2;
-					this.y = (1 - Math.sin(Math.PI * 2 * angle)) / 2;
-					this.style.left = `${this.x * this.boundRect.width}px`;
-					this.style.top = `${this.y * this.boundRect.height}px`;
-				}
-				
-
-			}
-			this.dispatchEvent(new CustomEvent("input"));
-		}
 	}
 
 	rectOffset(rect, pix = 0){
@@ -8824,68 +8764,19 @@ class XY_handle extends HTMLElement {
 	}
 
 	get value(){
-		// if(this.direction.x && this.direction.y){
-		// 	return [this.x, this.y];
-		// } else if(this.direction.x){
-		// 	return this.x;
-		// } else if(this.direction.y){
-		// 	return this.y;
-		// }
-		
-		let values = this.sources.map(source => {
-			return this.getProperty(source);
-		});
-		return values;
+		if(this.direction.x && this.direction.y){
+			return [this.x, this.y];
+		} else if(this.direction.x){
+			return this.x;
+		} else if(this.direction.y){
+			return this.y;
+		}
 		
 	}
-
-	getProperty(prop, x = this.x, y = this.y){
-		let deltaX, deltaY, rad, angle;
-		switch(prop){
-			case "x":
-			return x;
-			break;
-
-			case "y":
-			return y; 
-			break;
-
-			case "angle":
-			deltaX = (x * 2)-1;
-			deltaY = (y * 2)-1;
-			rad = Math.atan2(deltaY, deltaX);
-			// convert to 0-1
-			angle = (rad / Math.PI + 1) / 2;
-			// offset with stored value
-			angle = (angle + this.angleOffset) % 1;
-			return angle;
-			break;
-
-			case "radius":
-			deltaX = (x * 2)-1;
-			deltaY = (y * 2)-1;
-			return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
-			break;
-
-			case "dragged":
-			return this.dragged ? 1 : 0;
-			break;
-
-		}
-	}	
 
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
-	}
-
-	set angleOffset(val){
-		val = Math.max(0, Math.min(val, 1));
-		this._angleOffset = val;
-	}
-
-	get angleOffset(){
-		return this._angleOffset || 0;
 	}
 
 	initRects(){
@@ -8911,4 +8802,4 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{"./WebAudioUtils.js":28}]},{},[27]);
+},{}]},{},[27]);

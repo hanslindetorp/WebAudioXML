@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    
+
+ -->
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+
+    <mixer gain="$gain">
+        <AmbientAudio 
+            src="audio/synth_C_penta_scale.mp3" 
+            start="auto"
+            loopStart="$loopstart"
+            loopLength="500"
+            fadeTime="250"
+            detune="$detune"
+            randomPosition="0"
+            randomDuration="0"
+            randomDetune="10"
+        />
+    </mixer>
+
+</Audio>
