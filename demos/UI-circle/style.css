@@ -1,0 +1,14 @@
+waxml-xy-handle {
+    opacity: 0;
+}
+waxml-xy-handle.changed {
+    opacity: 1;
+}
+waxml-xy-handle.dragged {
+    background-color: green !important;
+}
+
+img {
+    max-width: 50%;
+    height: auto;
+}
