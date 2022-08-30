@@ -1,56 +1,758 @@
 <?xml version="1.0"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-targetNamespace="https://www.w3schools.com"
-xmlns="https://www.w3schools.com"
-elementFormDefault="qualified">
+<xs:schema 
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="https://www.w3schools.com"
+  xmlns="https://www.w3schools.com"
+  elementFormDefault="qualified">
 
   
 
 
   <!-- Types -->
-  <!-- <xs:simpleType name="tempo">
+
+  <xs:simpleType name="version">
     <xs:annotation>
-      <xs:documentation>Beats per minute. Note: it always relates to the beat specified with timeSign.</xs:documentation>
+      <xs:documentation></xs:documentation>
     </xs:annotation>
-    <xs:restriction base="xs:decimal"/>
-  </xs:simpleType> -->
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="volume">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="gain">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="convolutionGain">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="normalize">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:boolean"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="loop">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:boolean"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="voices">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="max">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="delay">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  
+
+  <!-- // AudioNodes -->
+
+  <xs:simpleType name="frequency">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="detune">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="Q">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="delayTime">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="maxDelayTime">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  
+
+  <!-- // compressor -->
+  <xs:simpleType name="threshold">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="knee">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="ratio">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="reduction">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="attack">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="release">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <!-- // AudioBufferSourceNode -->
+  
+  <xs:simpleType name="playbackRate">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="loopStart">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="loopEnd">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <!-- // waxml -->
+  
+  <xs:simpleType name="transitionTime">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="ADSR">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <!-- // parameter mapping -->
+
+  <xs:simpleType name="level">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="range">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="curve">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="follow">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="mapin">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="mapout">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="times">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="values">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="channel">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="dynamictimes">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="dynamicvalues">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="targetvariables">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="peak">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="convert">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="steps">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="value">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="pan">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="fadeTime">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="loopLength">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="coneInnerAngle">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="coneOuterAngle">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="coneOuterGain">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="distanceModel">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="maxDistance">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="orientationX">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="orientationY">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="orientationZ">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="panningModel">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="positionX">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="positionY">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="positionZ">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="refDistance">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="rolloffFactor">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="timeUnit">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="crossFade">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+	<!-- // Ambient Audio / Granular -->
+  <xs:simpleType name="randomPosition">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="randomDuration">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="randomDetune">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="frameRate">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="fallOffRatio">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="smoothDerivative">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="output">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="outputBus">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="id">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="class">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="name">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="src">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="href">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
 
   <!-- Element Groups -->
-
-  <!-- <xs:group name="imusic">
+  <xs:group name="waxml">
     <xs:choice>
-      <xs:element ref="arrangement"/>
-      <xs:element ref="motif"/>
-      <xs:element ref="leadin"/>
-    </xs:choice>   
-  </xs:group> -->
 
+
+      <!-- Native elements -->
+      <xs:element name="AudioBufferSourceNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="AudioWorkletNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DelayNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="MediaStreamAudioSourceNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="PannerNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="WaveShaperNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+
+      <xs:element name="OscillatorNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="GainNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+      
+      <xs:element name="BiquadFilterNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="StereoPannerNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="ConvolverNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DynamicsCompressorNode">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      
+
+      <!-- Native elements with children -->
+      <xs:element name="ChannelMergerNode">
+        <xs:complexType>
+          <xs:group ref="waxml" minOccurs="1" maxOccurs="unbounded"/>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="ChannelSplitterNode">
+        <xs:complexType>
+          <xs:group ref="waxml" minOccurs="1" maxOccurs="unbounded"/>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+
+      <!-- WAXML logic -->
+      <xs:element name="var">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="Envelope">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+      
+      <xs:element name="include">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+
+
+      <!-- WAXML routing -->
+      <xs:element name="Send">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="Chain">
+        <xs:complexType>
+          <xs:group ref="waxml" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+      
+      <xs:element name="Mixer">
+        <xs:complexType>
+          <xs:group ref="waxml" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      
+      <!-- WAXML routing -->
+      <xs:element name="Synth">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="Voice" minOccurs="1" maxOccurs="unbounded"></xs:element>
+          </xs:choice>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="ObjectBasedAudio">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="AmbientAudio">
+        <xs:complexType>
+          <xs:attributeGroup ref="waxml"/>
+        </xs:complexType>
+      </xs:element>
+
+      
+    </xs:choice>   
+  </xs:group>
+  
+
+  <!-- Attribute groups -->
+  <xs:attributeGroup name="waxml">
+    <xs:attribute name="version" type="version"/>
+    <xs:attribute name="timeUnit" type="timeUnit"/>
+
+    <xs:attribute name="id" type="id"/>
+    <xs:attribute name="class" type="class"/>
+    <xs:attribute name="name" type="name"/>
+    <xs:attribute name="value" type="value"/>
+    <xs:attribute name="src" type="src"/>
+    <xs:attribute name="href" type="href"/>
+
+    <xs:attribute name="gain" type="gain"/>
+    <xs:attribute name="type" type="gain"/>
+    <xs:attribute name="frequency" type="gain"/>
+    <xs:attribute name="outputBus" type="gain"/>
+    <xs:attribute name="pan" type="pan"/>
+
+    <xs:attribute name="ratio" type="ratio"></xs:attribute>
+  </xs:attributeGroup>
 
   <!-- Elements -->
-<!-- 
-  <xs:element name="imusic">
 
-    <xs:annotation>
-      <xs:documentation>The imusic element is the root element. It typically contains arrangements but can also contain global motifs and leadins. The variables specified here will be global and affect all child elements if they don't have individual settings. This makes this element a good place for specifying tempo, timeSign etc.</xs:documentation>
-      <xs:documentation>Elements: arrangement, motif and leadin</xs:documentation>
-      <xs:documentation>Attributes: version, audioPath, tempo, timeSign, suffix, showGUI, changeOnNext, fadeTime and loopLength</xs:documentation>
-    </xs:annotation>
-
+  <xs:element name="Audio">
     <xs:complexType>
-
-      <xs:group ref="imusic" minOccurs="0" maxOccurs="unbounded"/>
-        
-      <xs:attribute name="version" type="xs:string"/>
-      <xs:attribute name="audioPath" type="audioPath"/>
-      <xs:attribute name="tempo" type="tempo"/>
-      <xs:attribute name="timeSign" type="meter"/>
-      <xs:attribute name="suffix" type="suffix"/>
-      <xs:attribute name="showGUI" type="showGUI"/>
-      <xs:attribute name="changeOnNext" type="length"/>
-      <xs:attribute name="fadeTime" type="fadeTime"/>
-      <xs:attribute name="loopLength" type="length"/>
-
+      <xs:group ref="waxml" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:attributeGroup ref="waxml"/>
     </xs:complexType>
-  </xs:element> -->
+  </xs:element>
 
 </xs:schema>
