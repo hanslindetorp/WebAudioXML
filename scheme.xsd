@@ -871,7 +871,7 @@
 
   <xs:element name="Audio">
     <xs:complexType>
-      <xs:group ref="waxml" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:group ref="waxml" minOccurs="1" maxOccurs="unbounded"/>
       <xs:attributeGroup ref="waxml"/>
     </xs:complexType>
   </xs:element>
