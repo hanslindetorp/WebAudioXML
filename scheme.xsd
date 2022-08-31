@@ -285,13 +285,6 @@
     <xs:restriction base="xs:string"/>
   </xs:simpleType>
 
-  <xs:simpleType name="peak">
-    <xs:annotation>
-      <xs:documentation></xs:documentation>
-    </xs:annotation>
-    <xs:restriction base="xs:string"/>
-  </xs:simpleType>
-
   <xs:simpleType name="convert">
     <xs:annotation>
       <xs:documentation></xs:documentation>
@@ -307,6 +300,13 @@
   </xs:simpleType>
 
   <xs:simpleType name="value">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="default">
     <xs:annotation>
       <xs:documentation></xs:documentation>
     </xs:annotation>
@@ -556,6 +556,42 @@
     <xs:restriction base="xs:string"/>
   </xs:simpleType>
 
+  <xs:simpleType name="controls">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="type">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="mix">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="crossFadeRange">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="peak">
+    <xs:annotation>
+      <xs:documentation></xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  
 
 
   <!-- Element Groups -->
@@ -673,6 +709,8 @@
           <xs:attributeGroup ref="waxml"/>
         </xs:complexType>
       </xs:element>
+      
+
 
 
 
@@ -698,7 +736,7 @@
       </xs:element>
 
       
-      <!-- WAXML routing -->
+      <!-- WAXML objects -->
       <xs:element name="Synth">
         <xs:complexType>
           <xs:choice>
@@ -733,14 +771,16 @@
     <xs:attribute name="id" type="id"/>
     <xs:attribute name="class" type="class"/>
     <xs:attribute name="name" type="name"/>
-    <xs:attribute name="value" type="value"/>
+
     <xs:attribute name="src" type="src"/>
     <xs:attribute name="href" type="href"/>
 
     <xs:attribute name="gain" type="gain"/>
-    <xs:attribute name="type" type="gain"/>
-    <xs:attribute name="frequency" type="gain"/>
-    <xs:attribute name="outputBus" type="gain"/>
+    <xs:attribute name="type" type="type"/>
+    <xs:attribute name="controls" type="controls"/>
+
+    <xs:attribute name="frequency" type="frequency"/>
+    <xs:attribute name="outputBus" type="outputBus"/>
     <xs:attribute name="pan" type="pan"/>
     
     <xs:attribute name="volume" type="volume"/>
@@ -775,6 +815,8 @@
     <xs:attribute name="crossFade" type="crossFade"/>
 
     <!-- // parameter mapping -->  
+    <xs:attribute name="value" type="value"/>
+    <xs:attribute name="default" type="default"/>
     <xs:attribute name="level" type="level"/>  
     <xs:attribute name="range" type="range"/>  
     <xs:attribute name="curve" type="curve"/>  
@@ -787,7 +829,6 @@
     <xs:attribute name="dynamictimes" type="dynamictimes"/>  
     <xs:attribute name="dynamicvalues" type="dynamicvalues"/>  
     <xs:attribute name="targetvariables" type="targetvariables"/>  
-    <xs:attribute name="peak" type="peak"/>  
     <xs:attribute name="convert" type="convert"/>  
     <xs:attribute name="steps" type="steps"/>  
     <xs:attribute name="fadeTime" type="fadeTime"/>
@@ -818,6 +859,12 @@
     <xs:attribute name="smoothDerivative" type="smoothDerivative"/>  
     <xs:attribute name="output" type="output"/>  
     <xs:attribute name="convolutionGain" type="convolutionGain"/>  
+
+
+    <!-- Mixer -->
+    <xs:attribute name="mix" type="mix"/> 
+    <xs:attribute name="crossFadeRange" type="crossFadeRange"/> 
+    <xs:attribute name="peak" type="peak"/> 
   </xs:attributeGroup>
 
   <!-- Elements -->
