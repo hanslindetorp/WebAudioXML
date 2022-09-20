@@ -106,14 +106,19 @@ class Mapper{
 			break;
 
 			case "string":
-			let i = this.mapin.indexOf(x);
-			if(i == -1){
-				return 0;
+			if(this.mapin){
+				let i = this.mapin.valueOf().indexOf(x);
+				if(i == -1){
+					return 0;
+				} else {
+					x = this.mapout[i];
+					x = this.convert(x, i);
+					return x;
+				}
 			} else {
-				x = this.mapout[i];
-				x = this.convert(x, i);
-				return x;
+				return 0;
 			}
+			
 			break;
 
 			default:
