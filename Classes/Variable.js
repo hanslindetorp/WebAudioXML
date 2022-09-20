@@ -6,25 +6,34 @@ var WebAudioUtils = require('./WebAudioUtils.js');
 class Variable {
 
 	constructor(xmlNode, params){
+
+		if(xmlNode){
+			this._parentAudioObj = xmlNode.parentNode.audioObject;
+		}
+		
+
 		this._params = params;
 		this._callBackList = [];
 		this.waxml = params.waxml;
 		this.lastUpdate = 0;
 		this._polarity = 0;
 		this._derivative = 0;
-		this._derivativePolarity = 0;
 		this._derivative2 = 0;
-		this._derivative2Polarity = 0;
+		this._derivative3 = 0;
 		this._xml = xmlNode;
 		this.name = params.name;
 
 		this.derivativeValues = [0];
 		// this.derivative2Values = [0];
-		this.smoothDerivative = 2;
+		// this.smoothDerivative = 3;
+		this.registeredTimes = [];
 
 
 		this._mapper = new Mapper(params);
 		this.scheduledEvents = [];
+
+		this.autoTriggerTimeout = 0;
+		this.lastBroadCastedValues = {};
 
 		// if(this.name == "pan"){
 		// 	console.log("hej");
@@ -65,57 +74,90 @@ class Variable {
 		return this.value;
 	}
 
-	setValue(val, transistionTime){
+	setValue(val = this._value, transistionTime = 0, autoTrigger = false){
 
-		if(this._value != val){
-			// this.setDerivative(val);
+		// clear autoTrigger (no matter if the function is triggered manually or automatically)
+		// the autoTrigger makes sure derivatas are reset even if no data is updated
+		if(this.autoTriggerTimeout){
+			clearTimeout(this.autoTriggerTimeout);
+			this.autoTriggerTimeout = 0;
+		}
 
-			let now = this.time;
+		if(typeof val == "boolean"){
+			// pick minin if false, maxin if true
+			val = val ? this.maxIn : this.minIn;
+		}
 
-			this._value = val;
-			this.mappedValue = this._mapper.getValue(this._value);
+		let oldValue = this._value;
+		let newValue = val;
 
-			if(typeof this.lastMappedValue == "undefined"){
-				this.lastMappedValue = this.mappedValue;
-				this.lastUpdate = now;
-			} else {
-				let diff = this.mappedValue - this.lastMappedValue;
-				this.lastMappedValue = this.mappedValue;
-				
-				let time = 1; // now - this.lastUpdate;
-			
-				if(time){
-					if(diff >= 0 && this._polarity <= 0){
-						this._polarity = 1;
-						this.broadCastEvent("trough");
-						this.broadCastEvent("polarityChange");
-					} else if(diff <= 0 && this._polarity >= 0){
-						this._polarity = -1;
-						this.broadCastEvent("crest");
-						this.broadCastEvent("polarityChange");
-					}
+		let curFrame = this.curFrame;
 
+		if(val == parseFloat(val))val = parseFloat(val);
+		this._value = val;
+		this.mappedValue = this._mapper.getValue(this._value);
+		let frames = 1;
 
-					let newDerivative = diff; // / time;
-					this.lastUpdate = now;
-	
-					let lastAVG = this._derivative;
-					let newAVG = this.setDerivative(newDerivative);
+		if(typeof this.lastMappedValue != "undefined"){
+			// don't run on first data value
 
-					this._derivative = newAVG;
-					
-					this._derivative2 = newAVG - lastAVG;
-
-					// this._derivative2 = newDerivative - this._derivative;
-					// this._derivative = newDerivative;
+			let diff = this.mappedValue - this.lastMappedValue;
+			this.lastMappedValue = this.mappedValue;
+			frames = curFrame - this.lastUpdate;
+		
+			if(frames){
+				if(diff >= 0 && this._polarity <= 0){
+					this._polarity = 1;
+					this.broadCastEvent("trough");
+					this.polarityChange();
+				} else if(diff <= 0 && this._polarity >= 0){
+					this._polarity = -1;
+					this.broadCastEvent("crest");
+					this.polarityChange();
 				}
+
+				let newDerivative1;
+				if(diff){
+					newDerivative1 = diff / frames;
+				} else {
+					// let the derivative fall towards zero if set
+					newDerivative1 = this._derivative ? this._derivative * this.fallOffRatio : 0;
+				}
+
+				newDerivative1 = this.getDerivativeAVG(newDerivative1);
 				
+				let newDerivative2 = newDerivative1 - this._derivative;
+				let newDerivative3 = newDerivative2 - this._derivative2;
+
+				// let lastAVG = this._derivative;
+				// let newAVG = this.setDerivative(newDerivative);
+
+				this._derivative = newDerivative1;
+				this._derivative2 = newDerivative2;
+				this._derivative3 = newDerivative3;
+
+				// this._derivative2 = newDerivative - this._derivative;
 				// this._derivative = newDerivative;
 			}
-
-
+			
+			// this._derivative = newDerivative;
 			this.doCallBacks(transistionTime);
 		}
+		this.lastUpdate = curFrame;
+		this.lastMappedValue = this.mappedValue;
+
+		let delay;
+		if(autoTrigger){
+			delay = 1 / this.frameRate;
+		} else {
+			delay = this.AVGtime(frames / this.frameRate);
+		}
+		
+		if(this._params.stream){
+			this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
+		}
+		
+		
 	}
 
 	get value() {
@@ -156,7 +198,8 @@ class Variable {
 		return arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
 	}
 
-	setDerivative(val){
+	getDerivativeAVG(val){
+		// feature used to smooth the derivative, but it also slows down the responsitivity
 		if(isNaN(val)){
 			console.log(`setDerivative(${val})`);
 		}
@@ -167,14 +210,37 @@ class Variable {
 		return this.average(this.derivativeValues);
 	}
 
+	get smoothDerivative(){
+		if(!this._smoothDerivative){
+			this._smoothDerivative = this.getParameter("smoothDerivative");
+		}
+		return this._smoothDerivative;
+	}
+
+	get frameRate(){
+		if(!this._frameRate){
+			this._frameRate = this.getParameter("frameRate");
+		}
+		return this._frameRate;
+	}
+
+	get fallOffRatio(){
+		if(!this._fallOffRatio){
+			this._fallOffRatio = this.getParameter("fallOffRatio");
+		}
+		return this._fallOffRatio;
+	}
+
 	get derivative(){
-		return this.average(this.derivativeValues);
-		// return this._derivative || 0;
+		return this._derivative || 0;
 	}
 
 	get derivative2(){
-		// return this.average(this.derivative2Values);
 		return this._derivative2 || 0;
+	}
+
+	get derivative3(){
+		return this._derivative3 || 0;
 	}
 
 	get acceleration(){
@@ -189,8 +255,12 @@ class Variable {
 		if(this.waxml){
 			return this.waxml._ctx.currentTime;
 		} else {
-			return Date.now();
+			return Date.now() / 1000;
 		}
+	}
+
+	get curFrame(){
+		return this.time * this.frameRate;
 	}
 
 	broadCastEvent(eventName){
@@ -201,6 +271,11 @@ class Variable {
 			});
 		}
 		
+	}
+
+	polarityChange(){
+		this.derivativeValues = [];
+		this.broadCastEvent("polarityChange");
 	}
 
 	// setDerivative(newVal){
@@ -278,16 +353,56 @@ class Variable {
 	}
 
 	get default(){
-		return this._params.default ? this._params.default : 1;
+		return typeof this._params.default == "undefined" ? 1 : this._params.default;
 	}
 
 	get defaultValue(){
 		return this.default;
 	}
 
+	AVGtime(time = 0){
+		// I decided to use frameRate instead of this auto-detect update rate for incoming data
+		// It defaults to 30 but can be set for any element
+
+		// But then I changed my mind. I think it will too much effort to specify all values manually.
+		// Better if the system can handle quite a lot automatically
+		let nrOfTimeValues = 10;
+		if(this._AVGtime) {
+			return this._AVGtime;
+		} else {
+			if(time){
+				this.registeredTimes.push(time);
+				if(this.registeredTimes.length > 10){
+					this.registeredTimes.shift();
+				}
+				return this.registeredTimes.reduce((a,b) => a + b) / nrOfTimeValues;
+
+				// time = this.registeredTimes.sort((a,b) => a < b);
+			} else {
+				return 0.1;
+			}
+			
+			// if(this.registeredTimes.length > 10){
+			// 	// calculate average time. Exclude outliers
+			// 	let sortedArr = this.registeredTimes.sort((a,b) => a < b);
+			// 	let filteredArr = sortedArr.filter((el, i) => i > 20 && i < 80);
+			// 	this._AVGtime = filteredArr.reduce((a,b) => a + b) / filteredArr.length;
+			// } else {
+			// 	return time || 0.1;
+			// }
+		}
+	}
+
 	doCallBacks(transistionTime){
+		let lastBroadCastedValues;
 		this._callBackList.forEach(obj => {
-			obj.callBack(this[obj.prop], transistionTime);
+			// if(this.lastBroadCastedValues != this[obj.prop]){ // Det här ställde till det!!! Loopen kördes bara
+			// för det första objektet
+				obj.callBack(this[obj.prop], transistionTime);
+				// this.lastBroadCastedValues = this[obj.prop];
+				// lastBroadCastedValues = this.lastBroadCastedValues;
+			// }
+			
 		});
 	}
 
@@ -318,18 +433,51 @@ class Variable {
 		this.doCallBacks(0.001);
 	}
 
-	getParameter(paramName){
+	
+    getParameter(paramName){
+		let val;
+  
 		if(typeof this._params[paramName] === "undefined"){
 			
 			if(this._parentAudioObj){
 				return this._parentAudioObj.getParameter(paramName);
 			} else {
-				return 0;
+  
+				// return default values
+				switch(paramName){
+				  case "transitionTime":
+					val = 0.001;
+				  break;
+  
+				  case "frameRate":
+					val = 30;
+				  break;
+  
+				  case "fallOffRatio":
+					val = 0.5;
+				  break;
+
+				  case "smoothDerivative":
+					val = 5;
+				  break;
+  
+				  case "loopEnd":
+					// avoid setting loopEnd to 0
+					// ideally (maybe) setting it to duration
+					// of audio buffer
+				  break;
+  
+				  default:
+					val = 0;
+				  break;
+				}
+				return val;
 			}
   
 		} else {
-			let val = this._params[paramName];
+			val = this._params[paramName];
   
+			// adjust time
 			switch(paramName){
 				case "transitionTime":
 				case "loopEnd":
@@ -342,7 +490,7 @@ class Variable {
 			}
 			return val;
 		}
-	  }
+	}
 
 }
 
