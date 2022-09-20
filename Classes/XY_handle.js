@@ -8,10 +8,12 @@ class XY_handle extends HTMLElement {
 		this.style.minWidth = this.getAttribute("width") || this.getAttribute("size")  || "20px";
 		this.style.minHeight = this.getAttribute("height") || this.getAttribute("size") || "20px";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#555";
+		this.style.color = this.getAttribute("color") || "#fff";
 		this.style.border = "2px solid black";
 		this.style.boxSizing = "border-box";
 		this.style.borderRadius = parseFloat(this.style.minWidth) / 2 + "px";
 		this.style.fontFamily = "sans-serif";
+		this.style.fontSize = this.getAttribute("font-size") || "10px";
 		this.style.textAlign = "center";
 		this.style.verticalAlign = "middle";
 		this.style.lineHeight = "1.3em";
@@ -38,11 +40,16 @@ class XY_handle extends HTMLElement {
 			return item.split("$").join("").trim();
 		});
 
-		let x =  this.getAttribute("x") || 0;
-		let y = this.getAttribute("y") || 0;
+		let type = this.parentElement.getAttribute("type") || "square";
+		let x =  this.getAttribute("x") || (type == "circle" ? 0.5 : 0);
+		let y = this.getAttribute("y") || (type == "circle" ? 0.5 : 0);
 
 		this.x = parseFloat(x);
 		this.y = parseFloat(y);
+		this._angle = this.XYtoAngle();
+		this._radius = this.XYtoRadius();
+
+		this._angleOffset = this.getAttribute("angleoffset");
 
 		this.move(this.x, this.y);
 
@@ -67,10 +74,7 @@ class XY_handle extends HTMLElement {
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
 		this.setPointerCapture(e.pointerId);
-		this.dispatchEvent(new CustomEvent("input"));
-
-		this.classList.add("changed");
-		this.classList.add("dragged");
+		this.pointerMove(e);
 	}
 
 	pointerMove(e){
@@ -95,13 +99,17 @@ class XY_handle extends HTMLElement {
 				// make sure handle is inside circle boundaries
 				let radius = this.getProperty("radius");
 				if(radius > 1){
-					let angle = this.getProperty("angle");
-					this.x = (1 - Math.cos(Math.PI * 2 * angle)) / 2;
-					this.y = (1 - Math.sin(Math.PI * 2 * angle)) / 2;
-					this.style.left = `${this.x * this.boundRect.width}px`;
-					this.style.top = `${this.y * this.boundRect.height}px`;
+					radius = 1;
+					let angle = (this.XYtoAngle() + 0.5) % 1;
+					let XY = this.angleRadiusToXY(angle, 1);
+					this.x = XY.x;
+					this.y = XY.y;
+					this.move(XY.x, XY.y);
+					// this.style.left = `${this.x * this.boundRect.width}px`;
+					// this.style.top = `${this.y * this.boundRect.height}px`;
 				}
-				
+				this._radius = radius;
+				this._angle = this.XYtoAngle();
 
 			}
 			this.dispatchEvent(new CustomEvent("input"));
@@ -183,6 +191,20 @@ class XY_handle extends HTMLElement {
 
 	}
 
+	get dragged(){
+		return this._dragged;
+	}
+
+	set dragged(state){
+		this._dragged = state;
+		if(state){
+			this.classList.add("changed");
+			this.classList.add("dragged");
+		} else {
+			this.classList.remove("dragged");
+		}
+	}
+
 	get value(){
 		// if(this.direction.x && this.direction.y){
 		// 	return [this.x, this.y];
@@ -211,20 +233,17 @@ class XY_handle extends HTMLElement {
 			break;
 
 			case "angle":
-			deltaX = (x * 2)-1;
-			deltaY = (y * 2)-1;
-			rad = Math.atan2(deltaY, deltaX);
-			// convert to 0-1
-			angle = (rad / Math.PI + 1) / 2;
 			// offset with stored value
-			angle = (angle + this.angleOffset) % 1;
+			let angle = this.XYtoAngle(x, y);
+			angle = (angle + this._angleOffset) % 1;
 			return angle;
 			break;
+			
 
 			case "radius":
 			deltaX = (x * 2)-1;
 			deltaY = (y * 2)-1;
-			return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+			return this.XYtoRadius(x, y);
 			break;
 
 			case "dragged":
@@ -234,12 +253,47 @@ class XY_handle extends HTMLElement {
 		}
 	}	
 
+
+	angleRadiusToXY(angle = this._angle, radius = this._radius){
+		let obj = {};
+		obj.x = (radius - Math.cos(Math.PI * 2 * angle)) / 2;
+		obj.y = (radius - Math.sin(Math.PI * 2 * angle)) / 2;
+		return obj;
+	}
+
+	XYtoRadius(x = this.x, y = this.y){
+		let deltaX = (x * 2)-1;
+		let deltaY = (y * 2)-1;
+		return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+	}
+
+	XYtoAngle(x = this.x, y = this.y){
+		let deltaX = (x * 2) - 1;
+		let deltaY = (y * 2) - 1;
+		let rad = Math.atan2(deltaY, deltaX);
+		// convert to 0-1 with 0 being x=1, y=0
+		return (0.5 + (rad / Math.PI + 1) / 2) % 1;
+	}
+
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
 	}
 
-	set angleOffset(val){
+	set angle(val){
+		this._angle = val;
+		let XY = this.angleRadiusToXY(val);
+		this.move(XY.x, XY.y);
+	}
+
+	set radius(val){
+		this._radius = val;
+		let XY = this.angleRadiusToXY();
+		this.move(XY.x, XY.y);
+	}
+
+	set angleOffset(val = 0){
+		val = parseFloat(val);
 		val = Math.max(0, Math.min(val, 1));
 		this._angleOffset = val;
 	}
