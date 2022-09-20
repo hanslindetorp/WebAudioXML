@@ -57,6 +57,7 @@ class Connector {
 						case "oscillatornode":
 						case "audiobuffernode":
 						case "synth":
+						case "mixer":
 						break;
 
 						case "channelmergernode":
@@ -75,6 +76,10 @@ class Connector {
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
 					}
+					// 2022-08-30 I try to set done=true always which means that
+					// chain element input are only connected to the first audio child element
+					// and only if they allow audio input.
+					done = true;
 
 				}
 
@@ -98,8 +103,7 @@ class Connector {
 			break;
 
 			case "send":
-			let selector = xmlNode.obj.getParameter("outputbus");
-			if(!selector){selector = xmlNode.obj.getParameter("bus")}
+			let selector = xmlNode.obj.getParameter("outputbus") || xmlNode.obj.getParameter("bus") || xmlNode.obj.getParameter("output");
 			targetElements = this.getTargetElements(xmlNode, selector);
 			targetElements.forEach(target => {
 				xmlNode.obj._bus.connect(target.obj.input);
@@ -186,6 +190,7 @@ class Connector {
 					case "voice":
 					case "synth":
 					case "xi:include":
+					case "include":
 					case "channelsplitternode":
 					xmlNode.obj.connect(xmlNode.parentNode.obj._node);
 					break;
