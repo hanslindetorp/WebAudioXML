@@ -14,7 +14,14 @@ class Envelope {
 		params.dynamicvalues = typeof params.dynamicvalues == "undefined" ? [0] : params.dynamicvalues;
 
 		this._params = params;
-		let parentAudioObj = xmlNode.parentNode.obj;
+		let parentAudioObj
+		if(xmlNode.parentNode.obj){
+			parentAudioObj = xmlNode.parentNode.obj;
+		} else {
+			// to let external objects like iMusic host envelopes
+			parentAudioObj = waxml.master;
+		}
+		
 		this._parentAudioObj = parentAudioObj;
 		this.timeScale = this.getParameter("timescale") || 1;
 
@@ -28,25 +35,85 @@ class Envelope {
 			console.error(`No times specified for ${this._xml}`);
 			this._params.times = [0,100];
 		}
-		this._params.times = this._params.times.map(time => time * this.timeScale);
+		this._params.times = this._params.times.valueOf().map(time => time * this.timeScale);
 
 		if(!this._params.values){
 			console.error(`No values specified for ${this._xml}`);
 			this._params.values = [1,0];
 		}
 
-		this.timeModVal = this._params.times.length;
+		this.timeModVal = this._params.times.valueOf().length;
 		this._listeners = [];
 
 		this._params.targetvariables = this._params.targetvariables  || [];
+
+		if(this._params.target){
+			let targetParam; // = "frequency"; // default
+			let selector = this._params.target.split("_").map(str => {
+				str = str.trim();
+				if(str.includes(".")){
+					let ta = str.split(".");
+					str = ta[0];
+					targetParam = ta[1];
+				}
+				return `.${str.trim()}`;
+			}).join(" ");
+
+			let convertStr = this._params.convert ? this._params.convert[0] : "x";
+			waxml.querySelectorAll(selector).forEach(targetObject => {
+				let audioNode = targetObject._node;
+				targetParam = targetParam || (audioNode.detune ? "detune" : "gain");
+				if(audioNode[targetParam]){
+					this.addListener(targetObject._node[targetParam], convertStr);
+				}
+			});
+			
+		}
 	}
 
-	addListener(param, expression){
+	addListener(param, expression = "x"){
 
-		expression = WebAudioUtils.replaceEnvelopeName(expression);
-		let values = this._params.values.map(x => this.mapValue(x, expression));
+		if(expression.includes("€")){
+			// kolla på det här! Jag behöver styra upp hela kopplingen med ENV
+			expression = WebAudioUtils.replaceEnvelopeName(expression);
+		}
+		
+		let values = this._params.values.map(x => {
+			let val;
+			switch(expression){
+				case "MIDI->frequency":
+				val = WebAudioUtils.MIDInoteToFrequency(x);
+				break;
 
-		param.setTargetAtTime(values[values.length-1], this._ctx.currentTime, 0.001);
+				case "dB->power":
+				val = WebAudioUtils.dbToPower(x);
+				break;
+
+				default:
+				val = this.mapValue(x, expression);
+				break;
+			}
+			return val;
+		});
+
+		if(typeof this._params.default != "undefined"){
+			let def;
+			switch(expression){
+				case "MIDI->frequency":
+				def = WebAudioUtils.MIDInoteToFrequency(this._params.default);
+				break;
+
+				case "dB->power":
+				def = WebAudioUtils.dbToPower(this._params.default);
+				break;
+
+				default:
+				def = this.mapValue(this._params.default, expression);
+				break;
+			}
+			param.setTargetAtTime(def, this._ctx.currentTime, 0.001);
+		}
+		
 		this._listeners.push(
 			{
 				obj: param,
@@ -60,10 +127,23 @@ class Envelope {
 		return eval(expression);
 	}
 
+	setTimes(times){
+
+		let curOffset = times[0];
+		times = times.map(t => {
+			let relTime = t - curOffset;
+			curOffset = relTime + 0.01;
+			return relTime;
+		});
+		
+		this._params.times = times;
+	}
+
 	start(args = []){
 
 		args = [...args];
 		let factor = typeof args[0] == "undefined" ? 1 : args[0];
+
 
 		// make it possible to update variables with data from event (like velocity or key)
 		this._params.targetvariables.forEach((varName, index) => {
@@ -75,10 +155,10 @@ class Envelope {
 
 
 		let delay = this.getParameter("delay");
-        let startTime = delay * this.timeScale + this._ctx.currentTime;
+        let startTime = delay * this.timeScale + this._ctx.currentTime + 0.001;
 
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
-		let times = this._params.times.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
+		let times = this._params.times.valueOf().map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
 		
 		if(this._params.mode == "mono" && args[2] == 0){
 			// don't retrigger if legato
@@ -88,13 +168,16 @@ class Envelope {
 				let timeOffset = 0;
 				let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
 			
-				// remove release value
-				values.pop();
+				// remove release value seemed good when doing ADSR but not in general
+				// values.pop();
+				console.log("Env startTime: ", startTime);
 				values.forEach((value, index) => {
 					let time = times[index % this.timeModVal];
 					// See info about timeConstant and reaching the target value:
 					// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
-					target.obj.setTargetAtTime(value, startTime + timeOffset, time/3);
+					// let timeFactor = target.obj.value < value ? 1 : 0.2;
+					target.obj.setTargetAtTime(value, startTime + timeOffset, time);
+					console.log(value, startTime + timeOffset, time)
 					timeOffset += time;
 				});
 			});
@@ -141,7 +224,7 @@ class Envelope {
 		
 
 		let tIndex = this.timeModVal-1;
-		let t = this._params.times[tIndex];
+		let t = this._params.times.valueOf()[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
 		if(this._params.mode == "mono" && args[2] == 0){
@@ -161,6 +244,10 @@ class Envelope {
 		
 	}
 
+	
+	setTargetAtTime(val){
+		// at the moment this play a risk of overwriting a Watcher. Think this trough thouroughly!
+	}
 
     getParameter(paramName){
 		if(typeof this._params[paramName] === "undefined"){
@@ -187,6 +274,8 @@ class Envelope {
 		}
 	}
 
+
+	// is this method in use or is it obsolete?
 	getWAXMLparameters(){
 		let waxmlParams = [];
 		let paramNames = [];
