@@ -1,6 +1,7 @@
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
+var Watcher = require('./Watcher.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
@@ -22,10 +23,13 @@ class InteractionManager {
 		}
 		window.addEventListener("pointerdown", initCall);
 
-		this.eventTracker = new EventTracker();
+		this.eventTracker = new EventTracker(waxml);
 		this.waxml = waxml;
 		this.inited = false;
 		this.variables = new VariableContainer();
+		this.watchers = [];
+
+		this._variablesToStore = [];
 
 		// variables
 		// create a way of keeping track of each touch
@@ -64,6 +68,14 @@ class InteractionManager {
 			this.midiManager = new MidiManager(this.waxml);
 		});
 
+	}
+
+	set variablesToStore(varNames){
+		this._variablesToStore = varNames;
+	}
+
+	get variablesToStore(){
+		return this._variablesToStore;
 	}
 
 	defineCustomElements(){
@@ -121,41 +133,6 @@ class InteractionManager {
 
 
 	connectToHTMLelements(){
-		// this.waxml.querySelectorAll("[start]:not([start=''])").forEach((obj, i) => {
-		// 	let trigData = WebAudioUtils.split(obj.parameters.start);
-		// 	let trigSelector = trigData[0];
-
-		// 	if(trigSelector){
-		// 		trigSelector = trigSelector.replace("/", "\\/");
-		// 		document.querySelectorAll(trigSelector).forEach((el, i) => {
-		// 			let trigEventName = trigData[1] || "pointerdown";
-		// 			el.addEventListener(trigEventName, e => obj.start());
-		// 		});
-
-		// 		if(obj.parameters.stop){
-		// 			let releaseData = WebAudioUtils.split(obj.parameters.stop);
-		// 			let releaseSelector = releaseData[0];
-		// 			if(releaseSelector){
-		// 				document.querySelectorAll(releaseSelector).forEach((el, i) => {
-		// 					let releaseEventName = releaseData[1] || "pointerup";
-		// 					el.addEventListener(releaseEventName, e => obj.stop());
-		// 				});
-		// 			}
-		// 		}
-		// 	}
-		// });
-
-		// this.waxml.querySelectorAll("[release]:not([release=''])").forEach((obj, i) => {
-		// 	let trigData = WebAudioUtils.split(obj.parameters.trig);
-		// 	let selector = trigData[0];
-		// 	let eventName = trigData[1] || "click";
-		// 	if(selector){
-		// 		document.querySelectorAll(selector).forEach((el, i) => {
-		// 			el.addEventListener(eventName, e => obj.stop());
-		// 		});
-		// 	}
-		// });
-
 
 		// add waxml commands to HTML elements
 		[...document.querySelectorAll("*")].forEach( el => {
@@ -163,75 +140,134 @@ class InteractionManager {
 			[...el.attributes].forEach( attr => {
 				if(attr.localName.startsWith("data-waxml-")){
 
-					// Create empty link for <a> elements
-					if(el.localName == "a"){
-						var deadLink = "javascript:void(0)";
-						if(!el.attributes.href){
-							el.setAttribute("href", deadLink);
-						} else if(el.attributes.href.nodeValue == "#"){
-							el.attributes.href.nodeValue = deadLink;
-						}
-					}
 					
 					let val = attr.nodeValue;
-					
-					if(val.includes("this.")){
-						let targetProperty = val.replace("this", "el");
-						val = {
-							valueOf: () => {
-								return eval(targetProperty);
-							}
-						}
-					} else {
-						let floatVal = parseFloat(val);
-						if(!Number.isNaN(floatVal)){
-							val = floatVal;
-						}
-					}
-					
 
 					let fn;
 					let attrNameArr = attr.localName.split("-");
-					if(attrNameArr.length == 3){
-						// insert default click event
-						attrNameArr.splice(2, 0, "click");
-					}
 
 					let eventName = attrNameArr[2];
 					let commandName = attrNameArr[3];
 
-					switch(commandName){
-						case "start":
-						case "play":
-							fn = e => this.waxml.start(val);
-							break;
+					switch(eventName){
 
-						case "stop":
-							fn = e => this.waxml.stop(val);
-							break;
+						case "style":
+							let CSSprop = val.split("=").shift().trim();
+							val = val.split("=").pop().trim();
+							let watcher = new Watcher(this.waxml._xml, val, {
+								waxml: this.waxml,
+								callBack: (val, time) => {
+									el.style[CSSprop] = val;
+								}
+							});
+
+							this.watchers.push(watcher);
+						break;
+
 
 						default:
-							fn = e => {
-								this.waxml.setVariable(commandName, val.valueOf());
+
+							// Create empty link for <a> elements
+							if(el.localName == "a"){
+								var deadLink = "javascript:void(0)";
+								if(!el.attributes.href){
+									el.setAttribute("href", deadLink);
+								} else if(el.attributes.href.nodeValue == "#"){
+									el.attributes.href.nodeValue = deadLink;
+								}
 							}
-							break;
-					}
-					let frFn;
-					if(eventName == "timeupdate" && el.requestVideoFrameCallback){
-						// allow for frame synced updates
-						frFn = (now, metaData) => {
-							fn();
-							el.requestVideoFrameCallback(frFn);
-						}
-						el.requestVideoFrameCallback(frFn);
-					} else {
-						el.addEventListener(eventName, fn);
+							
+							switch(commandName){
+								case "start":
+								case "play":
+									fn = e => {
+										this.waxml.start(val);
+										this.waxml.setVariable(val, 1);
+									}
+									break;
+		
+								case "stop":
+									fn = e => {
+										this.waxml.stop(val);
+
+										// trix för att sätta resp keydown variable rätt
+										val = val.replace("keyup:", "keydown:");
+										this.waxml.setVariable(val, 0);
+									}
+									break;
+
+								case "continue":
+									fn = e => {
+										this.waxml.continue(val);
+										this.waxml.setVariable(val, 1);
+									}
+									break;
+
+
+								case "set":
+									if(val.includes("=")){
+										let values = [];
+										// allow for multiple values
+										let rules = val.split(";").forEach(expression => {
+											let arr = expression.split("=").map(v => v.trim());
+											let key = arr[0];
+											let value = arr[1];
+											if(key){
+
+												if(value.includes("this.")){
+													// allow for dynamic values from slider, switches etc.
+													let targetProperty = value.replace("this", "el");
+													value = {
+														valueOf: () => {
+															return eval(targetProperty);
+														}
+													}
+												} 
+												values.push({key: key, value: value});
+											}
+										});
+										fn = e => {
+											values.forEach(entry => {
+												this.waxml.setVariable(entry.key, entry.value.valueOf());
+											});
+										}
+										
+									} 
+
+
+
+
+									break;
+		
+								default:
+									fn = e => {
+										this.waxml.setVariable(commandName, val.valueOf());
+									}
+									break;
+							}
+							let frFn;
+							if(eventName == "timeupdate" && el.requestVideoFrameCallback){
+								// allow for frame synced updates
+								frFn = (now, metaData) => {
+									fn();
+									el.requestVideoFrameCallback(frFn);
+								}
+								el.requestVideoFrameCallback(frFn);
+							} else {
+								el.addEventListener(eventName, fn);
+							}
+		
+							if(eventName == "play" && el.autoplay && el.currentTime){
+								// trig function manually if video has already begun playback
+								(frFn || fn)();
+							}
+						break;
+
+
 					}
 
-					if(eventName == "play" && el.autoplay && el.currentTime){
-						// trig function manually if video has already begun playback
-						(frFn || fn)();
-					}
+
+					
 				}
 			});
 
@@ -686,7 +722,11 @@ class InteractionManager {
 		this.eventTracker.addSequence(name, events);
 	}
 
-	getSequence(name="_storedGesture"){
+	clearSequence(name){
+		this.eventTracker.clear(name);
+	}
+
+	getSequence(name = "_storedGesture"){
 		return this.eventTracker.getSequence(name);
 	}
 
@@ -698,7 +738,7 @@ class InteractionManager {
 		this._variables = this._variables || val;
 	}
 
-	setVariable(key, val, transistionTime){
+	setVariable(key, val, transistionTime, fromSequencer){
 		// 2022-03-23
 		// This is really bad design. There is a global layer of "invisible"
 		// variable objects stored in this._variables and there are global
@@ -706,12 +746,19 @@ class InteractionManager {
 		// These really ought to be the same container, but for now, they aren't...
 		
 		let container;
+
+		// remove initial dollar sign
+		if(key.substr(0,1) == "$"){
+			key = key.substr(1);
+		}
 		if(this.waxml.master && this.waxml.master.variables[key] instanceof Variable){
 			container = this.waxml.master.variables;
 		} else if(this._variables[key] instanceof Variable){
 			container = this._variables;
 		}
+		let updated = false;
 		if(container){
+			updated = container[key].valueOf() != val;
 			if(transistionTime){
 				// override transitionTime if specified
 				container[key].setValue(val, transistionTime);
@@ -720,7 +767,13 @@ class InteractionManager {
 			}
 			
 		} else {
+			updated = this._variables[key] != val;
 			this._variables[key] = val;
+		}
+
+		// store in sequencer if specified
+		if(!fromSequencer && updated && this.variablesToStore.includes(key)){
+			this.eventTracker.store(key, val);
 		}
 		
 	}
