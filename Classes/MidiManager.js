@@ -15,10 +15,10 @@ class MidiManager {
 					input.onmidimessage = e => this.getMIDIMessage(e);
 				}
 			}, () => {
-				console.error('Could not access your MIDI devices.');
+				console.warn('Could not access your MIDI devices.');
 			});
 		} else {
-			console.error('WebMIDI is not supported in this browser.');
+			console.warn('WebMIDI is not supported in this browser.');
 		}
 
 	}
