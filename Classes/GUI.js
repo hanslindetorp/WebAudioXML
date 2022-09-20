@@ -9,7 +9,6 @@ class GUI {
 
 		this.waxml = waxml;
 		this.elementCounter = 0;
-
 		
 		let style = document.createElement("style");
 		style.innerHTML = `
@@ -17,13 +16,8 @@ class GUI {
 			* {
 				font-family: sans-serif;
 			}
-			#waxml-GUI {
+			#waxml-GUI, #iMusic-GUI {
 				font-size: 80%;
-				top: 0px;
-				left: 0px;
-				width: 100%;
-				height: 100%;
-				position: absolute;
 				overflow: auto;
 				padding: 1em;
 				transition: 0.5s;
@@ -35,10 +29,12 @@ class GUI {
 				border-top: 1px solid grey;
 				margin-top: 1em;
 			}
-			#waxml-GUI button {
-				border-radius: 3px;
+			#waxml-GUI button,
+			#iMusic-GUI button {
+				border-radius: 5px;
 				padding: 0.2em 0.5em;
-   				margin: 0em 0.2em;
+				min-width: 5em;
+				margin-right: 0.5em;
 			}
 
 			#waxml-GUI > button.close {
@@ -130,6 +126,22 @@ class GUI {
 			#waxml-GUI .sliderContainer.variable input[type='range'] {
 				width: 15.6em;
 			}
+
+			#waxml-GUI select,
+			#iMusic-GUI select {
+				margin: 1em;
+				padding: 0.5em;
+				min-width: 10em;
+			}			
+
+			#waxml-GUI .errorBox,
+			#iMusic-GUI .errorBox {
+				color: #900;
+				border: 1px solid black;
+				margin-top: 1em;
+				padding: 1em;
+				width: 80%;
+			}
 		
 		`;
 
@@ -138,6 +150,7 @@ class GUI {
 		container.classList.add("WebAudioXML");
 
 		let allNodes = xmlNode.querySelectorAll("*[controls='true'], *[controls='show']");
+
 
 		if(xmlNode.firstChild.getAttribute("controls") == "show"){
 			document.head.appendChild(style);
@@ -162,9 +175,12 @@ class GUI {
 
 			shadowElement.appendChild(container);
 
+
+			this.HTML = shadowElement;
+
 			
 			let openbtn = document.createElement("button");
-			openbtn.innerHTML = "WebAudioXML GUI";
+			openbtn.innerHTML = "Music and Mixer";
 			openbtn.style.position = "absolute";
 			openbtn.style.right = "2px";
 			openbtn.style.top = "2px";
@@ -196,8 +212,6 @@ class GUI {
 		header.innerHTML = "WebAudioXML";
 		container.appendChild(header);
 
-
-
 		// Find variables in use without <var> elements
 		let usedVariables = [];
 		xmlNode.querySelectorAll("*").forEach(node => {
@@ -220,7 +234,7 @@ class GUI {
 
 		// Generate sliders for <var> elememts and audio parameters
 		let specifiedContainer = document.createElement("div");
-		specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
+		//specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
 		specifiedContainer.classList.add("container");
 		container.appendChild(specifiedContainer);
 
@@ -230,12 +244,12 @@ class GUI {
 			this.XMLtoSliders(xmlNode, specifiedContainer, true);
 		});
 
-		this.addUnspecifiedVariableSliders(this.usedVariables, unspecVarsContainer);
+		//this.addUnspecifiedVariableSliders(this.usedVariables, unspecVarsContainer);
 		
-		let columnView = document.createElement("div");
-		columnView.classList.add("columnView");
-		document.body.appendChild(columnView);
-		this.XMLtoColumnView([this.waxml.structure.XMLtree], columnView);
+		// let columnView = document.createElement("div");
+		// columnView.classList.add("columnView");
+		// document.body.appendChild(columnView);
+		// this.XMLtoColumnView([this.waxml.structure.XMLtree], columnView);
 	}
 
 
@@ -280,16 +294,21 @@ class GUI {
 		container.innerHTML = "<h2>Triggers</h2>";
 		el.appendChild(container);
 
-		xmlNode.querySelectorAll("*[id]").forEach(xmlNode => {
+		let idSelector = "Envelope[id], ObjectBasedAudio[id], AmbientAudio[id], AudioBufferSourceNode[id]";
+
+		xmlNode.querySelectorAll(idSelector).forEach(xmlNode => {
 			IDs.push(xmlNode.id);
 		});
 		[...new Set(IDs)].forEach(id => this.addButton(id, container, e => this.waxml.start(`#${id}`)));
 
-		xmlNode.querySelectorAll("*[class]").forEach(xmlNode => {
+		let selector = "Envelope[class], ObjectBasedAudio[class], AmbientAudio[class], AudioBufferSourceNode[class]";
+
+		xmlNode.querySelectorAll(selector).forEach(xmlNode => {
 			xmlNode.classList.forEach(className => classNames.push(className));
 		});
 		[...new Set(classNames)].forEach(className => this.addButton(className, container, e => this.waxml.start(`.${className}`)));
 
+		container.style.display = classNames.length + IDs.length ? "block" : "none";
 	}
 
 
@@ -322,10 +341,13 @@ class GUI {
 			subEl.classList.add(xmlNode.localName.toLowerCase());
 			subEl.classList.add("waxml-object");
 			
+			// 2022-08-30 - reduced to only show top level variables
+			if(xmlNode.parentNode.nodeName == "#document"){
+				Array.from(xmlNode.children).forEach(childNode => {
+					slidersAdded = this.XMLtoSliders(childNode, subEl) || slidersAdded;
+				});
+			}
 			
-			Array.from(xmlNode.children).forEach(childNode => {
-				slidersAdded = this.XMLtoSliders(childNode, subEl) || slidersAdded;
-			});
 			if(slidersAdded)el.appendChild(subEl);
 
 		} else {
