@@ -197,7 +197,10 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		default:
 		floatVal = parseFloat(value);
-		if(!Number.isNaN(floatVal)){
+		// if(!Number.isNaN(floatVal)){
+		// 	value = floatVal;
+		// }
+		if(floatVal == value){
 			value = floatVal;
 		}
 		break;
@@ -373,6 +376,22 @@ WebAudioUtils.caseFixParameter = param => {
 
 		case "randomdetune":
 		param = "randomDetune";
+		break;
+
+		case "framerate":
+		param = "frameRate";
+		break;
+
+		case "falloffratio":
+		param = "fallOffRatio";
+		break;
+
+		case "smoothderivative":
+		param = "smoothDerivative";
+		break;
+
+		case "reloffset":
+		param = "relOffset";
 		break;
 
   	}
