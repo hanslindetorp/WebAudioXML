@@ -34,8 +34,9 @@ class XY_area extends HTMLElement {
 		this.style.display = "inline-block"; // not good
 		this.style.width = "200px";
 		this.style.height = "200px";
+		this.style.boxSizing = "border-box";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
-
+		
 		this.type = this.getAttribute("type") || "square";
 		switch(this.type){
 			case "square":
