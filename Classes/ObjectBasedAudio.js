@@ -12,19 +12,17 @@ class ObjectBasedAudio {
 
         this.input = new GainNode(this._ctx);
         this.pannerNode = new PannerNode(this._ctx, params);
+        this.gainNode = new GainNode(this._ctx);
         this.send = new GainNode(this._ctx);
         this.output = new GainNode(this._ctx);
+ 
+        this.input.connect(this.pannerNode);  
+        this.pannerNode.connect(this.gainNode);  
+        this.gainNode.connect(this.send)
+        this.gainNode.connect(this.output);
 
-        this.input.connect(this.pannerNode);   
-        this.pannerNode.connect(this.send)
-        this.pannerNode.connect(this.output);
-
-        if(params.src){
-            this.bufferSource = new BufferSourceObject(this, params);
-            this.bufferSource.connect(this.pannerNode);
-        } else {
-            // console.error("No src specified for ObjectBasedAudio", params);
-        }
+        this.bufferSource = new BufferSourceObject(this, params);
+        this.bufferSource.connect(this.pannerNode);
 
         if(params.convolution){
             this.convolverNode = waxml.getConvolver(params.convolution).node;
@@ -62,6 +60,19 @@ class ObjectBasedAudio {
             }
             return val;
         }
+    }
+
+    fadeIn(time){
+        this.fade(1, time);
+    }
+
+    fadeOut(time){
+        this.fade(0, time);
+    }
+
+    fade(val = 1, time = 0){
+        this.output.gain.cancelScheduledValues(this._ctx.currentTime);
+        this.output.gain.setTargetAtTime(val, this._ctx.currentTime, time);
     }
 	
     get input(){
@@ -306,7 +317,8 @@ class ObjectBasedAudio {
     }
   
     get gain(){
-        return this.output.gain;
+        // return this.output.gain.value;
+        return this.gainNode.gain;
     }
      
     connect(destination){
@@ -315,6 +327,12 @@ class ObjectBasedAudio {
     }
 	
     start(){
+        if(this.stopTimeout){
+            clearTimeout(this.stopTimeout);
+        }
+
+        let transitionTime = this.getParameter("transitionTime");
+        this.fadeIn(transitionTime/3);
 
         if(this.bufferSource._buffer){
             this.bufferSource.start();
@@ -324,8 +342,48 @@ class ObjectBasedAudio {
         }
     }
 
+    resume(){
+        let transitionTime = this.getParameter("transitionTime");
+        this.fadeIn(transitionTime/3);
+		if(this.bufferSource._buffer){
+            this.bufferSource.resume();
+        } else {
+            let fn = () => this.bufferSource.resume();
+            this.bufferSource.addCallBack(fn);
+        }
+	}
+
+    get playing(){
+        return this.bufferSource ? this.bufferSource.playing : false;
+    }
+
+    set playing(state){
+        if(this.bufferSource){
+            this.bufferSource.playing = state;
+        }
+       
+    }
+
+
+	continue(){
+		this.resume();
+	}
+
     stop(){
-        if(this.bufferSource)this.bufferSource.stop();
+
+        // fadeout first
+        let transitionTime = this.getParameter("transitionTime");
+        this.fadeOut(transitionTime/5);
+        this.playing = false;
+
+        if(this.bufferSource){
+            this.bufferSource.stop({dontDisconnect: true})
+            // avoid cutting audio before fade is done
+            this.stopTimeout = setTimeout(e => {
+                this.bufferSource.disconnect();
+            }, transitionTime * 1000 * 1.5);
+        }
+        
     }
 
 
@@ -342,7 +400,30 @@ class ObjectBasedAudio {
         // we hard-code the Y component to 0, as Y is the axis of rotation
         return [x, 0, z];
     }
-	    
+
+
+
+    get offset(){
+        return this.bufferSource ? this.bufferSource.offset :  0;
+    }
+
+    set offset(val){
+        if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this.bufferSource), 'offset')){
+            this.bufferSource.offset = val;
+        }
+    }
+
+    get relOffset(){
+        return this.bufferSource ? this.bufferSource.relOffset : 0;
+    }
+
+    set relOffset(val){
+        if(this.bufferSource){
+            if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this.bufferSource), 'relOffset')){
+                this.bufferSource.relOffset = val;
+            }
+        }
+    }
 }
 
 module.exports = ObjectBasedAudio;
