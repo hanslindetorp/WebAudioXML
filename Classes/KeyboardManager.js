@@ -28,6 +28,8 @@ class KeyboardManager {
 	
 			this.waxml.start(`keydown:${e.key}`);
 			this.waxml.stop(`keydown:${e.key}`);
+
+			this.waxml.setVariable(`keydown:${e.key}`, 1);
 		}
 		
 	}
@@ -49,6 +51,8 @@ class KeyboardManager {
 	
 			this.waxml.start(`keyup:${e.key}`);
 			this.waxml.stop(`keyup:${e.key}`);
+
+			this.waxml.setVariable(`keydown:${e.key}`, 0);
 		}
 
 		
