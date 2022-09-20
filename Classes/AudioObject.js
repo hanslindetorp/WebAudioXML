@@ -237,6 +237,7 @@ class AudioObject{
         case "gainnode":
         case "mixer":
         case "voice":
+        case "include":
         case "xi:include":
 		  	this._node = this._ctx.createGain();
 		  	break;
@@ -297,7 +298,10 @@ class AudioObject{
 
 
 		  	case "envelope":
-		  	this._node = xmlNode.parentNode.audioObject._node;
+        if(xmlNode.parentNode.audioObject){
+          this._node = xmlNode.parentNode.audioObject._node;
+        }
+		  	
 		  	this._params.max = this._params.max || 1;
 		  	this._params.valuescale = this._params.max / 100;
 
@@ -318,7 +322,10 @@ class AudioObject{
 
 
         // init envelope to be "closed" on startup
-		  	this.setTargetAtTime(this._node, 0, 0, 0, true);
+        if(this._node){
+          this.setTargetAtTime(this._node, 0, 0, 0, true);
+        }
+		  	
 		  	break;
 
 
@@ -462,7 +469,7 @@ class AudioObject{
                   this.setTargetAtTime(key, val, 0, time, true);
                  }
                });
-            } else if(envName = WebAudioUtils.getEnvelopeName(value)){
+            } else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
 
               // make connection to controlling Envelope
               let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
@@ -506,17 +513,50 @@ class AudioObject{
     }
 
     getParameter(paramName){
+      let val;
+
       if(typeof this._params[paramName] === "undefined"){
           
           if(this._parentAudioObj){
               return this._parentAudioObj.getParameter(paramName);
           } else {
-              return 0;
+
+              // return default values
+              switch(paramName){
+                case "transitionTime":
+                  val = 0.001;
+                break;
+
+                case "frameRate":
+                  val = 30;
+                break;
+
+                case "fallOffRatio":
+                  val = 0.5;
+                break;
+
+
+                case "smoothDerivative":
+                  val = 5;
+                break;
+
+                case "loopEnd":
+                  // avoid setting loopEnd to 0
+                  // ideally (maybe) setting it to duration
+                  // of audio buffer
+                break;
+
+                default:
+                  val = 0;
+                break;
+              }
+              return val;
           }
 
       } else {
-          let val = this._params[paramName];
+          val = this._params[paramName];
 
+          // adjust time
           switch(paramName){
               case "transitionTime":
               case "loopEnd":
@@ -640,6 +680,7 @@ class AudioObject{
     }
 
   	start(data){
+      this._playing = true;
 	  	switch(this._nodeType){
 
 		  	case "oscillatornode":
@@ -740,8 +781,23 @@ class AudioObject{
 	  	}
   	}
 
+    continue(){
+      if(this._node.continue){
+        this._playing = true;
+        this._node.continue();
+      }
+    }
+
+    resume(){
+      if(this._node.resume){
+        this._playing = true;
+        this._node.resume();
+      }
+    }
+
   	stop(data){
 
+      this._playing = false;
 	  	switch(this._nodeType){
 
 		  	case "voice":
@@ -763,12 +819,13 @@ class AudioObject{
 		  	}
 		  	break;
 
+        case "ambientaudio":
         case "audiobuffersourcenode":
         case "objectbasedaudio":
-        case "ambientaudio":
         //if(this._node.stop){this._node.stop()}
         this._node.stop();
         break;
+
 	  	}
   	}
 
@@ -780,7 +837,11 @@ class AudioObject{
 	  	let startTime = this._ctx.currentTime + (delay || 0);
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
-      audioNode = audioNode || this._node;
+
+      // this is stupid. Send objects shall control their "_bus" node
+      // which is dealt with in the set gain() method, but it wasn't taken care of 
+      // here. Not good desig.
+      audioNode = audioNode || this._bus ||  this._node;
 
       if(typeof value == "undefined"){
         console.warn("Cannot set " + param + " value to undefined");
@@ -788,8 +849,14 @@ class AudioObject{
       }
 
 
+      // Hela den här if-satsen är en katastrof som MÅSTE göras om från grunden.
+      // Kanske det bästa vore att ha en enda funktion för att sätta en parameter som tillåter
+      // delay och fadeTime. Sedan får funktionen ta reda på vilka förutsättningar som finns för att
+      // ändra med setTargetAtTime. Inte på det här tokiga sättet med undantag i det oändliga.
+      
+      let avoidList = ["channelmergernode"];
 
-      if(audioNode && this._nodeType != "channelmergernode"){
+      if(audioNode && !avoidList.includes(this._nodeType)){
 
         //  web audio parameter
         if(typeof param == "string"){
@@ -897,7 +964,7 @@ class AudioObject{
     fadeOut(fadeTime = 0.001){
       this.fade(0, fadeTime);
     }
-    fade(val, fadeTime = 0.001){
+    fade(val = 1, fadeTime = 0.001){
       this.setTargetAtTime("gain", val, 0, fadeTime, true);
     }
 
@@ -957,6 +1024,27 @@ class AudioObject{
 
 	  	}
   	}
+
+
+    get offset(){
+      return 0 || this._node.offset || this._offset || 0;
+    }
+
+    set offset(val){
+      if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._node), 'offset')){
+        this._node.offset = val;
+      }
+    }
+
+    get relOffset(){
+      return this._node.relOffset;
+    }
+
+    set relOffset(val){
+      if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._node), 'relOffset')){
+        this._node.relOffset = val;
+      }
+    }
 
     set loop(val){
       this._node.loop = val == true;
@@ -1021,7 +1109,12 @@ class AudioObject{
   	}
 
   	get gain(){
-	  	return this._node.gain.value;
+      // det här är scary. För att setTargetAtTime ska funka måste
+      // get gain returnera ett objekt, men jag har ingen aning om var det kan gå fel...
+      // Jag vågar nog ändå inte...
+      // return this._node.gain;
+      let gainParam = this._node.gain;
+	  	return gainParam ? this._node.gain.value : false;
   	}
 
   	set frequency(val){
@@ -1147,6 +1240,9 @@ class AudioObject{
 	  	return this._node.value;
   	}
 
+    get playing(){
+      return this._node.playing;
+    }
 
 
     set mix(val){
@@ -1157,7 +1253,7 @@ class AudioObject{
         
       val *= targets.length; // 0 - nr of children or channelCount
 
-      let crossFadeRange = this._params.crossfaderange;
+      let crossFadeRange = this._params.crossfaderange.valueOf();
       crossFadeRange = typeof crossFadeRange == "undefined" ? 1 : crossFadeRange;
       crossFadeRange = crossFadeRange || 0.000001;
       let frameWidth = 1 - crossFadeRange;
@@ -1235,14 +1331,24 @@ class AudioObject{
 
         // Det vore kanske bättre att lägga ut detta i Mapper-objektet
         // Och att ha en extra GainNode mellan child-objekt och input
+        // let panValues = [];
         targets.forEach((target, i) => {
           let input = target.output ? target.output : target;
           let dist = Math.abs(i - val);
           let reduction = Math.min(dist, 1);
           reduction = Math.pow(reduction, 2); // +3dB for equal power
           let gain = 1 - reduction;
+          // panValues.push(Math.floor(gain * 100) / 100);
+          if(isNaN(gain)){
+            console.log("gain is NaN");
+          }
           input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
         });
+
+        // if(this._xml.parentElement.getAttribute("id") == "hf-chain"){
+        //   console.log(panValues);
+        // }
+        
 
       } else {
 		  	this.setTargetAtTime("pan", val);
