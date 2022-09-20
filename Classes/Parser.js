@@ -90,10 +90,6 @@ class Parser {
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
 					.then(xmlNode => {
-						// snyggare att lyfta ut audio-in till en egen class 
-						if(this.allElements.mediastreamaudiosourcenode){
-							navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
-						}
 						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
@@ -104,14 +100,6 @@ class Parser {
 
 		});
 
-	}
-
-	onStream(stream){
-		this.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
-	}
-
-	onStreamError(){
-		console.warn("Audio input error");
 	}
 
 	
@@ -421,6 +409,24 @@ class Parser {
 	get XMLstring(){
 		return this._XMLstring;
 	}
+
+
+	createObject(xmlNode){
+		let params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+		let obj;
+		switch(xmlNode.nodeName.toLowerCase()){
+			case "envelope":
+			obj = new Envelope(xmlNode, this.waxml, params);
+			break;
+
+			default:
+			obj = new AudioObject(xmlNode, this.waxml, "", params);
+			break;
+		}
+		return obj;
+	}
+
+
 }
 
 
