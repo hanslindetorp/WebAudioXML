@@ -256,6 +256,13 @@ class WebAudio {
 
 		//webAudioXML = xmlDoc.audioObject;
 		//webAudioXML.touch = touches;
+
+		// snyggare att lyfta ut audio-in till en egen class 
+		if(this.parser.allElements.mediastreamaudiosourcenode){
+			navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+		}
+
+
 		new Connector(xmlDoc, this._ctx);
 		this.plugins.forEach(plugin => {
 			plugin.init();
@@ -280,6 +287,17 @@ class WebAudio {
 				bus.input.connect(obj.input);
 			});
 		});
+
+
+	}
+
+
+	onStream(stream){
+		this.parser.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
+	}
+
+	onStreamError(){
+		console.warn("Audio input error");
 	}
 
 	getInputBus(selector){
@@ -291,16 +309,24 @@ class WebAudio {
 	}
 
 	start(selector, options){
-
+		let selectStr;
 		if(!selector){
-			selector = "*";
+			selectStr = "*";
 		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
-			selector = `*[start='${selector}']`;
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = `*[start='${selector}']`;
+			if(!selector.includes(":")){
+				if(selector.substr(0,1) != "."){
+					// support for class selection without the dod syntax
+					selector = "." + selector;
+				}
+				selectStr += `,${selector}`;
+			}
 		}
 		if(this._ctx.state != "running"){
 			this.init();
 		}
-		this._xml.querySelectorAll(selector).forEach(XMLnode => {
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
@@ -312,8 +338,16 @@ class WebAudio {
 
 	trig(selector, options){
 		if(!this._xml){return}
+		let selectStr = `*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`;
+		if(!selector.includes(":")){
+			if(selector.substr(0,1) != "."){
+				// support for class selection without the dod syntax
+				selector = "." + selector;
+			}
+			selectStr += `,${selector}`;
+		}
 
-		this._xml.querySelectorAll(`*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`).forEach(XMLnode => {
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
@@ -321,16 +355,76 @@ class WebAudio {
 			}
 		});
 	}
+
+	continue(selector){
+
+		let selectStr;
+		if(!selector){
+			selectStr = "*";
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = `*[start='${selector}']`;
+			if(!selector.includes(":")){
+				if(selector.substr(0,1) != "."){
+					// support for class selection without the dod syntax
+					selector = "." + selector;
+				}
+				selectStr += `,${selector}`;
+			}
+		}
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+			if(XMLnode.obj.continue){
+				XMLnode.obj.continue();
+			} 
+		});
+
+	}
+
+	resume(selector){
+
+		let selectStr;
+		if(!selector){
+			selectStr = "*";
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = `*[start='${selector}']`;
+			if(!selector.includes(":")){
+				if(selector.substr(0,1) != "."){
+					// support for class selection without the dod syntax
+					selector = "." + selector;
+				}
+				selectStr += `,${selector}`;
+			}
+		}
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+			if(XMLnode.obj.resume){
+				XMLnode.obj.resume();
+			} 
+		});
+	}
 	
 
 	release(selector, options){
 		if(!this._xml){return}
-		
-		this._xml.querySelectorAll(`*[noteoff='${selector}'], *[stop='${selector}']`).forEach(XMLnode => {
+		let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
+		if(!selector.includes(":")){
+			if(selector.substr(0,1) != "."){
+				// support for class selection without the dod syntax
+				selector = "." + selector;
+			}
+			selectStr += `,${selector}`;
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.stop){
 				XMLnode.obj.stop(options);
 			} else if(XMLnode.obj.noteOff){
-				XMLnode.obj.noteOn(options);
+				XMLnode.obj.noteOff(options);
 			}
 		});
 	}
@@ -493,7 +587,7 @@ class WebAudio {
 		this.ui.variables = val;
 	}
 
-	setVariable(key, val, transitionTime){
+	setVariable(key, val, transitionTime, fromSequencer){
 
 		// move to a separate object
 		// read transitionTime
@@ -540,10 +634,12 @@ class WebAudio {
 			if(val == floatVal){val = floatVal}
 		}
 		
-		this.ui.setVariable(key, val, transitionTime);
+		this.ui.setVariable(key, val, transitionTime, fromSequencer);
 
 		// this REALLY need to be worked through
 		// at the moment I just pass the variable "hand_r8y"
+		// to make it possible to control intensity in iMusic on 
+		// my 50% seminar ;-)
 		if(key == "hand_r8y"){
 			this.plugins.forEach(plugin => {
 				if(plugin.setVariable){
@@ -553,6 +649,15 @@ class WebAudio {
 		}
 		
 	}
+
+	set variablesToStore(varNames){
+		this.ui.variablesToStore = varNames;
+	}
+
+	get variablesToStore(){
+		return this.ui.variablesToStore;
+	}
+	
 	getVariable(key){
 		return this.ui.getVariable(key);
 	}
@@ -562,12 +667,22 @@ class WebAudio {
 		return this.ui.lastGesture;
 	}
 
-	addSequence(events, name){
-		this.ui.addSequence(events, name);
+	addSequence(name = "default", events){
+		this.ui.addSequence(name, events);
 	}
 
-	getSequence(name){
+	clearSequence(name = "default"){
+		this.ui.clearSequence(name);
+	}
+
+	getSequence(name = "default"){
 		return this.ui.getSequence(name);
+	}
+
+	getSequenceData(options = {}){
+		let name = options.name || "default";
+		let seq = this.ui.getSequence(name);
+		return seq.getData(options);
 	}
 
 	copyLastGestureToClipboard(){
@@ -609,6 +724,12 @@ class WebAudio {
 		}
 		return convolverNodeObject;
 	}
+
+	// a way to create WAXML objects from iMusicXML
+	createObject(xmlNode){
+		return this.parser.createObject(xmlNode);
+	}
+
 
 }
 
