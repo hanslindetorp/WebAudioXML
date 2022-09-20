@@ -4,8 +4,8 @@ var Sequence = require('./Sequence.js');
 
 class EventTracker {
 
-	constructor(_varRouter){
-		this._variableRouter = _varRouter;
+	constructor(waxml){
+		this.waxml = waxml;
 
 		this._sequences = [];
 		this._registeredEvents = [];
@@ -14,7 +14,7 @@ class EventTracker {
 		this.addSequence();
 	}
 
-	getSequence(name = this._curSeqName){
+	getSequence(name = "_storedGesture"){
 		return this._sequences.find(seq => seq.name == name);
 	}
 
@@ -95,14 +95,32 @@ class EventTracker {
 		return ev;
 	}
 
+	// added 2022-05-11 as a simpler way of recording variable changes
+	store(key, value){
+		this.currentSequence.store(key, value);
+	}
+
 	trigEvent(name, value){
-		let ev = this._registeredEvents.find(ev => ev.name == name);
-		if(ev.execute){ev.execute(value)}
+		// Kolla vad de här två raderna gjorde i gamla tider
+		// let ev = this._registeredEvents.find(ev => ev.name == name);
+		// if(ev.execute){ev.execute(value)}
+
+		// Till Ficson har jag fixat denna istället:
+		this.waxml.setVariable(name, value, 0, true);
+		this.waxml.plugins.forEach(plugin => {
+			if(plugin.setVariable){
+				plugin.setVariable(name, value);
+			}
+		});
+
 	}
 
 	clear(name = this._curSeqName){
-
-		this.getSequence(name).clear();
+		let seq = this.getSequence(name);
+		if(seq){
+			seq.clear();
+		}
+		
 	}
 
 	allEvents(name = this._curSeqName, filter = []){
@@ -116,14 +134,14 @@ class EventTracker {
 	get lastTouchGesture(){
 		let seq = this.getSequence("default");
 		let name = seq.name;
-		let events = seq.events("touchstart", "touchend", ["touchstart", "touchmove", "touchend"], ["relX", "relY"]);
+		let events = seq.filterEvents("touchstart", "touchend", ["touchstart", "touchmove", "touchend"], ["relX", "relY"]);
 		return new Sequence(this, name, events);
 	}
 
 	get lastGesture(){
 		let seq = this.getSequence("default");
 		let name = seq.name;
-		let events = seq.events("pointerdown", "pointerup", ["pointerdown", "pointermove", "pointerup"], ["relX", "relY"]);
+		let events = seq.filterEvents("pointerdown", "pointerup", ["pointerdown", "pointermove", "pointerup"], ["relX", "relY"]);
 		return new Sequence(this, name, events);
 	}
 
