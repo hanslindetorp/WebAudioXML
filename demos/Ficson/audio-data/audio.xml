@@ -2,6 +2,8 @@
 <Audio transitionTime="1" version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
     
 
+    <var name="master" default="1"></var>
+    <var name="calibration" default="0"></var>
     <var name="solo" value="$solo" default="0"></var>
     
     
@@ -13,7 +15,7 @@
     <var name="angle1" value="$time" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_rAngle.csv"></var>
     <var name="pan1" value="$angle1" mapin="-0.066,0.423" mapout="0,1"></var>
         
-    <Mixer gain="+7dB" output="#ch1-hang-flyer">
+    <Mixer gain="-7dB" output="#ch1-hang-flyer">
         <var name="zPos" value="($time+0.8)%31" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
         
         <var name="pan" value="$angle1" mapin="-0.066,0.423" mapout="-1,4"></var>
@@ -52,7 +54,7 @@
     <var name="pan3" value="$angle3" mapin="-0.2,0.5" mapout="-0.8,0.8"></var>
           
 
-    <Mixer gain="+9dB" output="#ch3-fleeting-board">
+    <Mixer gain="-3dB" output="#ch3-fleeting-board">
         <var name="dist" value="$time" mapin="0,31" mapout="AnimationData/hoverBoard/hoverBoard_Dist.csv"></var>
         <var name="locZ" value="$dist" mapin="10, 17" mapout="-10,-30"></var>
         <var name="yRot" value="$time" mapin="0,31" mapout="AnimationData/hoverBoard/hoverBoard_rYRot.csv"></var>
@@ -83,75 +85,72 @@
             <!-- <var name="multi_pan" mapin="-1,1"></var> -->
             
             <GainNode id="ch1-hang-flyer" gain="$ch1"></GainNode>
+            
+            <GainNode gain="1"></GainNode>
+
             <Send output=".cityConvolution" gain="0"></Send>
             <Send output="#hangflyerLP"></Send>
-            <!-- <GainNode output=".multi-out"></GainNode> -->
+            <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$pan1">
                 <GainNode class="multi-out" channel="4"></GainNode>
                 <GainNode class="multi-out" channel="5"></GainNode>
             </ChannelMergerNode>
-            <GainNode gain="0dB"></GainNode>
         </Chain>
 
-        <Chain>
+        <Chain id="hf-chain">
             <GainNode id="hangflyerLP" gain="+3dB"></GainNode>
             <BiquadFilterNode type="lowpass" frequency="300"></BiquadFilterNode>
-            <!-- <GainNode output=".multi-out"></GainNode> -->
-            <ChannelMergerNode pan="$pan1">
-                <GainNode class="multi-out"></GainNode>
-                <GainNode class="multi-out"></GainNode>
-                <GainNode class="multi-out"></GainNode>
-                <GainNode class="multi-out"></GainNode>
-            </ChannelMergerNode>
-            <GainNode gain="1"></GainNode>
+            <GainNode output=".multi-out"></GainNode>
+            
+            <GainNode gain="-3dB"></GainNode>
         </Chain>
 
-        <Chain>
+        <Chain id="wc-chain">
             <GainNode id="ch2-wheel-chair" gain="$ch2"></GainNode>
+            
+            <GainNode gain="1"></GainNode>
+
             <Send output=".cityConvolution" gain="0"></Send>
-            <!-- <GainNode output=".multi-out"></GainNode> -->
+            <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$pan2">
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
             </ChannelMergerNode>
-            <GainNode gain="1"></GainNode>
         </Chain>
 
 
         <Chain>
             <GainNode id="ch3-fleeting-board" gain="$ch3"></GainNode>
+            
+            <GainNode gain="1"></GainNode>
+
             <Send output=".cityConvolution" gain="0"></Send>
-            <!-- <GainNode output=".multi-out"></GainNode> -->
+            <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$pan3">
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
                 <GainNode class="multi-out"></GainNode>
             </ChannelMergerNode>
-            <GainNode gain="1"></GainNode>
         </Chain>
         
         <ConvolverNode class="cityConvolution" src="convolution/PlateSmall.wav"></ConvolverNode>
         
-        <!-- <Chain gain="+3db">
+        <Chain id="bg-node" gain="+3db">
+            <!-- gain="$ambiencegain" -->
             <ChannelMergerNode>
                 <AmbientAudio src="ambience/front_atmo_w_voices.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio>
+                <!-- <AmbientAudio src="ambience/street_car_distant.wav" start="auto" gain="-12dB" channel="6,7"></AmbientAudio> -->
+                <!--AmbientAudio src="ambience/surround_atmo.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio-->  
                 <AmbientAudio src="ambience/ped_crossing.wav" start="auto" gain="-18dB" channel="6,7"></AmbientAudio>  
                 <AmbientAudio src="ambience/steg_loop.wav" start="auto" gain="-12dB" channel="6,4"></AmbientAudio>    
             </ChannelMergerNode>
             <GainNode gain="$bg"></GainNode>
 
-            <GainNode gain="1"></GainNode>
-        </Chain> -->
-
-        <Mixer>
-            <AmbientAudio src="ambience/front_atmo_w_voices.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio>
-            <AmbientAudio src="ambience/ped_crossing.wav" start="auto" gain="-18dB" channel="6,7"></AmbientAudio>  
-            <AmbientAudio src="ambience/steg_loop.wav" start="auto" gain="-12dB" channel="6,4"></AmbientAudio>    
-        </Mixer>
-
+            <GainNode gain="0"></GainNode>
+        </Chain>
         
     </Mixer>
 

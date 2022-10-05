@@ -13,16 +13,22 @@
     <var name="gen3Gain" value="$deg2" mapin="0,90,180,270,360" mapout="0,0,1,0,0"></var>
     <var name="gen4Gain" value="$deg2" mapin="0,90,180,270,360" mapout="0,0,0,1,0"></var>
 
-    <var name="dryGain" value="$dist2"></var>
-    <var name="wetGain" value="1-$dist2"></var>
+    
+    <var name="dryGain" value="$dist2" mapin="0,0.7" mapout="0,1"></var>
+    <var name="wetGain" value="$dist2" mapin="0,0.7" mapout="1,0"></var>
+    <var name="engineGain" value="$dist2" curve="3" mapin="0.5,1" mapout="0.2,0.7"></var>
 
     <Mixer id="vehicle2" output=".channel" gain="$dynGain">
 
         <var name="root" mapin="48, 72" steps="0,1" default="65"></var>
 
-        <xi:include href="engine2-wheel-chair.xml" />
+        <Mixer gain="$engineGain">
+            <xi:include href="engine2-wheel-chair.xml" />
+        </Mixer>
+        
         
         <Chain gain="$dryGain">
+        <!-- <Chain gain="1-($onX*$onY)"> -->
             <Mixer gain="1">
 
                 <!-- GENERATOR 1 -->
@@ -109,6 +115,8 @@
             <Send output=".reverb" gain="+7.5dB"></Send>
         </Chain>
 
+        <var name="origo" value="$onX*$onY" curve="3"></var>
+        <!-- <Chain gain="$origo"> -->
         <Chain gain="$wetGain">
             <ConvolverNode class="reverb" src="convolution/r1_omni_48k_1s.wav"></ConvolverNode>
             
@@ -126,7 +134,7 @@
 
     <Chain class="channel">
         <GainNode gain="$gain"></GainNode>
-        <ObjectBasedAudio positionZ="-5" positionX="$pan"></ObjectBasedAudio>
+        <!-- <ObjectBasedAudio positionZ="-5" positionX="$pan"></ObjectBasedAudio> -->
     </Chain>
 
 </Audio>

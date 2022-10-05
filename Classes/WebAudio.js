@@ -309,19 +309,19 @@ class WebAudio {
 	}
 
 	start(selector, options){
+		
 		let selectStr;
 		if(!selector){
 			selectStr = "*";
-		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
+		} else if(selector.includes("[") || selector.includes("#") || selector.includes(".") ){
+			// complex and correct selector expected
+			selectStr = selector;
+		} else if(selector.includes(":")){
+			// special case for keydown:x and keyup:x
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}']`).join(",");
+		} else {
 			// select both elements with attribute "start="selector" and class="selector"
-			selectStr = `*[start='${selector}']`;
-			if(!selector.includes(":")){
-				if(selector.substr(0,1) != "."){
-					// support for class selection without the dod syntax
-					selector = "." + selector;
-				}
-				selectStr += `,${selector}`;
-			}
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
@@ -338,7 +338,7 @@ class WebAudio {
 
 	trig(selector, options){
 		if(!this._xml){return}
-		let selectStr = `*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`;
+		let selectStr = `*[trig='${selector}'], *[noteon='${selector}'], *[start='${selector}']`;
 		if(!selector.includes(":")){
 			if(selector.substr(0,1) != "."){
 				// support for class selection without the dod syntax
@@ -358,19 +358,12 @@ class WebAudio {
 
 	continue(selector){
 
-		let selectStr;
+		let selectStr = `*[start='${selector}']`;
 		if(!selector){
 			selectStr = "*";
-		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
 			// select both elements with attribute "start="selector" and class="selector"
-			selectStr = `*[start='${selector}']`;
-			if(!selector.includes(":")){
-				if(selector.substr(0,1) != "."){
-					// support for class selection without the dod syntax
-					selector = "." + selector;
-				}
-				selectStr += `,${selector}`;
-			}
+			selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
@@ -385,19 +378,12 @@ class WebAudio {
 
 	resume(selector){
 
-		let selectStr;
+		let selectStr = `*[start='${selector}']`;
 		if(!selector){
 			selectStr = "*";
-		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
 			// select both elements with attribute "start="selector" and class="selector"
-			selectStr = `*[start='${selector}']`;
-			if(!selector.includes(":")){
-				if(selector.substr(0,1) != "."){
-					// support for class selection without the dod syntax
-					selector = "." + selector;
-				}
-				selectStr += `,${selector}`;
-			}
+			selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
@@ -413,12 +399,9 @@ class WebAudio {
 	release(selector, options){
 		if(!this._xml){return}
 		let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
-		if(!selector.includes(":")){
-			if(selector.substr(0,1) != "."){
-				// support for class selection without the dod syntax
-				selector = "." + selector;
-			}
-			selectStr += `,${selector}`;
+		if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+			// select both elements with attribute "stop="selector" and class="selector"
+			selectStr += ", " + selector.split(",").map(sel => `*[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
 		}
 		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.stop){
@@ -593,42 +576,53 @@ class WebAudio {
 		// read transitionTime
 		let xTime = transitionTime
 		if(this._xml){
-			xTime = xTime || this._xml.obj.getParameter("transitionTime");
+			if(typeof xTime == "undefined"){
+				xTime = this.master.getParameter("transitionTime");
+			} 
 		}
-		xTime = xTime || 0.001;
+		xTime = xTime || 0.01;
 
 		let floatVal = parseFloat(val);
 		if(typeof floatVal == "number"){
 			let listener = this._ctx.listener;
 			switch(key){
 				case "positionx":
-				listener.positionX.setTargetAtTime(floatVal, 0, xTime);
+				case "positionX":
+				listener.positionX.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "positiony":
-				listener.positionY.setTargetAtTime(floatVal, 0, xTime);
+				case "positionY":
+				listener.positionY.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "positionz":
-				listener.positionZ.setTargetAtTime(floatVal, 0, xTime);
+				case "positionZ":
+				listener.positionZ.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 	
 				case "forwardx":
-				listener.forwardX.setTargetAtTime(floatVal, 0, xTime);
+				case "forwardX":
+				listener.forwardX.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "forwardy":
-				listener.forwardY.setTargetAtTime(floatVal, 0, xTime);
+				case "forwardY":
+				listener.forwardY.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "forwardz":
-				listener.forwardZ.setTargetAtTime(floatVal, 0, xTime);
+				case "forwardZ":
+				listener.forwardZ.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 	
 				case "upx":
-				listener.upX.setTargetAtTime(floatVal, 0, xTime);
+				case "upX":
+				listener.upX.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "upy":
-				listener.upY.setTargetAtTime(floatVal, 0, xTime);
+				case "upY":
+				listener.upY.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "upz":
-				listener.upZ.setTargetAtTime(floatVal, 0, xTime);
+				case "upZ":
+				listener.upZ.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 			}
 			if(val == floatVal){val = floatVal}
@@ -659,7 +653,34 @@ class WebAudio {
 	}
 	
 	getVariable(key){
-		return this.ui.getVariable(key);
+		switch(key){
+
+			case "positionX":
+			return this._ctx.listener.positionX.value;
+			break;
+			case "positionY":
+			return this._ctx.listener.positionY.value;
+			break;
+			case "positionZ":
+			return this._ctx.listener.positionZ.value;
+			break;
+
+			case "forwardX":
+			return this._ctx.listener.forwardX.value;
+			break;
+			case "forwardY":
+			return this._ctx.listener.forwardY.value;
+			break;
+			case "forwardZ":
+			return this._ctx.listener.forwardZ.value;
+			break;
+
+			default:
+			return this.ui.getVariable(key);
+			break;
+
+		}
+		
 	}
 
 	// InteractionManager

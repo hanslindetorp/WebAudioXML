@@ -12,15 +12,18 @@
     <var name="gen3Gain" value="$deg1" mapin="0,90,180,270,360" mapout="0,0,1,0,0"></var>
     <var name="gen4Gain" value="$deg1" mapin="0,90,180,270,360" mapout="0,0,0,1,0"></var>
 
-    <var name="dryGain" value="$dist1"></var>
-    <var name="wetGain" value="1-$dist1"></var>
+    <var name="dryGain" value="$dist1" mapin="0,0.7" mapout="0,1"></var>
+    <var name="wetGain" value="$dist1" mapin="0,0.7" mapout="1,0"></var>
+    <var name="engineGain" value="$dist1" curve="3" mapin="0.5,1" mapout="0.2,0.7"></var>
 
     <Mixer id="vehicle1" output=".channel">
 
         <var name="root" mapin="48, 72" steps="0,1" default="68"></var>
 
-        <xi:include href="engine1-hang-flyer.xml" />
-        
+        <Mixer gain="$engineGain">
+            <xi:include href="engine1-hang-flyer.xml" />
+        </Mixer>
+
         <Chain gain="$dryGain">
         <!-- <Chain gain="1-($onX*$onY)"> -->
             <Mixer gain="$dynGain">
@@ -45,7 +48,7 @@
                 </Chain>
 
                 <!-- GENERATOR 2 -->
-                <Chain class="generator2" gain="-6dB">
+                <Chain class="generator2" gain="-3dB">
                     <!-- <var name="gain" value="$x*$onX" mapin="0.5,1" mapout="0,1"></var> -->
                     <var name="gain" value="$gen2Gain"></var>
 
@@ -66,7 +69,7 @@
                 </Chain>
 
                 <!-- GENERATOR 3 -->
-                <Chain class="generator3" gain="-6dB">
+                <Chain class="generator3" gain="-3dB">
                     <!-- <var name="gain" value="$y*$onY" mapin="0.5,1" mapout="0,1"></var> -->
                     <var name="gain" value="$gen3Gain"></var>
 
@@ -83,9 +86,9 @@
                     <!-- <var name="gain" value="(1-$x)*$onX" mapin="0.5,1" mapout="0,1"></var> -->
                     <var name="gain" value="$gen4Gain"></var>
 
-                    <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,106" convert="MIDI->frequency"></var>
+                    <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,100" convert="MIDI->frequency"></var>
                     <!-- <var name="bandpass_Q" mapin="0,50" default="40"></var> -->
-                    <var name="bandpass_Q" value="Math.sqrt($bandpass_frequency)*4"></var>
+                    <var name="bandpass_Q" value="Math.sqrt($bandpass_frequency)*8"></var>
 
                     <var name="attack" mapin="1,100" default="40"></var>
                     <var name="decay" mapin="1,200" default="8"></var>
@@ -101,6 +104,8 @@
 
             <!-- <var name="dynGain" value="$speed" mapin="0,0.5" mapout="0.4,1"></var>
             <GainNode gain="$dynGain"></GainNode> -->
+            <DynamicsCompressorNode></DynamicsCompressorNode>
+            
             <Send output=".reverb" gain="+3dB"></Send>
         </Chain>
 
@@ -123,7 +128,7 @@
 
     <Chain class="channel">
         <GainNode gain="$gain"></GainNode>
-        <ObjectBasedAudio positionZ="-10" positionX="$pan" positionY="5"></ObjectBasedAudio>
+        <!-- <ObjectBasedAudio positionZ="-10" positionX="$pan" positionY="5"></ObjectBasedAudio> -->
     </Chain>
 
 </Audio>

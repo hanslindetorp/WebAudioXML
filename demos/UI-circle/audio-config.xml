@@ -1,12 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="-10dB">
 
-	<var name="f1" value="$angle" mapin="0, 1" mapout="36, 60, 36" steps="0,3,5,7,10,12" convert="MIDI->frequency" />
-	<var name="f2" value="$radius" mapin="0, 1" mapout="100, 3000" curve="3" />
+	<var name="d1" default="0" />
+	<var name="d2" default="0" />
+	<var name="d3" default="0" />
+	<var name="solo" default="0" value="$d1+$d2+$d2+$d3+$d3+$d3+$d3" />
 
-	<Chain gain="$dragged">
-		<OscillatorNode type="sawtooth" frequency="$f1" />
-		<BiquadFilterNode type="lowpass" frequency="$f2" />
+	<var name="f1a" value="$a1" mapin="0, 1" mapout="36, 60, 36" steps="0,3,5,7,10,12" convert="MIDI->frequency" />
+	<var name="f1b" value="$r1" mapin="0, 1" mapout="100, 3000" curve="3" />
+
+	<var name="f2a" value="$a2" mapin="0, 1" mapout="36, 60, 36" steps="0,3,5,7,10,12" convert="MIDI->frequency" />
+	<var name="f2b" value="$r2" mapin="0, 1" mapout="100, 3000" curve="3" />
+
+	<var name="f3a" value="$a3" mapin="0, 1" mapout="36, 60, 36" steps="0,3,5,7,10,12" convert="MIDI->frequency" />
+	<var name="f3b" value="$r3" mapin="0, 1" mapout="100, 3000" curve="3" />
+
+
+	<Chain gain="$d1">
+		<OscillatorNode type="sawtooth" frequency="$f1a" />
+		<BiquadFilterNode type="lowpass" frequency="$f1b" />
+	</Chain>
+
+	<Chain gain="$d2">
+		<OscillatorNode type="sawtooth" frequency="$f2a" />
+		<BiquadFilterNode type="lowpass" frequency="$f2b" />
+	</Chain>
+	<Chain gain="$d3">
+		<OscillatorNode type="sawtooth" frequency="$f3a" />
+		<BiquadFilterNode type="lowpass" frequency="$f3b" />
 	</Chain>
 	
 

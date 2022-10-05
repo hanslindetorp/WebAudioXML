@@ -4,8 +4,12 @@ class XY_area extends HTMLElement {
 
 	constructor(){
 		super();
+	}
 
+
+	connectedCallback(){
 		// grid
+
 		let columns = parseInt(this.getAttribute("columns") || 1);
 		let rows = parseInt(this.getAttribute("rows") || 1);
 
@@ -32,12 +36,13 @@ class XY_area extends HTMLElement {
 
 		this.style.touchAction = "none";
 		this.style.display = "inline-block"; // not good
-		this.style.width = "200px";
-		this.style.height = "200px";
+		this.style.width = this.getAttribute("width") || "200px";
+		this.style.height = this.getAttribute("height") || "200px";
 		this.style.boxSizing = "border-box";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
+		this.style.border = this.getAttribute("border") || "1px solid black";
 		
-		this.type = this.getAttribute("type") || "square";
+		// this.type = this.getAttribute("type") || "square";
 		switch(this.type){
 			case "square":
 			break;
@@ -65,7 +70,7 @@ class XY_area extends HTMLElement {
 					handle.pointerMove(data);
 				});
 			});
-		}
+		} 
 		
 	}
 
@@ -192,9 +197,6 @@ class XY_area extends HTMLElement {
 	}
 
 
-
-	connectedCallback() {
-	}
 }
 
 module.exports = XY_area;

@@ -4,24 +4,42 @@ class XY_handle extends HTMLElement {
 
 	constructor(){
 		super();
+	}
+
+
+	connectedCallback() {
+
 		this.style.position = "absolute";
-		this.style.minWidth = this.getAttribute("width") || this.getAttribute("size")  || "20px";
-		this.style.minHeight = this.getAttribute("height") || this.getAttribute("size") || "20px";
-		this.style.backgroundColor = this.getAttribute("background-color") || "#555";
-		this.style.color = this.getAttribute("color") || "#fff";
-		this.style.border = "2px solid black";
-		this.style.boxSizing = "border-box";
-		this.style.borderRadius = parseFloat(this.style.minWidth) / 2 + "px";
-		this.style.fontFamily = "sans-serif";
-		this.style.fontSize = this.getAttribute("font-size") || "10px";
-		this.style.textAlign = "center";
-		this.style.verticalAlign = "middle";
-		this.style.lineHeight = "1.3em";
-		this.style.padding = "3px";
 		this.style.cursor = "pointer";
 
 		// ensure that the XY_area has a specified position
+		// It seems like this one is nessecary
 		this.parentElement.style.position = this.parentElement.style.position || "relative";
+
+		let w = this.getAttribute("width") || this.getAttribute("size")  || "20px";
+		let h = this.getAttribute("height") || this.getAttribute("size") || "20px";
+
+		let icon = this.getIcon(this.getAttribute("icon"));
+		if(icon){
+			this.innerHTML = icon;
+			this.style.width = w;
+			this.style.height = h;
+			this.style.padding = "0px";
+		} else {
+			this.style.boxSizing = "border-box";
+			this.style.minWidth = w;
+			this.style.minHeight = h;
+			this.style.backgroundColor = this.getAttribute("background-color") || "#555";
+			this.style.color = this.getAttribute("color") || "#fff";
+			this.style.borderRadius = parseFloat(this.style.minWidth) / 2 + "px";
+			this.style.fontFamily = "sans-serif";
+			this.style.fontSize = this.getAttribute("font-size") || "10px";
+			this.style.textAlign = "center";
+			this.style.verticalAlign = "middle";
+			this.style.lineHeight = "1.3em";
+			this.style.padding = "3px";
+			this.style.border = "2px solid black";
+		}
 
 		this.initRects();
 
@@ -51,6 +69,12 @@ class XY_handle extends HTMLElement {
 
 		this._angleOffset = this.getAttribute("angleoffset");
 
+
+		this._minX = parseFloat(this.getAttribute("minX") || 0);
+		this._minY = parseFloat(this.getAttribute("minY") || 0);
+		this._maxX = parseFloat(this.getAttribute("maxX") || 1);
+		this._maxY = parseFloat(this.getAttribute("maxY") || 1);
+
 		this.move(this.x, this.y);
 
 
@@ -58,6 +82,7 @@ class XY_handle extends HTMLElement {
 		this.addEventListener("pointerdown", e => this.pointerDown(e), false);
 
 		this.addEventListener("pointerup", e => {
+			e.preventDefault();
 			this.dragged = false;
 			this.dispatchEvent(new CustomEvent("input"));
 			this.classList.remove("dragged");
@@ -70,6 +95,8 @@ class XY_handle extends HTMLElement {
 	}
 
 	pointerDown(e){
+		e.preventDefault();
+		e.cancelBubble = true;
 		this.initRects();
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
@@ -78,7 +105,7 @@ class XY_handle extends HTMLElement {
 	}
 
 	pointerMove(e){
-		//event.preventDefault();
+		e.preventDefault();
 		if(this.dragged){
 
 			if(this.direction.x){
@@ -225,11 +252,11 @@ class XY_handle extends HTMLElement {
 		let deltaX, deltaY, rad, angle;
 		switch(prop){
 			case "x":
-			return x;
+			return this._minX + x * (this._maxX-this._minX);
 			break;
 
 			case "y":
-			return y; 
+			return this._minY + y * (this._maxY-this._minY); 
 			break;
 
 			case "angle":
@@ -275,6 +302,16 @@ class XY_handle extends HTMLElement {
 		return (0.5 + (rad / Math.PI + 1) / 2) % 1;
 	}
 
+	pointToRelativeRadians(point){
+		let rad = Math.atan2(point.y - this.y, point.x - this.x);
+		return rad;
+	}
+
+
+	pointToRelativeCoordinate(point){
+		return {x: point.x - this.x, y: point.y - this.y};
+	}
+
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
@@ -314,12 +351,18 @@ class XY_handle extends HTMLElement {
 		};
 	}
 
-	move(x, y){
+	move(x = this.x, y = this.y){
 		if(this.direction.x)this.style.left = x * this.boundRect.width + "px";
 		if(this.direction.y)this.style.top = y * this.boundRect.height + "px";
 	}
-	connectedCallback() {
 
+	getIcon(id){
+		switch(id){
+			case "arrow-up-circle-fill":
+			return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="white"  viewBox="0 0 16 16">
+				<path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+			</svg>`;
+		}
 	}
 }
 

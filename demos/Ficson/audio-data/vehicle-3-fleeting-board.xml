@@ -11,15 +11,20 @@
     <var name="gen2Gain" value="$deg3" mapin="0,90,180,270,360" mapout="0,1,0,0,0"></var>
     <var name="gen3Gain" value="$deg3" mapin="0,90,180,270,360" mapout="0,0,1,0,0"></var>
     <var name="gen4Gain" value="$deg3" mapin="0,90,180,270,360" mapout="0,0,0,1,0"></var>
-
-    <var name="dryGain" value="$dist3"></var>
-    <var name="wetGain" value="1-$dist3"></var>
+    
+    <var name="dryGain" value="$dist3" mapin="0,0.7" mapout="0,1"></var>
+    <var name="wetGain" value="$dist3" mapin="0,0.7" mapout="1,0"></var>
+    <var name="engineGain" value="$dist3" curve="3" mapin="0.5,1" mapout="0.2,0.7"></var>
 
     <Mixer id="vehicle3" output=".channel">
 
         <var name="root" mapin="48, 72" steps="0,1" default="62"></var>
 
-        <xi:include href="engine3-fleeting-board.xml" />
+        <Mixer gain="$engineGain">
+            <xi:include href="engine3-fleeting-board.xml" />
+        </Mixer>
+        
+        
         
         <Chain gain="$dryGain">
         <!-- <Chain gain="1-($onX*$onY)"> -->
@@ -101,6 +106,7 @@
             </Mixer>
 
 
+            <DynamicsCompressorNode></DynamicsCompressorNode>
             <Send output=".reverb" gain="+3dB"></Send>
         </Chain>
 
@@ -123,7 +129,7 @@
 
     <Chain class="channel">
         <GainNode gain="$gain"></GainNode>
-        <ObjectBasedAudio positionZ="$locZ" positionX="$pan"></ObjectBasedAudio>
+        <!-- <ObjectBasedAudio positionZ="$locZ" positionX="$pan"></ObjectBasedAudio> -->
     </Chain>
 
 </Audio>

@@ -788,7 +788,7 @@ class AudioObject{
                   this.setTargetAtTime(key, val, 0, time, true);
                  }
                });
-            } else if(envName = WebAudioUtils.getEnvelopeName(value)){
+            } else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
 
               // make connection to controlling Envelope
               let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
@@ -832,17 +832,37 @@ class AudioObject{
     }
 
     getParameter(paramName){
+      let val;
+
       if(typeof this._params[paramName] === "undefined"){
           
           if(this._parentAudioObj){
               return this._parentAudioObj.getParameter(paramName);
           } else {
-              return 0;
+
+              // return default values
+              switch(paramName){
+                case "transitionTime":
+                  val = 0.001;
+                break;
+
+                case "loopEnd":
+                  // avoid setting loopEnd to 0
+                  // ideally (maybe) setting it to duration
+                  // of audio buffer
+                break;
+
+                default:
+                  val = 0;
+                break;
+              }
+              return val;
           }
 
       } else {
-          let val = this._params[paramName];
+          val = this._params[paramName];
 
+          // adjust time
           switch(paramName){
               case "transitionTime":
               case "loopEnd":
@@ -1089,12 +1109,13 @@ class AudioObject{
 		  	}
 		  	break;
 
+        case "ambientaudio":
         case "audiobuffersourcenode":
         case "objectbasedaudio":
-        case "ambientaudio":
         //if(this._node.stop){this._node.stop()}
         this._node.stop();
         break;
+
 	  	}
   	}
 
@@ -1114,8 +1135,14 @@ class AudioObject{
       }
 
 
+      // Hela den här if-satsen är en katastrof som MÅSTE göras om från grunden.
+      // Kanske det bästa vore att ha en enda funktion för att sätta en parameter som tillåter
+      // delay och fadeTime. Sedan får funktionen ta reda på vilka förutsättningar som finns för att
+      // ändra med setTargetAtTime. Inte på det här tokiga sättet med undantag i det oändliga.
+      
+      let avoidList = ["channelmergernode"];
 
-      if(audioNode && this._nodeType != "channelmergernode"){
+      if(audioNode && !avoidList.includes(this._nodeType)){
 
         //  web audio parameter
         if(typeof param == "string"){
@@ -1223,7 +1250,7 @@ class AudioObject{
     fadeOut(fadeTime = 0.001){
       this.fade(0, fadeTime);
     }
-    fade(val, fadeTime = 0.001){
+    fade(val = 1, fadeTime = 0.001){
       this.setTargetAtTime("gain", val, 0, fadeTime, true);
     }
 
@@ -1347,6 +1374,10 @@ class AudioObject{
   	}
 
   	get gain(){
+      // det här är scary. För att setTargetAtTime ska funka måste
+      // get gain returnera ett objekt, men jag har ingen aning om var det kan gå fel...
+      // Jag vågar nog ändå inte...
+      // return this._node.gain;
 	  	return this._node.gain.value;
   	}
 
@@ -1561,14 +1592,21 @@ class AudioObject{
 
         // Det vore kanske bättre att lägga ut detta i Mapper-objektet
         // Och att ha en extra GainNode mellan child-objekt och input
+        // let panValues = [];
         targets.forEach((target, i) => {
           let input = target.output ? target.output : target;
           let dist = Math.abs(i - val);
           let reduction = Math.min(dist, 1);
           reduction = Math.pow(reduction, 2); // +3dB for equal power
           let gain = 1 - reduction;
+          // panValues.push(Math.floor(gain * 100) / 100);
           input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
         });
+
+        // if(this._xml.parentElement.getAttribute("id") == "hf-chain"){
+        //   console.log(panValues);
+        // }
+        
 
       } else {
 		  	this.setTargetAtTime("pan", val);
@@ -1910,7 +1948,7 @@ class BufferSourceObject {
 		return destination;
 	}
 	
-	start(time, offset, duration){
+	start(time = this._ctx.currentTime, offset = 0, duration){
 		let params = {}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
 		if(typeof this._params.loopStart != "undefined"){params.loopStart = this._params.loopStart * this._params.timescale}
@@ -1934,31 +1972,46 @@ class BufferSourceObject {
 		// if(typeof this._params.playbackRate != "undefined"){
 		// 	this.playbackRate = this._params.playbackRate;
 		// }
-		let factor = Math.abs(this._params.playbackRate || 1)
+		let factor = Math.abs(this._params.playbackRate || 1);
+		duration = duration || this._buffer.duration;
+
 		this._node.connect(this.destination);	
 		this._node.start(time, offset * factor, duration * factor);
 
 	}
 
 	stop(){
+
 		this._node.disconnect();
 	}
 
 
 
 	getParameter(paramName){
-        if(typeof this._params[paramName] === "undefined"){
-            
-            if(this._parentAudioObj){
-                return this._parentAudioObj.getParameter(paramName);
-            } else {
-                return 0;
-            }
+		if(typeof this._params[paramName] === "undefined"){
+			
+			if(this._parentAudioObj){
+				return this._parentAudioObj.getParameter(paramName);
+			} else {
+				return 0;
+			}
 
-        } else {
-            return this._params[paramName];
-        }
-    }
+		} else {
+			let val = this._params[paramName];
+
+			switch(paramName){
+				case "transitionTime":
+				case "loopEnd":
+				case "loopStart":
+				case "delay":
+				let timescale = this.getParameter("timescale") || 1;
+				val *= timescale;
+				break;
+
+			}
+			return val;
+		}
+	}
 
 	addCallBack(fn){
 		this.callBackList = [];
@@ -2141,8 +2194,7 @@ class Connector {
 			break;
 
 			case "send":
-			let selector = xmlNode.obj.getParameter("outputbus");
-			if(!selector){selector = xmlNode.obj.getParameter("bus")}
+			let selector = xmlNode.obj.getParameter("outputbus") || xmlNode.obj.getParameter("bus") || xmlNode.obj.getParameter("output");
 			targetElements = this.getTargetElements(xmlNode, selector);
 			targetElements.forEach(target => {
 				xmlNode.obj._bus.connect(target.obj.input);
@@ -2423,14 +2475,14 @@ class Envelope {
 			console.error(`No times specified for ${this._xml}`);
 			this._params.times = [0,100];
 		}
-		this._params.times = this._params.times.map(time => time * this.timeScale);
+		this._params.times = this._params.times.valueOf().map(time => time * this.timeScale);
 
 		if(!this._params.values){
 			console.error(`No values specified for ${this._xml}`);
 			this._params.values = [1,0];
 		}
 
-		this.timeModVal = this._params.times.length;
+		this.timeModVal = this._params.times.valueOf().length;
 		this._listeners = [];
 
 		this._params.targetvariables = this._params.targetvariables  || [];
@@ -2473,7 +2525,7 @@ class Envelope {
         let startTime = delay * this.timeScale + this._ctx.currentTime;
 
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
-		let times = this._params.times.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
+		let times = this._params.times.valueOf().map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
 		
 		if(this._params.mode == "mono" && args[2] == 0){
 			// don't retrigger if legato
@@ -2536,7 +2588,7 @@ class Envelope {
 		
 
 		let tIndex = this.timeModVal-1;
-		let t = this._params.times[tIndex];
+		let t = this._params.times.valueOf()[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
 		if(this._params.mode == "mono" && args[2] == 0){
@@ -2556,6 +2608,10 @@ class Envelope {
 		
 	}
 
+	
+	setTargetAtTime(val){
+		// at the moment this play a risk of overwriting a Watcher. Think this trough thouroughly!
+	}
 
     getParameter(paramName){
 		if(typeof this._params[paramName] === "undefined"){
@@ -2615,8 +2671,8 @@ var Sequence = require('./Sequence.js');
 
 class EventTracker {
 
-	constructor(_varRouter){
-		this._variableRouter = _varRouter;
+	constructor(waxml){
+		this.waxml = waxml;
 
 		this._sequences = [];
 		this._registeredEvents = [];
@@ -2625,7 +2681,7 @@ class EventTracker {
 		this.addSequence();
 	}
 
-	getSequence(name = this._curSeqName){
+	getSequence(name = "_storedGesture"){
 		return this._sequences.find(seq => seq.name == name);
 	}
 
@@ -2706,14 +2762,32 @@ class EventTracker {
 		return ev;
 	}
 
+	// added 2022-05-11 as a simpler way of recording variable changes
+	store(key, value){
+		this.currentSequence.store(key, value);
+	}
+
 	trigEvent(name, value){
-		let ev = this._registeredEvents.find(ev => ev.name == name);
-		if(ev.execute){ev.execute(value)}
+		// Kolla vad de här två raderna gjorde i gamla tider
+		// let ev = this._registeredEvents.find(ev => ev.name == name);
+		// if(ev.execute){ev.execute(value)}
+
+		// Till Ficson har jag fixat denna istället:
+		this.waxml.setVariable(name, value, 0, true);
+		this.waxml.plugins.forEach(plugin => {
+			if(plugin.setVariable){
+				plugin.setVariable(name, value);
+			}
+		});
+
 	}
 
 	clear(name = this._curSeqName){
-
-		this.getSequence(name).clear();
+		let seq = this.getSequence(name);
+		if(seq){
+			seq.clear();
+		}
+		
 	}
 
 	allEvents(name = this._curSeqName, filter = []){
@@ -2727,14 +2801,14 @@ class EventTracker {
 	get lastTouchGesture(){
 		let seq = this.getSequence("default");
 		let name = seq.name;
-		let events = seq.events("touchstart", "touchend", ["touchstart", "touchmove", "touchend"], ["relX", "relY"]);
+		let events = seq.filterEvents("touchstart", "touchend", ["touchstart", "touchmove", "touchend"], ["relX", "relY"]);
 		return new Sequence(this, name, events);
 	}
 
 	get lastGesture(){
 		let seq = this.getSequence("default");
 		let name = seq.name;
-		let events = seq.events("pointerdown", "pointerup", ["pointerdown", "pointermove", "pointerup"], ["relX", "relY"]);
+		let events = seq.filterEvents("pointerdown", "pointerup", ["pointerdown", "pointermove", "pointerup"], ["relX", "relY"]);
 		return new Sequence(this, name, events);
 	}
 
@@ -3267,6 +3341,7 @@ module.exports = InputBusses;
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
+var Watcher = require('./Watcher.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
@@ -3288,10 +3363,13 @@ class InteractionManager {
 		}
 		window.addEventListener("pointerdown", initCall);
 
-		this.eventTracker = new EventTracker();
+		this.eventTracker = new EventTracker(waxml);
 		this.waxml = waxml;
 		this.inited = false;
 		this.variables = new VariableContainer();
+		this.watchers = [];
+
+		this._variablesToStore = [];
 
 		// variables
 		// create a way of keeping track of each touch
@@ -3330,6 +3408,14 @@ class InteractionManager {
 			this.midiManager = new MidiManager(this.waxml);
 		});
 
+	}
+
+	set variablesToStore(varNames){
+		this._variablesToStore = varNames;
+	}
+
+	get variablesToStore(){
+		return this._variablesToStore;
 	}
 
 	defineCustomElements(){
@@ -3429,75 +3515,116 @@ class InteractionManager {
 			[...el.attributes].forEach( attr => {
 				if(attr.localName.startsWith("data-waxml-")){
 
-					// Create empty link for <a> elements
-					if(el.localName == "a"){
-						var deadLink = "javascript:void(0)";
-						if(!el.attributes.href){
-							el.setAttribute("href", deadLink);
-						} else if(el.attributes.href.nodeValue == "#"){
-							el.attributes.href.nodeValue = deadLink;
-						}
-					}
 					
 					let val = attr.nodeValue;
 					
-					if(val.includes("this.")){
-						let targetProperty = val.replace("this", "el");
-						val = {
-							valueOf: () => {
-								return eval(targetProperty);
-							}
-						}
-					} else {
-						let floatVal = parseFloat(val);
-						if(!Number.isNaN(floatVal)){
-							val = floatVal;
-						}
-					}
 					
 
 					let fn;
 					let attrNameArr = attr.localName.split("-");
-					if(attrNameArr.length == 3){
-						// insert default click event
-						attrNameArr.splice(2, 0, "click");
-					}
+
+					// den här bakåtkompatibiliteten tror jag bara är dålig.
+					// och tas bort.
+					// Bättre att alltid köra data-waxml-[event/style]="targetVariable/styleProperty=value"
+					// if(attrNameArr.length == 3){
+					// 	// insert default click event
+					// 	attrNameArr.splice(2, 0, "click");
+					// }
+
+					
 
 					let eventName = attrNameArr[2];
 					let commandName = attrNameArr[3];
 
-					switch(commandName){
-						case "start":
-						case "play":
-							fn = e => this.waxml.start(val);
-							break;
+					switch(eventName){
 
-						case "stop":
-							fn = e => this.waxml.stop(val);
-							break;
+						case "style":
+							let CSSprop = val.split("=").shift().trim();
+							val = val.split("=").pop().trim();
+							let watcher = new Watcher(this.waxml._xml, val, {
+								waxml: this.waxml,
+								callBack: (val, time) => {
+									el.style[CSSprop] = val;
+								}
+							});
+
+							this.watchers.push(watcher);
+						break;
+
 
 						default:
-							fn = e => {
-								this.waxml.setVariable(commandName, val.valueOf());
+
+							// Create empty link for <a> elements
+							if(el.localName == "a"){
+								var deadLink = "javascript:void(0)";
+								if(!el.attributes.href){
+									el.setAttribute("href", deadLink);
+								} else if(el.attributes.href.nodeValue == "#"){
+									el.attributes.href.nodeValue = deadLink;
+								}
 							}
-							break;
-					}
-					let frFn;
-					if(eventName == "timeupdate" && el.requestVideoFrameCallback){
-						// allow for frame synced updates
-						frFn = (now, metaData) => {
-							fn();
-							el.requestVideoFrameCallback(frFn);
-						}
-						el.requestVideoFrameCallback(frFn);
-					} else {
-						el.addEventListener(eventName, fn);
+							if(val.includes("this.")){
+								let targetProperty = val.replace("this", "el");
+								val = {
+									valueOf: () => {
+										return eval(targetProperty);
+									}
+								}
+							} else {
+								let floatVal = parseFloat(val);
+								if(!Number.isNaN(floatVal)){
+									val = floatVal;
+								}
+							}
+							
+							switch(commandName){
+								case "start":
+								case "play":
+									fn = e => {
+										this.waxml.start(val);
+										this.waxml.setVariable(val, 1);
+									}
+									break;
+		
+								case "stop":
+									fn = e => {
+										this.waxml.stop(val);
+
+										// trix för att sätta resp keydown variable rätt
+										val = val.replace("keyup:", "keydown:");
+										this.waxml.setVariable(val, 0);
+									}
+									break;
+		
+								default:
+									fn = e => {
+										this.waxml.setVariable(commandName, val.valueOf());
+									}
+									break;
+							}
+							let frFn;
+							if(eventName == "timeupdate" && el.requestVideoFrameCallback){
+								// allow for frame synced updates
+								frFn = (now, metaData) => {
+									fn();
+									el.requestVideoFrameCallback(frFn);
+								}
+								el.requestVideoFrameCallback(frFn);
+							} else {
+								el.addEventListener(eventName, fn);
+							}
+		
+							if(eventName == "play" && el.autoplay && el.currentTime){
+								// trig function manually if video has already begun playback
+								(frFn || fn)();
+							}
+						break;
+
+
 					}
 
-					if(eventName == "play" && el.autoplay && el.currentTime){
-						// trig function manually if video has already begun playback
-						(frFn || fn)();
-					}
+
+					
 				}
 			});
 
@@ -3952,7 +4079,11 @@ class InteractionManager {
 		this.eventTracker.addSequence(name, events);
 	}
 
-	getSequence(name="_storedGesture"){
+	clearSequence(name){
+		this.eventTracker.clear(name);
+	}
+
+	getSequence(name = "_storedGesture"){
 		return this.eventTracker.getSequence(name);
 	}
 
@@ -3964,7 +4095,7 @@ class InteractionManager {
 		this._variables = this._variables || val;
 	}
 
-	setVariable(key, val, transistionTime){
+	setVariable(key, val, transistionTime, fromSequencer){
 		// 2022-03-23
 		// This is really bad design. There is a global layer of "invisible"
 		// variable objects stored in this._variables and there are global
@@ -3977,7 +4108,9 @@ class InteractionManager {
 		} else if(this._variables[key] instanceof Variable){
 			container = this._variables;
 		}
+		let updated = false;
 		if(container){
+			updated = container[key].valueOf() != val;
 			if(transistionTime){
 				// override transitionTime if specified
 				container[key].setValue(val, transistionTime);
@@ -3986,7 +4119,13 @@ class InteractionManager {
 			}
 			
 		} else {
+			updated = this._variables[key] != val;
 			this._variables[key] = val;
+		}
+
+		// store in sequencer if specified
+		if(!fromSequencer && updated && this.variablesToStore.includes(key)){
+			this.eventTracker.store(key, val);
 		}
 		
 	}
@@ -4015,7 +4154,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./MidiManager.js":16,"./Variable.js":24,"./VariableContainer.js":25,"./WebAudioUtils.js":28,"./XY_area.js":29,"./XY_handle.js":30}],13:[function(require,module,exports){
+},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./MidiManager.js":16,"./Variable.js":24,"./VariableContainer.js":25,"./Watcher.js":26,"./WebAudioUtils.js":28,"./XY_area.js":29,"./XY_handle.js":30}],13:[function(require,module,exports){
 
 
 class KeyboardManager {
@@ -4046,6 +4185,8 @@ class KeyboardManager {
 	
 			this.waxml.start(`keydown:${e.key}`);
 			this.waxml.stop(`keydown:${e.key}`);
+
+			this.waxml.setVariable(`keydown:${e.key}`, 1);
 		}
 		
 	}
@@ -4067,6 +4208,8 @@ class KeyboardManager {
 	
 			this.waxml.start(`keyup:${e.key}`);
 			this.waxml.stop(`keyup:${e.key}`);
+
+			this.waxml.setVariable(`keydown:${e.key}`, 0);
 		}
 
 		
@@ -4326,14 +4469,19 @@ class Mapper{
 			break;
 
 			case "string":
-			let i = this.mapin.indexOf(x);
-			if(i == -1){
-				return 0;
+			if(this.mapin){
+				let i = this.mapin.valueOf().indexOf(x);
+				if(i == -1){
+					return 0;
+				} else {
+					x = this.mapout[i];
+					x = this.convert(x, i);
+					return x;
+				}
 			} else {
-				x = this.mapout[i];
-				x = this.convert(x, i);
-				return x;
+				return 0;
 			}
+			
 			break;
 
 			default:
@@ -4945,6 +5093,19 @@ class ObjectBasedAudio {
             return val;
         }
     }
+
+    fadeIn(time){
+        this.fade(1, time);
+    }
+
+    fadeOut(time){
+        this.fade(0, time);
+    }
+
+    fade(val = 1, time = 0){
+        this.gain.cancelScheduledValues(this._ctx.currentTime);
+        this.gain.setTargetAtTime(val, this._ctx.currentTime, time);
+    }
 	
     get input(){
         return this._input;
@@ -5197,6 +5358,12 @@ class ObjectBasedAudio {
     }
 	
     start(){
+        if(this.stopTimeout){
+            clearTimeout(this.stopTimeout);
+        }
+
+        let transitionTime = this.getParameter("transitionTime");
+        this.fadeIn(transitionTime/3);
 
         if(this.bufferSource._buffer){
             this.bufferSource.start();
@@ -5207,7 +5374,16 @@ class ObjectBasedAudio {
     }
 
     stop(){
-        if(this.bufferSource)this.bufferSource.stop();
+
+        // fadeout first
+        let transitionTime = this.getParameter("transitionTime");
+        this.fadeOut(transitionTime/5);
+
+        if(this.bufferSource){
+            // avoid cutting audio before fade is done
+            this.stopTimeout = setTimeout(e => this.bufferSource.stop(), transitionTime * 1000 * 1.5);
+        }
+        
     }
 
 
@@ -5322,10 +5498,6 @@ class Parser {
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
 					.then(xmlNode => {
-						// snyggare att lyfta ut audio-in till en egen class 
-						if(this.allElements.mediastreamaudiosourcenode){
-							navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
-						}
 						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
@@ -5336,14 +5508,6 @@ class Parser {
 
 		});
 
-	}
-
-	onStream(stream){
-		this.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
-	}
-
-	onStreamError(){
-		console.warn("Audio input error");
 	}
 
 	
@@ -5808,10 +5972,41 @@ class Sequence {
 	}
 
 	allEvents(filter = []){
-		return this.events(0, this._events.length, filter);
+		return this.filterEvents(0, this._events.length, filter);
 	}
 
-	events(start = 0, end, filter = [], variableFilter = []){
+	get events(){
+		return this.allEvents();
+	}
+
+	getData(options = {}){
+		let data = {};
+		let timeOffset = options.timeOffset || (this._events.length ? this._events[0].time : 0);
+		let precision = typeof options.precision == "undefined" ? 100 : options.precision;
+		let precisionFactor = Math.pow(10, precision);
+
+		let frameRate = options.frameRate || 1000;
+		data.name = this._name;
+
+		let lastEvents = {};
+		let eventList = [];
+
+		this._events.forEach(evt => {
+			let time = evt.time - timeOffset;
+			let value = Math.round(evt.value * precisionFactor) / precisionFactor;
+			let name = evt.name;
+			if(!lastEvents[name] || time - lastEvents[name] > (1000 / frameRate)){
+				// add one event per 100ms
+				lastEvents[name] = time;
+				eventList.push([time, evt.name, value]);
+			}
+			
+		});
+		data.events = eventList;
+		return data;
+	}
+
+	filterEvents(start = 0, end, filter = [], variableFilter = []){
 
 		let startIndex, endIndex, i, ev;
 		if(typeof start == "string"){
@@ -5843,24 +6038,28 @@ class Sequence {
 		} else if(typeof end == "number"){
 			endIndex = end;
 		}
+		endIndex = Math.min(endIndex, this._events.length - 1);
 
 		let newEventList = [];
-		let offset = this._events[startIndex].time;
-		for(i = startIndex; i <= endIndex; i++){
-			ev = this._events[i];
-			if(!filter.length || filter.includes(ev.name)){
-				let newEv = {}
-				newEv.time = ev.time - offset;
-				newEv.name = ev.name;
-				newEv.value = {}
-				Object.keys(ev.value).forEach(key => {
-					if(!variableFilter.length || variableFilter.includes(key)){
-						newEv.value[key] = ev.value[key];
-					}
-				});
-				newEventList.push(newEv);
+		if(this._events.length){
+			let offset = this._events[startIndex].time;
+			for(i = startIndex; i <= endIndex; i++){
+				ev = this._events[i];
+				if(!filter.length || filter.includes(ev.name)){
+					let newEv = {}
+					newEv.time = ev.time - offset;
+					newEv.name = ev.name;
+					newEv.value = {}
+					Object.keys(ev.value).forEach(key => {
+						if(!variableFilter.length || variableFilter.includes(key)){
+							newEv.value[key] = ev.value[key];
+						}
+					});
+					newEventList.push(newEv);
+				}
 			}
 		}
+		
 		return newEventList;
 	}
 
@@ -7315,6 +7514,13 @@ class WebAudio {
 
 		//webAudioXML = xmlDoc.audioObject;
 		//webAudioXML.touch = touches;
+
+		// snyggare att lyfta ut audio-in till en egen class 
+		if(this.parser.allElements.mediastreamaudiosourcenode){
+			navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
+		}
+
+
 		new Connector(xmlDoc, this._ctx);
 		this.plugins.forEach(plugin => {
 			plugin.init();
@@ -7339,6 +7545,17 @@ class WebAudio {
 				bus.input.connect(obj.input);
 			});
 		});
+
+
+	}
+
+
+	onStream(stream){
+		this.parser.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
+	}
+
+	onStreamError(){
+		console.warn("Audio input error");
 	}
 
 	getInputBus(selector){
@@ -7552,7 +7769,7 @@ class WebAudio {
 		this.ui.variables = val;
 	}
 
-	setVariable(key, val, transitionTime){
+	setVariable(key, val, transitionTime, fromSequencer){
 
 		// move to a separate object
 		// read transitionTime
@@ -7599,10 +7816,12 @@ class WebAudio {
 			if(val == floatVal){val = floatVal}
 		}
 		
-		this.ui.setVariable(key, val, transitionTime);
+		this.ui.setVariable(key, val, transitionTime, fromSequencer);
 
 		// this REALLY need to be worked through
 		// at the moment I just pass the variable "hand_r8y"
+		// to make it possible to control intensity in iMusic on 
+		// my 50% seminar ;-)
 		if(key == "hand_r8y"){
 			this.plugins.forEach(plugin => {
 				if(plugin.setVariable){
@@ -7612,6 +7831,15 @@ class WebAudio {
 		}
 		
 	}
+
+	set variablesToStore(varNames){
+		this.ui.variablesToStore = varNames;
+	}
+
+	get variablesToStore(){
+		return this.ui.variablesToStore;
+	}
+	
 	getVariable(key){
 		return this.ui.getVariable(key);
 	}
@@ -7621,12 +7849,22 @@ class WebAudio {
 		return this.ui.lastGesture;
 	}
 
-	addSequence(events, name){
-		this.ui.addSequence(events, name);
+	addSequence(name = "default", events){
+		this.ui.addSequence(name, events);
 	}
 
-	getSequence(name){
+	clearSequence(name = "default"){
+		this.ui.clearSequence(name);
+	}
+
+	getSequence(name = "default"){
 		return this.ui.getSequence(name);
+	}
+
+	getSequenceData(options = {}){
+		let name = options.name || "default";
+		let seq = this.ui.getSequence(name);
+		return seq.getData(options);
 	}
 
 	copyLastGestureToClipboard(){
@@ -8473,8 +8711,9 @@ class XY_area extends HTMLElement {
 		this.style.display = "inline-block"; // not good
 		this.style.width = "200px";
 		this.style.height = "200px";
+		this.style.boxSizing = "border-box";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
-
+		
 		this.type = this.getAttribute("type") || "square";
 		switch(this.type){
 			case "square":
@@ -8648,10 +8887,12 @@ class XY_handle extends HTMLElement {
 		this.style.minWidth = this.getAttribute("width") || this.getAttribute("size")  || "20px";
 		this.style.minHeight = this.getAttribute("height") || this.getAttribute("size") || "20px";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#555";
+		this.style.color = this.getAttribute("color") || "#fff";
 		this.style.border = "2px solid black";
 		this.style.boxSizing = "border-box";
 		this.style.borderRadius = parseFloat(this.style.minWidth) / 2 + "px";
 		this.style.fontFamily = "sans-serif";
+		this.style.fontSize = this.getAttribute("font-size") || "10px";
 		this.style.textAlign = "center";
 		this.style.verticalAlign = "middle";
 		this.style.lineHeight = "1.3em";
@@ -8678,11 +8919,16 @@ class XY_handle extends HTMLElement {
 			return item.split("$").join("").trim();
 		});
 
-		let x =  this.getAttribute("x") || 0;
-		let y = this.getAttribute("y") || 0;
+		let type = this.parentElement.getAttribute("type") || "square";
+		let x =  this.getAttribute("x") || (type == "circle" ? 0.5 : 0);
+		let y = this.getAttribute("y") || (type == "circle" ? 0.5 : 0);
 
 		this.x = parseFloat(x);
 		this.y = parseFloat(y);
+		this._angle = this.XYtoAngle();
+		this._radius = this.XYtoRadius();
+
+		this._angleOffset = this.getAttribute("angleoffset");
 
 		this.move(this.x, this.y);
 
@@ -8707,10 +8953,7 @@ class XY_handle extends HTMLElement {
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
 		this.setPointerCapture(e.pointerId);
-		this.dispatchEvent(new CustomEvent("input"));
-
-		this.classList.add("changed");
-		this.classList.add("dragged");
+		this.pointerMove(e);
 	}
 
 	pointerMove(e){
@@ -8735,13 +8978,17 @@ class XY_handle extends HTMLElement {
 				// make sure handle is inside circle boundaries
 				let radius = this.getProperty("radius");
 				if(radius > 1){
-					let angle = this.getProperty("angle");
-					this.x = (1 - Math.cos(Math.PI * 2 * angle)) / 2;
-					this.y = (1 - Math.sin(Math.PI * 2 * angle)) / 2;
-					this.style.left = `${this.x * this.boundRect.width}px`;
-					this.style.top = `${this.y * this.boundRect.height}px`;
+					radius = 1;
+					let angle = (this.XYtoAngle() + 0.5) % 1;
+					let XY = this.angleRadiusToXY(angle, 1);
+					this.x = XY.x;
+					this.y = XY.y;
+					this.move(XY.x, XY.y);
+					// this.style.left = `${this.x * this.boundRect.width}px`;
+					// this.style.top = `${this.y * this.boundRect.height}px`;
 				}
-				
+				this._radius = radius;
+				this._angle = this.XYtoAngle();
 
 			}
 			this.dispatchEvent(new CustomEvent("input"));
@@ -8823,6 +9070,20 @@ class XY_handle extends HTMLElement {
 
 	}
 
+	get dragged(){
+		return this._dragged;
+	}
+
+	set dragged(state){
+		this._dragged = state;
+		if(state){
+			this.classList.add("changed");
+			this.classList.add("dragged");
+		} else {
+			this.classList.remove("dragged");
+		}
+	}
+
 	get value(){
 		// if(this.direction.x && this.direction.y){
 		// 	return [this.x, this.y];
@@ -8851,20 +9112,17 @@ class XY_handle extends HTMLElement {
 			break;
 
 			case "angle":
-			deltaX = (x * 2)-1;
-			deltaY = (y * 2)-1;
-			rad = Math.atan2(deltaY, deltaX);
-			// convert to 0-1
-			angle = (rad / Math.PI + 1) / 2;
 			// offset with stored value
-			angle = (angle + this.angleOffset) % 1;
+			let angle = this.XYtoAngle(x, y);
+			angle = (angle + this._angleOffset) % 1;
 			return angle;
 			break;
+			
 
 			case "radius":
 			deltaX = (x * 2)-1;
 			deltaY = (y * 2)-1;
-			return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+			return this.XYtoRadius(x, y);
 			break;
 
 			case "dragged":
@@ -8874,12 +9132,47 @@ class XY_handle extends HTMLElement {
 		}
 	}	
 
+
+	angleRadiusToXY(angle = this._angle, radius = this._radius){
+		let obj = {};
+		obj.x = (radius - Math.cos(Math.PI * 2 * angle)) / 2;
+		obj.y = (radius - Math.sin(Math.PI * 2 * angle)) / 2;
+		return obj;
+	}
+
+	XYtoRadius(x = this.x, y = this.y){
+		let deltaX = (x * 2)-1;
+		let deltaY = (y * 2)-1;
+		return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+	}
+
+	XYtoAngle(x = this.x, y = this.y){
+		let deltaX = (x * 2) - 1;
+		let deltaY = (y * 2) - 1;
+		let rad = Math.atan2(deltaY, deltaX);
+		// convert to 0-1 with 0 being x=1, y=0
+		return (0.5 + (rad / Math.PI + 1) / 2) % 1;
+	}
+
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
 	}
 
-	set angleOffset(val){
+	set angle(val){
+		this._angle = val;
+		let XY = this.angleRadiusToXY(val);
+		this.move(XY.x, XY.y);
+	}
+
+	set radius(val){
+		this._radius = val;
+		let XY = this.angleRadiusToXY();
+		this.move(XY.x, XY.y);
+	}
+
+	set angleOffset(val = 0){
+		val = parseFloat(val);
 		val = Math.max(0, Math.min(val, 1));
 		this._angleOffset = val;
 	}

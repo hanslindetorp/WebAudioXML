@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms">
+    <var name="bandpass_frequency" value="$speed" mapin="0,1" mapout="70,102" convert="MIDI->frequency"></var>
+    
+    <var name="engine_gain" mapin="0,1" default="1"></var>
+    <var name="dynGain" value="$speed" mapin="0.5,1" mapout="0.25,1"></var>
+    <var name="distGain" value=""></var>
+    <var name="amf" value="$speed" mapin="0.5,1" mapout="200,80"></var>
+    <var name="BPF" value="$speed" mapin="0,1" mapout="150,180"></var>
+    <OscillatorNode type="sawtooth" frequency="$amf" output=".AM"></OscillatorNode>
+    
+    <Chain gain="$engine_gain">
+		<GainNode class="engine3 white-noise" gain="$dynGain"></GainNode>
+        <!-- <GainNode gain="$distGain"></GainNode> -->
+        <DelayNode delayTime="2"></DelayNode>
+        <GainNode>
+            <gain class="AM"></gain>
+        </GainNode>
+        <Send output=".LP"></Send>
+		<BiquadFilterNode type="lowpass" frequency="800"></BiquadFilterNode>
+		<BiquadFilterNode frequency="$bandpass_frequency" type="bandpass" Q="5"></BiquadFilterNode>
+	</Chain>
+
+    <Chain gain="$dynGain">
+        <BiquadFilterNode class="LP" type="bandpass" frequency="$BPF" Q="5"></BiquadFilterNode>
+        <BiquadFilterNode class="HP" type="highpass" frequency="$HP"></BiquadFilterNode>
+    </Chain>
+</Audio>

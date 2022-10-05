@@ -4,6 +4,7 @@ class MidiManager {
 	constructor(waxml){
 		this.waxml = waxml;
 		this.keysPressed = Array(16).fill(Array(127).fill(false));
+		this.listeners = [];
 
 		if (navigator.requestMIDIAccess) {
 			console.log('This browser supports WebMIDI!');
@@ -49,14 +50,17 @@ class MidiManager {
 			case 9: // NoteOn
 			if (data2 > 0) {
 				this.noteOn(channel, data1, data2);
+				this.remoteControl(`NoteOn=${data1}`, data2);
 			} else {
 				this.noteOff(channel, data1);
+				this.remoteControl(`NoteOff=${data1}`, 0);
 			}
 			break;
 
 
 			case 8: // NoteOff
 			this.noteOff(channel, data1, data2);
+			this.remoteControl(`NoteOff=${data1}`, data2);
 			break;
 
 
@@ -64,12 +68,15 @@ class MidiManager {
 			val = data2/127;
 			this.waxml.setVariable(`MIDI:CC:${data1}`, val);
 			this.waxml.setVariable(`MIDI:ControlChange:${data1}`, val);
+			this.remoteControl(`ControlChange=${data1}:${data2}`);
+			this.remoteControl(`ControlChange=${data1}`, data2);
 			break;
 				
 			case 14: // pitch bend
 			val = (data2 + data1/128)/64 - 1;
 			this.waxml.setVariable(`MIDI:PB`, val);
 			this.waxml.setVariable(`MIDI:PitchBend`, val);
+			this.remoteControl("PitchBend", val);
 			break;
 
 			default:
@@ -77,6 +84,34 @@ class MidiManager {
 			break;
 		}
 		console.log({status: status, channel: channel, data1: data1, data2: data2});
+	}
+
+	addListener(obj){
+		this.listeners.push(obj);
+	}
+
+	remoteControl(filter, val){
+		this.listeners.filter(obj => obj.filter == filter).forEach(obj => {
+			switch(obj.task){
+				case "trig":
+				obj.element.dispatchEvent(new CustomEvent(obj.target));
+				break;
+
+				case "set":
+				if(filter.includes("PitchBend")){
+					val = (val+1) / 2 * (obj.max-obj.min) + obj.min;
+				} else {
+					val = val / 127 * (obj.max-obj.min) + obj.min;
+				}
+
+				val = Math.round(val/obj.step)*obj.step;
+				
+				obj.element[obj.target] = val;
+				obj.element.dispatchEvent(new CustomEvent("input"));
+				obj.element.dispatchEvent(new CustomEvent("change"));
+				break;
+			}
+		});
 	}
 
 	noteOn(ch, key, vel){

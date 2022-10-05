@@ -63,9 +63,9 @@ class InteractionManager {
 		}
 
 		this.waxml.addEventListener("inited", e => {
-			this.connectToHTMLelements();
 			this.keyboardManager = new KeyboardManager(this.waxml);
 			this.midiManager = new MidiManager(this.waxml);
+			this.connectToHTMLelements();
 		});
 
 	}
@@ -138,137 +138,155 @@ class InteractionManager {
 		[...document.querySelectorAll("*")].forEach( el => {
 
 			[...el.attributes].forEach( attr => {
+
 				if(attr.localName.startsWith("data-waxml-")){
-
-					
 					let val = attr.nodeValue;
-
-					let fn;
 					let attrNameArr = attr.localName.split("-");
-
+					let fn, commandName;
 					let eventName = attrNameArr[2];
-					let commandName = attrNameArr[3];
 
-					switch(eventName){
-
-						case "style":
-							let CSSprop = val.split("=").shift().trim();
-							val = val.split("=").pop().trim();
-							let watcher = new Watcher(this.waxml._xml, val, {
-								waxml: this.waxml,
-								callBack: (val, time) => {
-									el.style[CSSprop] = val;
-								}
+					if(eventName == "midi"){
+						// remote control HTML elements with MIDI
+						val.split(";").map(str => str.trim()).forEach(filter => {
+							this.midiManager.addListener({
+								element: el,
+								task: attrNameArr[3],
+								target: attrNameArr[4],
+								filter: filter,
+								min: parseFloat(el.getAttribute("min") ||0),
+								max: parseFloat(el.getAttribute("max") || 100),
+								step: parseFloat(el.getAttribute("step") || 1)
 							});
 
-							this.watchers.push(watcher);
-						break;
-
-
-						default:
-
-							// Create empty link for <a> elements
-							if(el.localName == "a"){
-								var deadLink = "javascript:void(0)";
-								if(!el.attributes.href){
-									el.setAttribute("href", deadLink);
-								} else if(el.attributes.href.nodeValue == "#"){
-									el.attributes.href.nodeValue = deadLink;
+						});
+	
+					} else {
+	
+						commandName = attrNameArr[3];
+	
+						switch(eventName){
+	
+							case "style":
+								let CSSprop = val.split("=").shift().trim();
+								val = val.split("=").pop().trim();
+								let watcher = new Watcher(this.waxml._xml, val, {
+									waxml: this.waxml,
+									callBack: (val, time) => {
+										el.style[CSSprop] = val;
+									}
+								});
+	
+								this.watchers.push(watcher);
+							break;
+	
+	
+							default:
+	
+								// Create empty link for <a> elements
+								if(el.localName == "a"){
+									var deadLink = "javascript:void(0)";
+									if(!el.attributes.href){
+										el.setAttribute("href", deadLink);
+									} else if(el.attributes.href.nodeValue == "#"){
+										el.attributes.href.nodeValue = deadLink;
+									}
 								}
-							}
-							
-							switch(commandName){
-								case "start":
-								case "play":
-									fn = e => {
-										this.waxml.start(val);
-										this.waxml.setVariable(val, 1);
-									}
-									break;
-		
-								case "stop":
-									fn = e => {
-										this.waxml.stop(val);
-
-										// trix för att sätta resp keydown variable rätt
-										val = val.replace("keyup:", "keydown:");
-										this.waxml.setVariable(val, 0);
-									}
-									break;
-
-								case "continue":
-									fn = e => {
-										this.waxml.continue(val);
-										this.waxml.setVariable(val, 1);
-									}
-									break;
-
-
-								case "set":
-									if(val.includes("=")){
-										let values = [];
-										// allow for multiple values
-										let rules = val.split(";").forEach(expression => {
-											let arr = expression.split("=").map(v => v.trim());
-											let key = arr[0];
-											let value = arr[1];
-											if(key){
-
-												if(value.includes("this.")){
-													// allow for dynamic values from slider, switches etc.
-													let targetProperty = value.replace("this", "el");
-													value = {
-														valueOf: () => {
-															return eval(targetProperty);
-														}
-													}
-												} 
-												values.push({key: key, value: value});
-											}
-										});
+								
+								switch(commandName){
+									case "start":
+									case "play":
 										fn = e => {
-											values.forEach(entry => {
-												this.waxml.setVariable(entry.key, entry.value.valueOf());
-											});
+											this.waxml.start(val);
+											this.waxml.setVariable(val, 1);
 										}
-										
-									} 
-
-
-
-
-									break;
-		
-								default:
-									fn = e => {
-										this.waxml.setVariable(commandName, val.valueOf());
-									}
-									break;
-							}
-							let frFn;
-							if(eventName == "timeupdate" && el.requestVideoFrameCallback){
-								// allow for frame synced updates
-								frFn = (now, metaData) => {
-									fn();
-									el.requestVideoFrameCallback(frFn);
+										break;
+			
+									case "stop":
+										fn = e => {
+											this.waxml.stop(val);
+	
+											// trix för att sätta resp keydown variable rätt
+											val = val.replace("keyup:", "keydown:");
+											this.waxml.setVariable(val, 0);
+										}
+										break;
+	
+									case "continue":
+										fn = e => {
+											this.waxml.continue(val);
+											this.waxml.setVariable(val, 1);
+										}
+										break;
+	
+	
+									case "set":
+										if(val.includes("=")){
+											let values = [];
+											// allow for multiple values
+											let rules = val.split(";").forEach(expression => {
+												let arr = expression.split("=").map(v => v.trim());
+												let key = arr[0];
+												let value = arr[1];
+												if(key){
+	
+													if(value.includes("this.")){
+														// allow for dynamic values from slider, switches etc.
+														let targetProperty = value.replace("this", "el");
+														value = {
+															valueOf: () => {
+																return eval(targetProperty);
+															}
+														}
+													} 
+													values.push({key: key, value: value});
+												}
+											});
+											fn = e => {
+												values.forEach(entry => {
+													this.waxml.setVariable(entry.key, entry.value.valueOf());
+												});
+											}
+											
+										} 
+	
+	
+	
+	
+										break;
+			
+									default:
+										fn = e => {
+											this.waxml.setVariable(commandName, val.valueOf());
+										}
+										break;
 								}
-								el.requestVideoFrameCallback(frFn);
-							} else {
-								el.addEventListener(eventName, fn);
-							}
-		
-							if(eventName == "play" && el.autoplay && el.currentTime){
-								// trig function manually if video has already begun playback
-								(frFn || fn)();
-							}
-						break;
-
-
+								let frFn;
+								if(eventName == "timeupdate" && el.requestVideoFrameCallback){
+									// allow for frame synced updates
+									frFn = (now, metaData) => {
+										fn();
+										el.requestVideoFrameCallback(frFn);
+									}
+									el.requestVideoFrameCallback(frFn);
+								} else {
+									el.addEventListener(eventName, fn);
+								}
+			
+								if(eventName == "play" && el.autoplay && el.currentTime){
+									// trig function manually if video has already begun playback
+									(frFn || fn)();
+								}
+							break;
+	
+	
+						}
+	
+	
+						
 					}
 
-
-					
 				}
+
 			});
 
 		});

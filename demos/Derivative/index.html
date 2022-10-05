@@ -1,0 +1,35 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, user-scalable=no" />
+		<title>WebAudioXML Circle UI</title>
+		<script src="script.js"></script>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+
+
+	<body>
+
+		<h1>WebAudioXML Circle UI</h1>
+		<p>WebAudioXML contains a custom HTML element for easy connection to control audio parameters. This DEMO shows
+			how it can be used to map pointer movements in a circle to control pitch and filter cutoff frequency
+			from the angle and radius of the pointer. Touch the circle to start.</p>
+
+		<waxml-xy-area type="square">
+			<waxml-xy-handle
+				id="handle_1" 
+				catch="true"
+				direction="xy"
+				angleOffset="0"
+				sources="x, y, angle, radius, dragged"
+				targets="x1, y1, a1, r1, d1"
+			></waxml-xy-handle>
+		</waxml-xy-area>
+
+		<div id="meter" data-waxml-style="width=$speed+'%'"></div>
+
+		<script src="WebAudioXML.js" data-source="audio-config.xml"></script>
+	</body>
+</html>

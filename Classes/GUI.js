@@ -1,6 +1,7 @@
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
+const XY_area = require('./XY_area.js');
 //var Finder = require('../finderjs/index.js');
 
 class GUI {
@@ -190,6 +191,11 @@ class GUI {
 				shadowContainer.style.width = "100%";
 				shadowContainer.style.height = "100%";
 				shadowContainer.style.display = "block";
+
+				container.querySelectorAll("waxml-xy-handle").forEach(el => {
+					el.initRects();
+					el.move();
+				});
 			});
 			openbtn.style.display = allNodes.length ? "block": "none";
 
@@ -211,6 +217,11 @@ class GUI {
 		let header = document.createElement("h1");
 		header.innerHTML = "WebAudioXML";
 		container.appendChild(header);
+
+
+		// ObjectBasedAudio
+
+		this.XY_areaFromAudioObjects(waxml.querySelectorAll("ObjectBasedAudio"), container);
 
 		// Find variables in use without <var> elements
 		let usedVariables = [];
@@ -311,6 +322,115 @@ class GUI {
 		container.style.display = classNames.length + IDs.length ? "block" : "none";
 	}
 
+	XY_areaFromAudioObjects(objects, targetElement){
+
+		if(!objects || !objects.length){return}
+
+		let maxValues = objects.reduce((prevObject, curObject) => {
+			return {
+				positionX: Math.max(Math.abs(prevObject.positionX), Math.abs(curObject.positionX)),
+				positionZ: Math.max(Math.abs(prevObject.positionZ), Math.abs(curObject.positionZ))
+			}
+		}, {positionX: 1, positionZ: 1});
+		let maxVal = Math.max(maxValues.positionX, maxValues.positionZ)*2;
+
+		let range = maxVal * 2;
+		let XY_area = document.createElement("waxml-xy-area");
+		XY_area.setAttribute("width", "500px");
+		XY_area.setAttribute("height", "500px");
+		XY_area.setAttribute("columns", range);
+		XY_area.setAttribute("rows", range);
+		XY_area.setAttribute("border", "2px solid black");
+		XY_area.setAttribute("background-color", "#696");
+		targetElement.appendChild(XY_area);
+
+		let title;
+		title = document.createElement("div");
+		title.innerHTML = "<strong>Object:</strong>";
+		targetElement.appendChild(title);
+
+		let XYoutput = document.createElement("div");
+		XYoutput.innerHTML = " ";
+		targetElement.appendChild(XYoutput);
+
+		title = document.createElement("div");
+		title.innerHTML = "<strong>Listener:</strong>"
+		targetElement.appendChild(title);
+
+		let headPositionOutput = document.createElement("div");
+		targetElement.appendChild(headPositionOutput);
+
+		let headForwardOutput = document.createElement("div");
+		targetElement.appendChild(headForwardOutput);
+
+		
+		objects.forEach(object => {
+			let label = object.name || object.id || object.src.split("/").pop();
+			let handle = document.createElement("waxml-xy-handle");
+			handle.innerHTML = label;
+
+			handle.setAttribute("minX", -maxVal);
+			handle.setAttribute("minY", -maxVal);
+			handle.setAttribute("maxX", maxVal);
+			handle.setAttribute("maxY", maxVal);
+
+			handle.setAttribute("direction", "xy");
+			handle.setAttribute("x", (object.positionX + maxVal) / (maxVal*2));
+			handle.setAttribute("y", (object.positionZ + maxVal) / (maxVal*2));
+
+			XY_area.appendChild(handle);
+
+			handle.addEventListener("input", e => {
+				let x = e.target.getProperty("x");
+				let y = e.target.getProperty("y");
+				object.positionX = x;
+				object.positionZ = y;
+				XYoutput.innerHTML = `positionX: ${x.toFixed(1)} | positionZ: ${y.toFixed(1)}`;
+			});
+		});
+
+		XY_area.addEventListener("pointerdown", e => {
+			// turn listener
+			let point = XY_area.coordinateTovalue({x:e.clientX, y:e.clientY});
+			let deltaX = (point.x - head.x) * maxVal;
+			let deltaY = (point.y - head.y) * maxVal;
+			headForwardOutput.innerHTML = `forwardX: ${deltaX.toFixed(1)} | forwardZ: ${deltaY.toFixed(1)}`;
+			this.waxml.setVariable("forwardX", deltaX);
+			this.waxml.setVariable("forwardZ", deltaY);
+
+			let rad = head.pointToRelativeRadians(point);
+			head.style.transform = `rotate(${rad}rad)`;
+		});
+		headForwardOutput.innerHTML = `forwardX: ${this.waxml.getVariable("forwardX").toFixed(1)} | forwardZ: ${this.waxml.getVariable("forwardZ").toFixed(1)}`
+
+
+		// listening head
+		let head = document.createElement("waxml-xy-handle");
+		head.setAttribute("icon", "arrow-up-circle-fill");
+
+		head.setAttribute("size", "40px");
+		head.setAttribute("x", 0.5);
+		head.setAttribute("y", 0.5);
+		head.setAttribute("minX", -maxVal);
+		head.setAttribute("minY", -maxVal);
+		head.setAttribute("maxX", maxVal);
+		head.setAttribute("maxY", maxVal);
+
+		XY_area.appendChild(head);
+		head.addEventListener("input", e => {
+			let x = e.target.getProperty("x");
+			let y = e.target.getProperty("y");
+			this.waxml.setVariable("positionX", x);
+			this.waxml.setVariable("positionZ", y);
+			headPositionOutput.innerHTML = `positionX: ${x.toFixed(1)} | positionZ: ${y.toFixed(1)}`;
+		});
+
+		head.style.transform = `rotate(${-90}deg)`;
+		headPositionOutput.innerHTML = `positionX: ${this.waxml.getVariable("positionX").toFixed(1)} | positionZ: ${this.waxml.getVariable("positionZ").toFixed(1)}`
+
+		return XY_area;
+	
+	}
 
 	XMLtoSliders(xmlNode, el, displayContainer){
 		let nodeName = xmlNode.localName.toLowerCase()

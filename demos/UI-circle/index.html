@@ -19,16 +19,41 @@
 
 		<waxml-xy-area type="circle">
 			<waxml-xy-handle
+				id="handle_1" 
 				catch="true"
 				direction="xy"
-				sources="x, y, angle, radius, dragged"
-				targets="x, y, angle, radius, dragged"
-				x="0.5"
-				y="0.5"
+				angleOffset="0"
+				sources="angle, radius, dragged"
+				targets="a1, r1, d1"
+			></waxml-xy-handle>
+		</waxml-xy-area>
+
+		<waxml-xy-area type="circle">
+			<waxml-xy-handle
+				id="handle_2" 
+				catch="true"
+				direction="xy"
+				angleOffset="0"
+				sources="angle, radius, dragged"
+				targets="a2, r2, d2"
+			></waxml-xy-handle>
+		</waxml-xy-area>
+
+		<waxml-xy-area type="circle">
+			<waxml-xy-handle
+				id="handle_3" 
+				catch="true"
+				direction="xy"
+				angleOffset="0"
+				sources="angle, radius, dragged"
+				targets="a3, r3, d3"
 			></waxml-xy-handle>
 		</waxml-xy-area>
 
 		<div id="output"></div>
+		<button id="timeStamp">TimeStamp</button>
+		<button id="newSession">New Session</button>
+		<select id="selectSession"></select>
 
 		<h3>HTML:</h3>
 		<img src="img/html.png" />

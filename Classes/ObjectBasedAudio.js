@@ -255,7 +255,7 @@ class ObjectBasedAudio {
         if(typeof this._params.positionX == "undefined"){
             this._params.positionX = this.pannerNode.positionX;
         }
-        return this.pannerNode.positionX;
+        return this.pannerNode.positionX.value;
     }
     set positionX(val){
         this._params.positionX = val;
@@ -266,7 +266,7 @@ class ObjectBasedAudio {
         if(typeof this._params.positionY == "undefined"){
             this._params.positionY = this.pannerNode.positionY;
         }
-        return this.pannerNode.positionY;
+        return this.pannerNode.positionY.value;
     }
     set positionY(val){
         this._params.positionY = val;
@@ -277,7 +277,7 @@ class ObjectBasedAudio {
         if(typeof this._params.positionZ == "undefined"){
             this._params.positionZ = this.pannerNode.positionZ;
         }
-        return this.pannerNode.positionZ;
+        return this.pannerNode.positionZ.value;
     }
     set positionZ(val){
         this._params.positionZ = val;
