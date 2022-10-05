@@ -241,8 +241,9 @@ class AmbientAudio {
                 this.trigSample();
                 this.inited = true;
             }
-            let transitionTime = this.getParameter("transitionTime") || 2;
-            this.fade.gain.setTargetAtTime(1, 0, transitionTime);
+            // let transitionTime = this.getParameter("transitionTime") || 2;
+            let fadeTime =  this.getParameter("fadeTime");
+            this.fade.gain.setTargetAtTime(1, 0, fadeTime);
         } else {
             let fn = () => this.start();
             if(!this.bufferSource1._buffer){
@@ -255,8 +256,9 @@ class AmbientAudio {
     }
 
     stop(){
-        let transitionTime = this.getParameter("transitionTime") || 2;
-        this.fade.gain.setTargetAtTime(0, 0, transitionTime);
+        // let transitionTime = this.getParameter("transitionTime") || 2;
+        let fadeTime =  this.getParameter("fadeTime");
+        this.fade.gain.setTargetAtTime(0, 0, fadeTime);
     }
 
     trigSample(){
