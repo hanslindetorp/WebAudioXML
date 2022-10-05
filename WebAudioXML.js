@@ -5284,7 +5284,7 @@ class MidiManager {
 		// to remove the channel information (accepting input from all MIDI channels)
 		// then perform this magic line
 		// (read more: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators	
-		let channel = status % 0x10;
+		let channel = status % 0x10 + 1;
 		status = status >> 4;
 		
 		let val;
@@ -5292,9 +5292,11 @@ class MidiManager {
 			case 9: // NoteOn
 			if (data2 > 0) {
 				this.noteOn(channel, data1, data2);
+				this.remoteControl(`NoteOn=${channel}:${data1}`, data2);
 				this.remoteControl(`NoteOn=${data1}`, data2);
 			} else {
 				this.noteOff(channel, data1);
+				this.remoteControl(`NoteOff=${channel}:${data1}`, 0);
 				this.remoteControl(`NoteOff=${data1}`, 0);
 			}
 			break;
@@ -5302,6 +5304,7 @@ class MidiManager {
 
 			case 8: // NoteOff
 			this.noteOff(channel, data1, data2);
+			this.remoteControl(`NoteOff=${channel}:${data1}`, data2);
 			this.remoteControl(`NoteOff=${data1}`, data2);
 			break;
 
@@ -5310,7 +5313,9 @@ class MidiManager {
 			val = data2/127;
 			this.waxml.setVariable(`MIDI:CC:${data1}`, val);
 			this.waxml.setVariable(`MIDI:ControlChange:${data1}`, val);
+			this.remoteControl(`ControlChange=${channel}:${data1}:${data2}`);
 			this.remoteControl(`ControlChange=${data1}:${data2}`);
+			this.remoteControl(`ControlChange=${channel}:${data1}`, data2);
 			this.remoteControl(`ControlChange=${data1}`, data2);
 			break;
 				
@@ -5318,6 +5323,7 @@ class MidiManager {
 			val = (data2 + data1/128)/64 - 1;
 			this.waxml.setVariable(`MIDI:PB`, val);
 			this.waxml.setVariable(`MIDI:PitchBend`, val);
+			this.remoteControl(`PitchBend:${channel}`, val);
 			this.remoteControl("PitchBend", val);
 			break;
 
