@@ -36,6 +36,7 @@ class BufferSourceObject {
 		this._node.disconnect();
 		this._node = new AudioBufferSourceNode(this._ctx, params);
 		this._node.buffer = this._buffer;
+		this._node.loopEnd = this._buffer.duration;
 
 		if(offset >= this._buffer.duration){
 			offset = 0;
@@ -44,18 +45,23 @@ class BufferSourceObject {
 		let factor = Math.abs(this._params.playbackRate || 1);
 		duration = duration || this._buffer.duration;
 
-		this._node.connect(this.destination);	
-		this._node.start(time, offset * factor, duration * factor);
+		this._node.connect(this.destination);
 		this.lastStarted = time;
 		this.offset = offset;
 		// important to set this._playing to true AFTER setting this.offset (otherwise it will make an endless call stack via resume)
 		this._playing = true;
 
-		this.autoStopTimer = setTimeout(() => {
-			this._offset = 0;
-			this._relOffset = 0;
-			this._playing = false;
-		}, (duration - offset) * factor * 1000);
+		if(params.loop){
+			this._node.start(time, offset * factor);
+		} else {
+			this._node.start(time, offset * factor, duration * factor);
+			this.autoStopTimer = setTimeout(() => {
+				this._offset = 0;
+				this._relOffset = 0;
+				this._playing = false;
+			}, (duration - offset) * factor * 1000);
+		}
+		
 	}
 
 	resume(){
@@ -67,12 +73,13 @@ class BufferSourceObject {
 		this.resume();
 	}
 
-	stop(params){
+	stop(p = {}){
 		clearTimeout(this.autoStopTimer);
 		this.autoStopTimer = 0;
 		if(this._playing){
 			if(!params.dontDisconnect){
-				this._node.disconnect();
+				// this._node.disconnect();
+				this._node.stop();
 			}
 			this._playing = false;
 			this.updateOffset();
@@ -191,6 +198,10 @@ class BufferSourceObject {
 			this._buffer = audioBuffer;
 			this.doCallBacks();
 		});
+	}
+
+	get loop(){
+		return this._params.loop;
 	}
 
 	get loopEnd(){
