@@ -513,9 +513,14 @@ class AudioObject{
     }
 
     getParameter(paramName){
-      let val;
 
-      if(typeof this._params[paramName] === "undefined"){
+      // stupid to separate parameters (from attributes) and variables (stored in var-elements)
+      let storedParameter = this._params[paramName];
+      let storedVariable = this.getVariable(paramName);
+
+      let val = storedVariable || storedParameter;
+
+      if(typeof val === "undefined"){
           
           if(this._parentAudioObj){
               return this._parentAudioObj.getParameter(paramName);
@@ -554,7 +559,7 @@ class AudioObject{
           }
 
       } else {
-          val = this._params[paramName];
+          val = val.valueOf();
 
           // adjust time
           switch(paramName){
@@ -913,7 +918,7 @@ class AudioObject{
         }
 
   	  	if(transitionTime && param.setTargetAtTime){
-  		  	param.setTargetAtTime(value, startTime, transitionTime/3);
+  		  	param.setTargetAtTime(value, startTime, transitionTime);
   	  	} else if(param.setValueAtTime){
   		  	param.setValueAtTime(value, startTime);
   	  	}
