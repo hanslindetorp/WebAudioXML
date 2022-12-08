@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+    xmlns="https://www.w3schools.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.1.xsd"
+
+    version="1.0" 
+    timeUnit="ms" 
+    gain="0dB">
+
+
+    <Chain class="channel">
+        <BiquadFilterNode class="lowpass" type="lowpass" frequency="20" detune="$lowpass"/>
+        <BiquadFilterNode class="highpass" type="highpass" frequency="20" detune="$highpass"/>
+        <GainNode class="gain" gain="$gain"/> 
+        <Send class="send1" bus="#send1" gain="$send1"/>
+        <Send class="send2" bus="#send2" gain="$send2"/>
+        <Send class="send3" bus="#send3" gain="$send3"/>
+        <StereoPannerNode class="pan" pan="$pan"/>
+    </Chain>
+
+</Audio>

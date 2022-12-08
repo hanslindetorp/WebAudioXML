@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+    xmlns="https://www.w3schools.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.1.xsd"
+
+    version="1.0" 
+    timeUnit="ms" 
+    gain="0dB">
+
+    <Chain>
+        <Mixer>
+            
+            <Chain class="ch1">
+                <var name="gain" value="$ch1_gain"/>
+                <var name="pan" value="$ch1_pan"/>
+                <var name="lowpass" value="$ch1_lowpass"/>
+                <var name="highpass" value="$ch1_highpass"/>
+                <var name="send1" value="$ch1_send1"/>
+                <var name="send2" value="$ch1_send2"/>
+                <var name="send3" value="$ch1_send3"/>
+                
+                <GainNode output=".channel"/>
+                <include href="mixer-channel.xml"/>
+            </Chain>
+
+
+            
+            <Chain class="ch2">
+                <var name="gain" value="$ch2_gain"/>
+                <var name="pan" value="$ch2_pan"/>
+                <var name="lowpass" value="$ch2_lowpass"/>
+                <var name="highpass" value="$ch2_highpass"/>
+                <var name="send1" value="$ch2_send1"/>
+                <var name="send2" value="$ch2_send2"/>
+                <var name="send3" value="$ch2_send3"/>
+                
+                <GainNode output=".channel"/>
+                <include href="mixer-channel.xml"/>
+            </Chain>
+
+
+
+            
+            <Chain class="ch3">
+                <var name="gain" value="$ch3_gain"/>
+                <var name="pan" value="$ch3_pan"/>
+                <var name="lowpass" value="$ch3_lowpass"/>
+                <var name="highpass" value="$ch3_highpass"/>
+                <var name="send1" value="$ch3_send1"/>
+                <var name="send2" value="$ch3_send2"/>
+                <var name="send3" value="$ch3_send3"/>
+                
+                <GainNode output=".channel"/>
+                <include href="mixer-channel.xml"/>
+            </Chain>
+
+
+
+            
+            <Chain class="ch4">
+                <var name="gain" value="$ch4_gain"/>
+                <var name="pan" value="$ch4_pan"/>
+                <var name="lowpass" value="$ch4_lowpass"/>
+                <var name="highpass" value="$ch4_highpass"/>
+                <var name="send1" value="$ch4_send1"/>
+                <var name="send2" value="$ch4_send2"/>
+                <var name="send3" value="$ch4_send3"/>
+                
+                <GainNode output=".channel"/>
+                <include href="mixer-channel.xml"/>
+            </Chain>
+
+            
+            <ConvolverNode id="send1" src="convolution/send1.wav"/>
+            <ConvolverNode id="send2" src="convolution/send2.wav"/>
+            <ConvolverNode id="send3" src="convolution/send3.wav"/> 
+        </Mixer>
+        <DynamicsCompressorNode ratio="$compressor_ratio" threshold="$compressor_threshold"/>
+    </Chain>
+</Audio>

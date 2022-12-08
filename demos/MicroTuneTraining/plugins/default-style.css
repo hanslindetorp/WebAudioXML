@@ -1,0 +1,47 @@
+
+/* Detta sätter alla grundmarginaler till 0 och ser till att sidan fyller hela webbläsaren */
+html, body {
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+body {
+	background-color: black;
+}
+
+
+/*
+Detta här måtten sätter formatet för den aktiva ytan "main"
+till 16:9 med bredden 1000 pixlar */
+main {
+	background-color: white;
+	width: 1000px;
+	height: 562.5px;
+}
+
+
+/* Det här är ett sätt att skapa olika sidor/sections som är gömda från början (opacity: 0)
+	och ligger underst (z-index: -1)
+	Toningnen sker på en halv sekund (transition: 0.5s)
+*/
+
+section{
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	z-index: -1;
+	padding: 20px;
+	box-sizing: border-box;
+	background-size: cover;
+	transition: 500ms;
+}
+
+/* När en section är "target" (d.v.s. man har klickat på en länk som pekar på det id:t blir den synlig - opacity: 1
+	och ligger längst fram - z-index: 1 */
+section:target {
+	opacity: 1;
+	z-index: 0;
+}

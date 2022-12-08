@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>3D-audio</title>
+		<link href="plugins/default-style.css" rel="stylesheet" type="text/css" />
+		<link href="style.css" rel="stylesheet" type="text/css" />
+		<script src="plugins/max.size.js"></script>
+		<script>
+			// Här bestäms vilken sida som visas först
+			window.addEventListener("load", () => location.href = "#play");
+		</script>
+	</head>
+
+
+	<body>
+
+		<main class="max-size pages">
+
+			<section id="play">
+				<a data-waxml-pointerdown-set="microtune=0;key=8">8</a>
+
+				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=7">7a</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=7">7b</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=7">7c</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=7">7d</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=7">7e</a>
+
+				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=6">6a</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=6">6b</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=6">6c</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=6">6d</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=6">6e</a>
+
+				<a data-waxml-pointerdown-set="microtune=0;key=5">5</a>
+
+				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=4">4a</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=4">4b</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=4">4c</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=4">4d</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=4">4e</a>
+
+				
+				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=3">3a</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=3">3b</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=3">3c</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=3">3d</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=3">3e</a>
+				
+				<a data-waxml-pointerdown-set="microtune=0;key=2">2</a>
+				<a data-waxml-pointerdown-set="microtune=0;key=1;">1</a>
+
+				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=-2">2e</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=-2">-2d</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=-2">-2c</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=-2">-2b</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=-2">-2a</a>
+
+				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=-3">3e</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=-3">-3d</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=-3">-3c</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=-3">-3b</a>
+				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=-3">-3a</a>
+
+				<a data-waxml-pointerdown-set="microtune=0;key=-4">-4</a>
+			</section>
+
+			<section id="key">
+				<a data-waxml-pointerdown-set="root=11">B</a>
+				<a class="black" data-waxml-pointerdown-set="root=10">A#</a>
+				<a data-waxml-pointerdown-set="root=9">A</a>
+				<a class="black" data-waxml-pointerdown-set="root=8">G#</a>
+				<a data-waxml-pointerdown-set="root=7">G</a>
+				<a class="black" data-waxml-pointerdown-set="root=6">F#</a>
+				<a data-waxml-pointerdown-set="root=5">F</a>
+				<a data-waxml-pointerdown-set="root=4">E</a>
+				<a class="black" data-waxml-pointerdown-set="root=3">D#</a>
+				<a data-waxml-pointerdown-set="root=2">D</a>
+				<a class="black" data-waxml-pointerdown-set="root=1">C#</a>
+				<a data-waxml-pointerdown-set="root=0">C</a>
+				
+			</section>
+
+			<section id="sound">
+				<h2>Octave:</h2>
+				<a class="octave" data-waxml-pointerdown-set="octave=1">+1</a>
+				<a class="octave selected" data-waxml-pointerdown-set="octave=0">0</a>
+				<a class="octave" data-waxml-pointerdown-set="octave=-1">-1</a>
+
+
+				<h2>Drone:</h2>
+				<a class="drone" data-waxml-pointerdown-set="drone=4">D</a>
+				<a class="drone selected" data-waxml-pointerdown-set="drone=3">C</a>
+				<a class="drone" data-waxml-pointerdown-set="drone=2">B</a>
+				<a class="drone" data-waxml-pointerdown-set="drone=1">A</a>
+				<a class="drone" data-waxml-pointerdown-set="drone=0">Off</a>
+				
+			</section>
+
+			<section id="mode">
+				
+			</section>
+
+			<nav>
+				<a href="#play">Play</a>
+				<a href="#key">Key</a>
+				<a href="#sound">Sound</a>
+				<a href="#mode">Mode</a>
+			</nav>
+
+
+		</main>
+		<script src="plugins/WebAudioXML.js" data-source="audio.xml"></script>
+		<script src="plugins/script.js"></script>
+	</body>
+</html>

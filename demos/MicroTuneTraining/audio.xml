@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+
+    xmlns="https://www.w3schools.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.5.xsd"
+
+    version="1.0" 
+    timeUnit="ms" 
+    gain="0dB"
+    controls="false">
+
+
+    <!-- Bordun -->
+    <var name="root" default="2" mapin="0,12"/>
+    <var name="lp" default="3" value="$drone" mapin="3,4" mapout="300,500" />
+    <var name="dronemix" value="$drone" default="3" mapin="0,3" mapout="0,1"/>
+
+    <Chain>
+
+        <var name="f1" value="$root+36" convert="MIDI->frequency"/>
+        <var name="f2" value="$root+43" convert="MIDI->frequency"/>
+
+        <OscillatorNode type="square" frequency="$f1" output="#a, #b, #c" />
+        <OscillatorNode type="square" frequency="$f2" output="#b, #c" />
+        <OscillatorNode type="square" frequency="$f1*2" output="#c" />
+
+        <Mixer transitionTime="100" mix="$dronemix" gain="-6dB">
+            <GainNode />
+            <GainNode id="a" />
+            <GainNode id="b" />
+            <GainNode id="c" />
+        </Mixer>
+
+        <BiquadFilterNode frequency="$lp" />
+        <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="-3dB" convolution="plugins/convolution/send1.wav"/>
+    </Chain>
+    
+
+    <!-- Melody -->
+
+    <var name="microtune" default="0" mapin="0,1" mapout="0,1"/>
+    <var name="key" default="1" mapin="-4,-3,-2,1,2,3,4,5,6,7,8" mapout="-5,-3,-2+$microtune,0,2,3+$microtune,5+$microtune,7,8+$microtune,10+$microtune,12" curve="steps"/>
+    <var name="octave" mapin="-1,0,1" mapout="4,5,6" curve="steps" default="0" />
+    <var name="melodygain" />
+    <Chain>
+        <var name="pitch" value="$root+$key+$octave*12" convert="MIDI->frequency"/>
+        <OscillatorNode transitionTime="0" type="square" frequency="$pitch"/>
+        <BiquadFilterNode frequency="$pitch" />
+        <GainNode transitionTime="50" gain="$melodygain" />
+        <ObjectBasedAudio gain="-3dB" positionZ="-2" positionX="1" convolutionGain="-3dB" convolution="plugins/convolution/send1.wav"/>
+    </Chain>
+
+
+</Audio>
