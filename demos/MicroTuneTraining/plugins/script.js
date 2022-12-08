@@ -29,5 +29,13 @@ window.addEventListener("load", e => {
             e.target.classList.add("selected");
         });
     });
+
+    document.querySelectorAll("a").forEach(btn => {
+        btn.addEventListener("touchstart", function(event) {event.preventDefault()});
+        btn.addEventListener("touchmove", function(event) {event.preventDefault()});
+        btn.addEventListener("touchend", function(event) {event.preventDefault()});
+        btn.addEventListener("touchcancel", function(event) {event.preventDefault()});
+    
+      });
     
 });
