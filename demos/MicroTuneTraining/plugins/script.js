@@ -38,16 +38,11 @@ window.addEventListener("load", e => {
         });
     });
 
-    document.querySelectorAll("a").forEach(btn => {
+    document.querySelectorAll("section > a").forEach(btn => {
         btn.addEventListener("touchstart", function(event) {event.preventDefault()});
         btn.addEventListener("touchmove", function(event) {event.preventDefault()});
         btn.addEventListener("touchend", function(event) {event.preventDefault()});
         btn.addEventListener("touchcancel", function(event) {event.preventDefault()});
     });
     
-    document.querySelectorAll("nav a").forEach(a => {
-        a.addEventListener("pointerdown", e => {
-            window.location = e.target.href;
-        });
-    });
 });
