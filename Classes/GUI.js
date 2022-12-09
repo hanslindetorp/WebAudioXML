@@ -185,6 +185,7 @@ class GUI {
 			openbtn.style.position = "absolute";
 			openbtn.style.right = "2px";
 			openbtn.style.top = "2px";
+			openbtn.classList.add("waxml-gui-btn");
 			document.body.appendChild(openbtn);
 			openbtn.addEventListener("click", e => {
 				e.target.style.display = "none";
@@ -363,9 +364,11 @@ class GUI {
 		let headForwardOutput = document.createElement("div");
 		targetElement.appendChild(headForwardOutput);
 
+		let sndCnt = 0;
 		
 		objects.forEach(object => {
-			let label = object.name || object.id || object.src.split("/").pop();
+			let tempName = object.src ? object.src.split("/").pop() : `Sound ${++sndCnt}`;
+			let label = object.name || object.id || tempName;
 			let handle = document.createElement("waxml-xy-handle");
 			handle.innerHTML = label;
 
