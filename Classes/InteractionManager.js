@@ -87,6 +87,9 @@ class InteractionManager {
 	init(){
 		this.inited = true;
 		this.waxml.init();
+	}
+
+	initSensors(){
 
 		if (window.DeviceMotionEvent) {
 
@@ -406,12 +409,19 @@ class InteractionManager {
 
 	}
 
-	setDeviceMotion(e){}
+	setDeviceMotion(e){
+		this.setVariable("deviceMotionAccelerationX", e.acceleration.x);
+		this.setVariable("deviceMotionAccelerationY", e.acceleration.y);
+		this.setVariable("deviceMotionAccelerationZ", e.acceleration.z);
+		this.setVariable("deviceMotionRotationRateAlpha", e.rotationRate.alpha);
+		this.setVariable("deviceMotionRotationRateBeta", e.rotationRate.beta);
+		this.setVariable("deviceMotionRotationRateGamma", e.rotationRate.gamma);
+	}
 
 	setDeviceOrientation(e){
-		this._variables.alpha = e.alpha;
-		this._variables.beta = e.beta;
-		this._variables.gamma = e.gamma;
+		this.setVariable("deviceOrientationAlpha", e.alpha);
+		this.setVariable("deviceOrientationBeta", e.beta);
+		this.setVariable("deviceOrientationGamma", e.gamma);
 	}
 
 	copyTouchProperties(source, target){
