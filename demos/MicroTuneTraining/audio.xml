@@ -7,7 +7,7 @@
 
     version="1.0" 
     timeUnit="ms" 
-    gain="-6dB"
+    gain="-12dB"
     controls="false">
 
 
@@ -15,6 +15,7 @@
     <var name="root" default="2" mapin="0,12"/>
     <var name="lp" default="3" value="$drone" mapin="3,4" mapout="250,400" />
     <var name="dronemix" value="$drone" default="3" mapin="0,3" mapout="0,1"/>
+    <var name="rev" default="-3" mapin="-20,0" convert="dB->power"/>
 
     <OscillatorNode frequency="0.3" output="next"/>
     <GainNode id="lfo" gain="150" output="none"/>
@@ -36,7 +37,7 @@
         </Mixer>
 
         <BiquadFilterNode transitionTime="200" frequency="$lp" detune="#lfo"/>
-        <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="-3dB" convolution="plugins/convolution/send1.wav"/>
+        <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/>
     </Chain>
     
 
@@ -49,9 +50,9 @@
     <Chain>
         <var name="pitch" value="$root+$key+$octave*12" convert="MIDI->frequency"/>
         <OscillatorNode transitionTime="0" type="square" frequency="$pitch"/>
-        <BiquadFilterNode frequency="$pitch" />
+        <BiquadFilterNode frequency="$pitch*1.5" />
         <GainNode transitionTime="50" gain="$melodygain" />
-        <ObjectBasedAudio gain="-3dB" positionZ="-2" positionX="1" convolutionGain="-3dB" convolution="plugins/convolution/send1.wav"/>
+        <ObjectBasedAudio gain="-3dB" positionZ="-2" positionX="1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/>
     </Chain>
 
 
