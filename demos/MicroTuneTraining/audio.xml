@@ -29,7 +29,7 @@
         <OscillatorNode type="square" frequency="$f2" output="#b, #c" />
         <OscillatorNode type="square" frequency="$f1*2" output="#c" />
 
-        <Mixer mix="$dronemix" gain="-6dB">
+        <Mixer mix="$dronemix" gain="-9dB">
             <GainNode />
             <GainNode id="a" />
             <GainNode id="b" />
