@@ -829,6 +829,7 @@ class AudioObject{
             // so that attributes don't overwrite any class functions
             // typeof this[key] !== "function" was added to save from
             // a disaster
+   
             let v = this._params[key].valueOf();
             // if(typeof v !== "undefined")this[key] = v;
             if(typeof v == typeof this[key] || typeof this[key] == "undefined")this[key] = v;
@@ -2309,6 +2310,25 @@ class Connector {
 
 		let nodeName = xmlNode.nodeName.toLowerCase();
 		let targetElements;
+
+		// connect AudioParameters if specified
+		if(xmlNode.obj && xmlNode.obj.parameters){
+			Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
+				if(typeof value == "string"){
+					if(xmlNode.obj._node[key] instanceof AudioParam){
+						let modulators = this.getTargetElements(xmlNode, value);
+						if(modulators){
+							modulators.forEach(modulatorNode => {
+								modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
+							});
+						}
+					}
+				}
+			});
+			
+		}
+		
+
 		switch(nodeName){
 			case "chain":
 			// connect chain input to first element in chain
@@ -2471,7 +2491,7 @@ class Connector {
 
 					case "mixer":
 					let i = [...xmlNode.parentNode.children].indexOf(xmlNode);
-					console.log(xmlNode, "connect to mixer", i);
+					//console.log(xmlNode, "connect to mixer", i);
 					xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[i]);
 					break;
 
@@ -9039,14 +9059,15 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		// waxml
 		case "transitionTime":
-			
-		
-		value = parseFloat(value);
+		v = parseFloat(value);
+		if(!isNaN(v)){value = v};
 		break;
 
 
 		case "maxDelayTime":
-		value = parseFloat(value) || 1;
+		v = parseFloat(value);
+		if(!isNaN(v)){value = v};
+		value = value || 1;
 		break;
 
 		case "adsr":

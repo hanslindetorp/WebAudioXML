@@ -25,6 +25,25 @@ class Connector {
 
 		let nodeName = xmlNode.nodeName.toLowerCase();
 		let targetElements;
+
+		// connect AudioParameters if specified
+		if(xmlNode.obj && xmlNode.obj.parameters){
+			Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
+				if(typeof value == "string"){
+					if(xmlNode.obj._node[key] instanceof AudioParam){
+						let modulators = this.getTargetElements(xmlNode, value);
+						if(modulators){
+							modulators.forEach(modulatorNode => {
+								modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
+							});
+						}
+					}
+				}
+			});
+			
+		}
+		
+
 		switch(nodeName){
 			case "chain":
 			// connect chain input to first element in chain
@@ -187,7 +206,7 @@ class Connector {
 
 					case "mixer":
 					let i = [...xmlNode.parentNode.children].indexOf(xmlNode);
-					console.log(xmlNode, "connect to mixer", i);
+					//console.log(xmlNode, "connect to mixer", i);
 					xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[i]);
 					break;
 

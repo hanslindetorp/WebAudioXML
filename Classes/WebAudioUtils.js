@@ -110,14 +110,15 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		// waxml
 		case "transitionTime":
-			
-		
-		value = parseFloat(value);
+		v = parseFloat(value);
+		if(!isNaN(v)){value = v};
 		break;
 
 
 		case "maxDelayTime":
-		value = parseFloat(value) || 1;
+		v = parseFloat(value);
+		if(!isNaN(v)){value = v};
+		value = value || 1;
 		break;
 
 		case "adsr":

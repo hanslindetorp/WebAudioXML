@@ -501,6 +501,7 @@ class AudioObject{
             // so that attributes don't overwrite any class functions
             // typeof this[key] !== "function" was added to save from
             // a disaster
+   
             let v = this._params[key].valueOf();
             // if(typeof v !== "undefined")this[key] = v;
             if(typeof v == typeof this[key] || typeof this[key] == "undefined")this[key] = v;
