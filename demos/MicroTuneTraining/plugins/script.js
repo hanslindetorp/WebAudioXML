@@ -30,12 +30,24 @@ window.addEventListener("load", e => {
         });
     });
 
+    let keyBtns = document.querySelectorAll("section#key a");
+    keyBtns.forEach(btn => {
+        btn.addEventListener("pointerdown", e => {
+            keyBtns.forEach(btn => btn.classList.remove("selected"));
+            e.target.classList.add("selected");
+        });
+    });
+
     document.querySelectorAll("a").forEach(btn => {
         btn.addEventListener("touchstart", function(event) {event.preventDefault()});
         btn.addEventListener("touchmove", function(event) {event.preventDefault()});
         btn.addEventListener("touchend", function(event) {event.preventDefault()});
         btn.addEventListener("touchcancel", function(event) {event.preventDefault()});
+    });
     
-      });
-    
+    document.querySelectorAll("nav a").forEach(a => {
+        a.addEventListener("pointerdown", e => {
+            window.location = e.target.href;
+        });
+    });
 });

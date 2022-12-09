@@ -7,14 +7,17 @@
 
     version="1.0" 
     timeUnit="ms" 
-    gain="-3dB"
+    gain="-6dB"
     controls="false">
 
 
     <!-- Bordun -->
     <var name="root" default="2" mapin="0,12"/>
-    <var name="lp" default="3" value="$drone" mapin="3,4" mapout="300,500" />
+    <var name="lp" default="3" value="$drone" mapin="3,4" mapout="250,400" />
     <var name="dronemix" value="$drone" default="3" mapin="0,3" mapout="0,1"/>
+
+    <OscillatorNode frequency="0.3" output="next"/>
+    <GainNode output="#lpdetune" gain="150"/>
 
     <Chain>
 
@@ -25,14 +28,16 @@
         <OscillatorNode type="square" frequency="$f2" output="#b, #c" />
         <OscillatorNode type="square" frequency="$f1*2" output="#c" />
 
-        <Mixer transitionTime="100" mix="$dronemix" gain="-6dB">
+        <Mixer mix="$dronemix" gain="-6dB">
             <GainNode />
             <GainNode id="a" />
             <GainNode id="b" />
             <GainNode id="c" />
         </Mixer>
 
-        <BiquadFilterNode frequency="$lp" />
+        <BiquadFilterNode transitionTime="200" frequency="$lp">
+            <detune id="lpdetune"/>
+        </BiquadFilterNode>
         <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="-3dB" convolution="plugins/convolution/send1.wav"/>
     </Chain>
     
