@@ -90,7 +90,7 @@ class Connector {
 			case "channelsplitternode":
 			// connect each channel to separate child nodes
 			let srcCh = 0;
-			xmlNode.children.forEach(node => {
+			[...xmlNode.children].forEach(node => {
 				xmlNode.obj.input.connect(node.obj.input, srcCh, 0);
 				srcCh++;
 			});
@@ -186,6 +186,11 @@ class Connector {
 				switch(parentNodeType){
 
 					case "mixer":
+					let i = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					console.log(xmlNode, "connect to mixer", i);
+					xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[i]);
+					break;
+
 					case "audio":
 					case "voice":
 					case "synth":
