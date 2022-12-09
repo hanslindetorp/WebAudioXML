@@ -95,68 +95,75 @@ class Variable {
 
 		if(val == parseFloat(val))val = parseFloat(val);
 		this._value = val;
+
 		this.mappedValue = this._mapper.getValue(this._value);
-		let frames = 1;
-
-		if(typeof this.lastMappedValue != "undefined"){
-			// don't run on first data value
-
-			let diff = this.mappedValue - this.lastMappedValue;
-			this.lastMappedValue = this.mappedValue;
-			frames = curFrame - this.lastUpdate;
 		
-			if(frames){
-				if(diff >= 0 && this._polarity <= 0){
-					this._polarity = 1;
-					this.broadCastEvent("trough");
-					this.polarityChange();
-				} else if(diff <= 0 && this._polarity >= 0){
-					this._polarity = -1;
-					this.broadCastEvent("crest");
-					this.polarityChange();
-				}
+		if(typeof this.mappedValue != "undefined"){
 
-				let newDerivative1;
-				if(diff){
-					newDerivative1 = diff / frames;
-				} else {
-					// let the derivative fall towards zero if set
-					newDerivative1 = this._derivative ? this._derivative * this.fallOffRatio : 0;
-				}
+			// successful mapping
+			let frames = 1;
 
-				newDerivative1 = this.getDerivativeAVG(newDerivative1);
+			if(typeof this.lastMappedValue != "undefined"){
+				// don't run on first data value
+
+				let diff = this.mappedValue - this.lastMappedValue;
+				this.lastMappedValue = this.mappedValue;
+				frames = curFrame - this.lastUpdate;
+			
+				if(frames){
+					if(diff >= 0 && this._polarity <= 0){
+						this._polarity = 1;
+						this.broadCastEvent("trough");
+						this.polarityChange();
+					} else if(diff <= 0 && this._polarity >= 0){
+						this._polarity = -1;
+						this.broadCastEvent("crest");
+						this.polarityChange();
+					}
+
+					let newDerivative1;
+					if(diff){
+						newDerivative1 = diff / frames;
+					} else {
+						// let the derivative fall towards zero if set
+						newDerivative1 = this._derivative ? this._derivative * this.fallOffRatio : 0;
+					}
+
+					newDerivative1 = this.getDerivativeAVG(newDerivative1);
+					
+					let newDerivative2 = newDerivative1 - this._derivative;
+					let newDerivative3 = newDerivative2 - this._derivative2;
+
+					// let lastAVG = this._derivative;
+					// let newAVG = this.setDerivative(newDerivative);
+
+					this._derivative = newDerivative1;
+					this._derivative2 = newDerivative2;
+					this._derivative3 = newDerivative3;
+
+					// this._derivative2 = newDerivative - this._derivative;
+					// this._derivative = newDerivative;
+				}
 				
-				let newDerivative2 = newDerivative1 - this._derivative;
-				let newDerivative3 = newDerivative2 - this._derivative2;
-
-				// let lastAVG = this._derivative;
-				// let newAVG = this.setDerivative(newDerivative);
-
-				this._derivative = newDerivative1;
-				this._derivative2 = newDerivative2;
-				this._derivative3 = newDerivative3;
-
-				// this._derivative2 = newDerivative - this._derivative;
 				// this._derivative = newDerivative;
+				this.doCallBacks(transistionTime);
+			}
+			this.lastUpdate = curFrame;
+			this.lastMappedValue = this.mappedValue;
+
+			let delay;
+			if(autoTrigger){
+				delay = 1 / this.frameRate;
+			} else {
+				delay = this.AVGtime(frames / this.frameRate);
 			}
 			
-			// this._derivative = newDerivative;
-			this.doCallBacks(transistionTime);
-		}
-		this.lastUpdate = curFrame;
-		this.lastMappedValue = this.mappedValue;
+			if(this._params.stream){
+				this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
+			}
 
-		let delay;
-		if(autoTrigger){
-			delay = 1 / this.frameRate;
-		} else {
-			delay = this.AVGtime(frames / this.frameRate);
+
 		}
-		
-		if(this._params.stream){
-			this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
-		}
-		
 		
 	}
 
