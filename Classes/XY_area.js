@@ -22,6 +22,7 @@ class XY_area extends HTMLElement {
 			this.style.backgroundImage = `linear-gradient(${gridColor} 1px, transparent 0),
 			linear-gradient(90deg, ${gridColor} 1px, transparent 0)`;
 			this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
+
 		}
 
 
@@ -36,11 +37,26 @@ class XY_area extends HTMLElement {
 
 		this.style.touchAction = "none";
 		this.style.display = "inline-block"; // not good
-		this.style.width = this.getAttribute("width") || "200px";
-		this.style.height = this.getAttribute("height") || "200px";
+
+		let w = parseFloat(this.getAttribute("width")) || 200;
+		let h = parseFloat(this.getAttribute("height")) || 200;
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
 		this.style.boxSizing = "border-box";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
 		this.style.border = this.getAttribute("border") || "1px solid black";
+
+		this.style["-webkit-touch-callout"] = "none"; /* iOS Safari */
+    	this.style["-webkit-user-select"] = "none"; /* Safari */
+    	this.style["-khtml-user-select"] = "none"; /* Konqueror HTML */
+		this.style["-moz-user-select"] = "none"; /* Old versions of Firefox */
+        this.style["-ms-user-select"] = "none"; /* Internet Explorer/Edge */
+        this.style["user-select"] = "none"; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+
+
+		this.colWidth = w / columns;
+		this.rowHeight = h / rows;
 		
 		// this.type = this.getAttribute("type") || "square";
 		switch(this.type){
@@ -53,19 +69,25 @@ class XY_area extends HTMLElement {
 		}
 
 
-		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch='true']");
+		this.initialRect = this.getBoundingClientRect();
+
+		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch]");
 		if(catchHandles.length){
 			this.style.cursor = "pointer";
-			this.addEventListener("pointerdown", e => {
+			let eventName = catchHandles[0].getAttribute("catch");
+			if(eventName == "true"){eventName = "pointerdown"}
+			this.addEventListener(eventName, e => {
 				let data = {
 					clientX: e.clientX,
 					clientY: e.clientY,
-					pointerId: e.pointerId
+					pointerId: e.pointerId,
+					preventDefault: () => {}
 				}
 				catchHandles.forEach(handle => {
 					let br = handle.getBoundingClientRect();
-					data.offsetX = br.width / 2;
-					data.offsetY = br.height / 2;
+					data.offsetX = -br.width / 2;
+					data.offsetY = -br.height / 2;
+					
 					handle.pointerDown(data);
 					handle.pointerMove(data);
 				});

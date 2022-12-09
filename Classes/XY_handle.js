@@ -19,6 +19,12 @@ class XY_handle extends HTMLElement {
 		let w = this.getAttribute("width") || this.getAttribute("size")  || "20px";
 		let h = this.getAttribute("height") || this.getAttribute("size") || "20px";
 
+		if(w == "grid"){
+			// set size to grid
+			w = `${this.parentElement.colWidth || 20}px`;
+			h = `${this.parentElement.rowHeight || 20}px`;
+		}
+
 		let icon = this.getIcon(this.getAttribute("icon"));
 		if(icon){
 			this.innerHTML = icon;
@@ -40,8 +46,15 @@ class XY_handle extends HTMLElement {
 			this.style.padding = "3px";
 			this.style.border = "2px solid black";
 		}
-
+		this.initialRect = this.getBoundingClientRect();
+		let parentRect = this.parentNode.initialRect;
 		this.initRects();
+		this.effectiveArea = {
+			left: this.initialRect.width / 2,
+			top: this.initialRect.height / 2,
+			width: parentRect.width - (this.initialRect.width * 1),
+			height: parentRect.height - this.initialRect.height
+		}
 
 		let dir = this.getAttribute("direction") || "xy";
 		this.direction = {
@@ -70,10 +83,10 @@ class XY_handle extends HTMLElement {
 		this._angleOffset = this.getAttribute("angleoffset");
 
 
-		this._minX = parseFloat(this.getAttribute("minX") || 0);
-		this._minY = parseFloat(this.getAttribute("minY") || 0);
-		this._maxX = parseFloat(this.getAttribute("maxX") || 1);
-		this._maxY = parseFloat(this.getAttribute("maxY") || 1);
+		this._minX = parseFloat(this.getAttribute("minx") || 0);
+		this._minY = parseFloat(this.getAttribute("miny") || 0);
+		this._maxX = parseFloat(this.getAttribute("maxx") || 1);
+		this._maxY = parseFloat(this.getAttribute("maxy") || 1);
 
 		this.move(this.x, this.y);
 
@@ -100,7 +113,7 @@ class XY_handle extends HTMLElement {
 		this.initRects();
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
-		this.setPointerCapture(e.pointerId);
+		if(e.pointerId){this.setPointerCapture(e.pointerId)};
 		this.pointerMove(e);
 	}
 
@@ -109,17 +122,17 @@ class XY_handle extends HTMLElement {
 		if(this.dragged){
 
 			if(this.direction.x){
-				let x = e.clientX-this.clickOffset.x-this.boundRect.left;
+				let x = e.clientX-this.boundRect.left;
 				x = Math.max(0, Math.min(x, this.boundRect.width));
 				this.x = x / this.boundRect.width;
-				this.style.left = `${x}px`;
+				this.style.left = `${this.x * this.effectiveArea.width}px`;
 			}
 
 			if(this.direction.y){
-				let y = e.clientY-this.clickOffset.y-this.boundRect.top;
+				let y = e.clientY-this.boundRect.top;
 				y = Math.max(0, Math.min(y, this.boundRect.height));
 				this.y = y / this.boundRect.height;
-				this.style.top = `${y}px`;
+				this.style.top = `${this.y * this.effectiveArea.height}px`;
 			}
 
 			if(this.parentElement.type == "circle"){
@@ -344,8 +357,8 @@ class XY_handle extends HTMLElement {
 		this.rect = this.getBoundingClientRect();
 		let br = this.parentNode.getBoundingClientRect();
 		this.boundRect = {
-			left: br.left,
-			top: br.top,
+			left: br.left + this.rect.width / 2,
+			top: br.top + this.rect.height / 2,
 			width: br.width - this.rect.width,
 			height: br.height - this.rect.height
 		};
