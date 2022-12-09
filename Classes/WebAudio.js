@@ -182,9 +182,14 @@ class WebAudio {
 		this.master.fadeIn(0.1);
 	}
 
-	getXMLString(){
+	get XMLstring(){
+		return this.parser.XMLstring;
+	}
+
+	toString(){
 		return new XMLSerializer().serializeToString(this._xml);
 	}
+
 
 	updateFromString(str){
 		return new Promise((resolve, reject) => {
@@ -310,6 +315,7 @@ class WebAudio {
 
 	start(selector, options){
 		
+		if(!this._xml){return}
 		let selectStr;
 		if(!selector){
 			selectStr = "*";
@@ -333,6 +339,9 @@ class WebAudio {
 				XMLnode.obj.noteOn(options);
 			}
 		});
+
+		this.callPlugins("start", selector, options);
+		
 		
 	}
 
@@ -346,7 +355,6 @@ class WebAudio {
 			}
 			selectStr += `,${selector}`;
 		}
-
 		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
@@ -354,9 +362,11 @@ class WebAudio {
 				XMLnode.obj.noteOn(options);
 			}
 		});
+		this.callPlugins("trig", selector, options);
 	}
 
 	continue(selector){
+		if(!this._xml){return}
 
 		let selectStr = `*[start='${selector}']`;
 		if(!selector){
@@ -377,6 +387,7 @@ class WebAudio {
 	}
 
 	resume(selector){
+		if(!this._xml){return}
 
 		let selectStr = `*[start='${selector}']`;
 		if(!selector){
@@ -414,6 +425,7 @@ class WebAudio {
 
 	stop(selector, options){
 		this.release(selector, options);
+		this.callPlugins("stop", selector, options);
 	}
 	
 
@@ -430,6 +442,16 @@ class WebAudio {
 		this.plugins.push(plugin);
 		// consider returning an interface to
 		// variables here
+	}
+
+	callPlugins(fn, arg1, arg2, arg3){
+		
+		this.plugins.forEach(plugin => {
+			console.log("callPlugins", fn, arg1, arg2, arg3)
+			if(plugin.call){
+				plugin.call(fn, arg1, arg2, arg3);
+			}
+		});
 	}
 
 	addEventListener(name, fn){
@@ -686,6 +708,10 @@ class WebAudio {
 	// InteractionManager
 	get lastGesture(){
 		return this.ui.lastGesture;
+	}
+
+	initSensors(){
+		this.ui.initSensors();
 	}
 
 	addSequence(name = "default", events){
