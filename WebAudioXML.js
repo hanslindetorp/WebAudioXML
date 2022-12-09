@@ -440,8 +440,14 @@ class AudioObject{
 		  	break;
 
 		  	case "delaynode":
-        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime).valueOf();
-		  	maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime);
+        if(maxDelayTime){
+          maxDelayTime = maxDelayTime.valueOf();
+          maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+        } else {
+          maxDelayTime = 1;
+        }
+		  	
 			  this._node = this._ctx.createDelay(maxDelayTime);
 		  	break;
 
@@ -561,6 +567,16 @@ class AudioObject{
 		  	case "xml":
 		  	break;
 
+        case "mixer":
+        this._node = this._ctx.createGain();
+        this.inputs = [];
+        while(this.inputs.length < xmlNode.children.length){
+          let input = this._ctx.createGain();
+          input.connect(this._node);
+          this.inputs.push(input);
+        }
+        break;
+
 		  	case "audio":
         case "gainnode":
         case "mixer":
@@ -596,7 +612,7 @@ class AudioObject{
 		  	break;
 
         case "channelsplitternode":
-        this.input = new ChannelSpitterNode(this._ctx, {
+        this.input = new ChannelSplitterNode(this._ctx, {
           numberOfOutputs: this._ctx.destination.maxChannelCount,
           channelCount: this._ctx.destination.maxChannelCount,
           channelCountMode: "explicit",
@@ -1168,6 +1184,9 @@ class AudioObject{
   	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious, audioNode){
 
 	  	let startTime = this._ctx.currentTime + (delay || 0);
+      if(param == "delayTime"){
+        value *= this._params.timescale;
+      }
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
 
@@ -1562,7 +1581,7 @@ class AudioObject{
   	}
 
   	set delayTime(val){
-	  	this.setTargetAtTime("delayTime", val * this._params.timescale);
+	  	this.setTargetAtTime("delayTime", val);
   	}
 
   	set value(val){
@@ -1586,15 +1605,17 @@ class AudioObject{
         
       val *= targets.length; // 0 - nr of children or channelCount
 
-      let crossFadeRange = this._params.crossfaderange.valueOf();
-      crossFadeRange = typeof crossFadeRange == "undefined" ? 1 : crossFadeRange;
+      let crossFadeRange = this._params.crossfaderange;
+      if(typeof crossFadeRange != "undefined"){
+        crossFadeRange = crossFadeRange.valueOf();
+      } else {
+        crossFadeRange = 1;
+      }
       crossFadeRange = crossFadeRange || 0.000001;
       let frameWidth = 1 - crossFadeRange;
 
-      // Det vore kanske bättre att lägga ut detta i Mapper-objektet
-      // Och att ha en extra GainNode mellan child-objekt och input
       targets.forEach((target, i) => {
-        let input = target.output ? target.output : target;
+        let input = this.inputs[i]; // target.output ? target.output : target;
         let fw;
         let peak = target.getParameter("peak");
         let peakRange = false;
@@ -1639,7 +1660,8 @@ class AudioObject{
         if(isNaN(gain)){
           console.log(gain);
         }
-        input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
+        let time = this.getParameter("transitionTime");
+        input.gain.setTargetAtTime(gain, input.context.currentTime, time);
       });
     }
 
@@ -2032,6 +2054,7 @@ class BufferSourceObject {
 			this.autoStopTimer = 0;
 		}
 		let params = {}
+		if(typeof this._params.offset != "undefined"){params.offset = this._params.offset}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
 		if(typeof this._params.loopStart != "undefined"){params.loopStart = this._params.loopStart * this._params.timescale}
 		if(typeof this._params.loopEnd != "undefined"){params.loopEnd = this._params.loopEnd * this._params.timescale}
@@ -2042,6 +2065,8 @@ class BufferSourceObject {
 		this._node = new AudioBufferSourceNode(this._ctx, params);
 		this._node.buffer = this._buffer;
 		this._node.loopEnd = this._buffer.duration;
+
+		offset = offset || this._params.offset * this._params.timescale || 0;
 
 		if(offset >= this._buffer.duration){
 			offset = 0;
@@ -2060,11 +2085,14 @@ class BufferSourceObject {
 			this._node.start(time, offset * factor);
 		} else {
 			this._node.start(time, offset * factor, duration * factor);
+
+			factor = factor || 0.0001;
+
 			this.autoStopTimer = setTimeout(() => {
 				this._offset = 0;
 				this._relOffset = 0;
 				this._playing = false;
-			}, (duration - offset) * factor * 1000);
+			}, (duration - offset) / Math.abs(factor) * 1000);
 		}
 		
 	}
@@ -2346,7 +2374,7 @@ class Connector {
 			case "channelsplitternode":
 			// connect each channel to separate child nodes
 			let srcCh = 0;
-			xmlNode.children.forEach(node => {
+			[...xmlNode.children].forEach(node => {
 				xmlNode.obj.input.connect(node.obj.input, srcCh, 0);
 				srcCh++;
 			});
@@ -2442,6 +2470,11 @@ class Connector {
 				switch(parentNodeType){
 
 					case "mixer":
+					let i = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					console.log(xmlNode, "connect to mixer", i);
+					xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[i]);
+					break;
+
 					case "audio":
 					case "voice":
 					case "synth":
@@ -3262,6 +3295,7 @@ class GUI {
 			openbtn.style.position = "absolute";
 			openbtn.style.right = "2px";
 			openbtn.style.top = "2px";
+			openbtn.classList.add("waxml-gui-btn");
 			document.body.appendChild(openbtn);
 			openbtn.addEventListener("click", e => {
 				e.target.style.display = "none";
@@ -3440,9 +3474,11 @@ class GUI {
 		let headForwardOutput = document.createElement("div");
 		targetElement.appendChild(headForwardOutput);
 
+		let sndCnt = 0;
 		
 		objects.forEach(object => {
-			let label = object.name || object.id || object.src.split("/").pop();
+			let tempName = object.src ? object.src.split("/").pop() : `Sound ${++sndCnt}`;
+			let label = object.name || object.id || tempName;
 			let handle = document.createElement("waxml-xy-handle");
 			handle.innerHTML = label;
 
@@ -3820,6 +3856,9 @@ class InteractionManager {
 	init(){
 		this.inited = true;
 		this.waxml.init();
+	}
+
+	initSensors(){
 
 		if (window.DeviceMotionEvent) {
 
@@ -4139,12 +4178,19 @@ class InteractionManager {
 
 	}
 
-	setDeviceMotion(e){}
+	setDeviceMotion(e){
+		this.setVariable("deviceMotionAccelerationX", e.acceleration.x);
+		this.setVariable("deviceMotionAccelerationY", e.acceleration.y);
+		this.setVariable("deviceMotionAccelerationZ", e.acceleration.z);
+		this.setVariable("deviceMotionRotationRateAlpha", e.rotationRate.alpha);
+		this.setVariable("deviceMotionRotationRateBeta", e.rotationRate.beta);
+		this.setVariable("deviceMotionRotationRateGamma", e.rotationRate.gamma);
+	}
 
 	setDeviceOrientation(e){
-		this._variables.alpha = e.alpha;
-		this._variables.beta = e.beta;
-		this._variables.gamma = e.gamma;
+		this.setVariable("deviceOrientationAlpha", e.alpha);
+		this.setVariable("deviceOrientationBeta", e.beta);
+		this.setVariable("deviceOrientationGamma", e.gamma);
 	}
 
 	copyTouchProperties(source, target){
@@ -4701,6 +4747,7 @@ Loader.loadAudio = (src, ctx) => {
 	});
 }
 
+
 Loader.loadXML = (url) => {
 
 	return new Promise((resolve, reject) => {
@@ -4846,7 +4893,8 @@ class Mapper{
 			}
 
 		}
-		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
+
+		this.isNumeric = this.mapout ? this.mapout.valueOf().every(element => typeof element.valueOf() === 'number') : true;
 	}
 
 	printInfo(params){
@@ -4859,6 +4907,17 @@ class Mapper{
 
 	getValue(x){
 
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+		
+		
 		// truncate x if needed
 		if(typeof x == "undefined")return x;
 
@@ -4868,12 +4927,12 @@ class Mapper{
 			break;
 
 			case "string":
-			if(this.mapin){
-				let i = this.mapin.valueOf().indexOf(x);
+			if(mapin){
+				let i = mapin.indexOf(x);
 				if(i == -1){
 					return 0;
 				} else {
-					x = this.mapout[i];
+					x = mapout[i];
 					x = this.convert(x, i);
 					return x;
 				}
@@ -4885,8 +4944,8 @@ class Mapper{
 
 			default:
 			x = x.valueOf();
-			x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
-			x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
+			x = mapin ? Math.max(x, Math.min(...mapin)) : x;
+			x = mapin ? Math.min(x, Math.max(...mapin)) : x;
 			return this.mapValue(x);
 			break;
 
@@ -4935,8 +4994,9 @@ class Mapper{
 
 		x = this.convert(x, i);
 
-		return x;
-
+		if(!isNaN(x)){
+			return x;
+		}
   	}
 
 	inToMapInIndex(x){
@@ -4949,35 +5009,63 @@ class Mapper{
 	inToMapOutIndex(x, i){
 		// let e = this.mapin.filter(entry => entry <= x).pop();
 		// let i = this.mapin.indexOf(e);
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
 
-		if(this.mapout.length > this.mapin.length && i+2 == this.mapin.length){
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
+		if(mapout.valueOf().length > mapin.valueOf().length && i+2 == mapin.length){
 			// more out-values than in-values and this is the next to last in-value
 		
 			// pick an out-value from the range between next to last and last in value
-			let outValues = this.mapout.filter((val, index) => index >= i);
+			let outValues = mapout.filter((val, index) => index >= i);
 			let len = outValues.length-1;
 			let x2 = x * len; // / Math.max(...this.mapin);
 			i += Math.floor(x2);
 			x = x == 1 ? x : x2 % 1;
-		} else if(this.mapout.length >= this.mapin.length && i+1 == this.mapin.length){
+		} else if(mapout.length >= mapin.length && i+1 == mapin.length){
 			// last mapin-value is mapped to last mapout-value
-			i = this.mapout.length-1;
+			i = mapout.length-1;
 			x = 0;
 		} else {
 			// if(i+2 >= this.mapout.length){
 			// match in to out values
-			i = i % this.mapout.length;
+			i = i % mapout.length;
 		}
 		return {i:i,x:x};
 	}
 
 	in2Rel(x, i){
-		let in1 = this.mapin[i % this.mapin.length];
-		let in2 = this.mapin[(i+1) % this.mapin.length];
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+		let in1 = mapin[i % this.mapin.length];
+		let in2 = mapin[(i+1) % this.mapin.length];
 		return (x-in1)/(in2-in1);
 	}
 
 	rel2Out(x, i){
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
 		if(this.isNumeric){
 			// interpolate between two in-values
 
@@ -4988,8 +5076,8 @@ class Mapper{
 				}
 			}
 
-			let out1 = this.mapout[i % this.mapout.length];
-			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let out1 = mapout[i % mapout.length];
+			let out2 = mapout[(i+1) % mapout.length];
 
 			// if(i+2 >= this.mapout.length){
 			// 	// match in to out values
@@ -5012,7 +5100,7 @@ class Mapper{
 		} else {
 
 			// pick a string value from mapout
-			return this.mapout[i % this.mapout.length];
+			return mapout[i % mapout.length];
 		}
 	}
 
@@ -5021,10 +5109,19 @@ class Mapper{
 			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
+			let mapin;
+			if(this.mapin){
+				mapin = this.mapin.valueOf();
+			}
+	
+			let mapout;
+			if(this.mapout){
+				mapout = this.mapout.valueOf();
+			}
 
 		if(steps instanceof Array){
-			let out1 = this.mapout[i % this.mapout.length];
-			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let out1 = mapout[i % mapout.length];
+			let out2 = mapout[(i+1) % mapout.length];
 			let range = Math.abs(out2 - out1);
 
 			// create a pattern for range
@@ -5053,8 +5150,19 @@ class Mapper{
 	}
 
 	offset(x, i){
+
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
 		if(this.isNumeric){
-			return x + this.mapout[i % this.mapout.length];
+			return x + mapout[i % mapout.length];
 		} else {
 			return x;
 		}
@@ -5944,6 +6052,7 @@ class Parser {
 
 	initFromString(str){
 		return new Promise((resolve, reject) => {
+			this.XMLstring = str;
 			let parser = new DOMParser();
 			let xml = parser.parseFromString(str,"text/xml");
 			this._xml = xml.firstElementChild;
@@ -5990,7 +6099,7 @@ class Parser {
 					
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
-					.then(xmlNode => {
+					.then((xmlNode) => {
 						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
@@ -6013,6 +6122,7 @@ class Parser {
 			localPath = Loader.getFolder(url);
 			Loader.loadXML(url)
 			.then((externalXML) => {
+				
 				externalXML.setAttribute("localpath", localPath);
 				return resolve(this.appendXMLnode(parentXML, externalXML, localPath));
 			});
@@ -6305,6 +6415,12 @@ class Parser {
 
 		return this._xml.firstElementChild;
 
+	}
+
+	set XMLstring(str){
+		if(str){
+			this._XMLstring = str;
+		}		
 	}
 
 	get XMLstring(){
@@ -7095,68 +7211,75 @@ class Variable {
 
 		if(val == parseFloat(val))val = parseFloat(val);
 		this._value = val;
+
 		this.mappedValue = this._mapper.getValue(this._value);
-		let frames = 1;
-
-		if(typeof this.lastMappedValue != "undefined"){
-			// don't run on first data value
-
-			let diff = this.mappedValue - this.lastMappedValue;
-			this.lastMappedValue = this.mappedValue;
-			frames = curFrame - this.lastUpdate;
 		
-			if(frames){
-				if(diff >= 0 && this._polarity <= 0){
-					this._polarity = 1;
-					this.broadCastEvent("trough");
-					this.polarityChange();
-				} else if(diff <= 0 && this._polarity >= 0){
-					this._polarity = -1;
-					this.broadCastEvent("crest");
-					this.polarityChange();
-				}
+		if(typeof this.mappedValue != "undefined"){
 
-				let newDerivative1;
-				if(diff){
-					newDerivative1 = diff / frames;
-				} else {
-					// let the derivative fall towards zero if set
-					newDerivative1 = this._derivative ? this._derivative * this.fallOffRatio : 0;
-				}
+			// successful mapping
+			let frames = 1;
 
-				newDerivative1 = this.getDerivativeAVG(newDerivative1);
+			if(typeof this.lastMappedValue != "undefined"){
+				// don't run on first data value
+
+				let diff = this.mappedValue - this.lastMappedValue;
+				this.lastMappedValue = this.mappedValue;
+				frames = curFrame - this.lastUpdate;
+			
+				if(frames){
+					if(diff >= 0 && this._polarity <= 0){
+						this._polarity = 1;
+						this.broadCastEvent("trough");
+						this.polarityChange();
+					} else if(diff <= 0 && this._polarity >= 0){
+						this._polarity = -1;
+						this.broadCastEvent("crest");
+						this.polarityChange();
+					}
+
+					let newDerivative1;
+					if(diff){
+						newDerivative1 = diff / frames;
+					} else {
+						// let the derivative fall towards zero if set
+						newDerivative1 = this._derivative ? this._derivative * this.fallOffRatio : 0;
+					}
+
+					newDerivative1 = this.getDerivativeAVG(newDerivative1);
+					
+					let newDerivative2 = newDerivative1 - this._derivative;
+					let newDerivative3 = newDerivative2 - this._derivative2;
+
+					// let lastAVG = this._derivative;
+					// let newAVG = this.setDerivative(newDerivative);
+
+					this._derivative = newDerivative1;
+					this._derivative2 = newDerivative2;
+					this._derivative3 = newDerivative3;
+
+					// this._derivative2 = newDerivative - this._derivative;
+					// this._derivative = newDerivative;
+				}
 				
-				let newDerivative2 = newDerivative1 - this._derivative;
-				let newDerivative3 = newDerivative2 - this._derivative2;
-
-				// let lastAVG = this._derivative;
-				// let newAVG = this.setDerivative(newDerivative);
-
-				this._derivative = newDerivative1;
-				this._derivative2 = newDerivative2;
-				this._derivative3 = newDerivative3;
-
-				// this._derivative2 = newDerivative - this._derivative;
 				// this._derivative = newDerivative;
+				this.doCallBacks(transistionTime);
+			}
+			this.lastUpdate = curFrame;
+			this.lastMappedValue = this.mappedValue;
+
+			let delay;
+			if(autoTrigger){
+				delay = 1 / this.frameRate;
+			} else {
+				delay = this.AVGtime(frames / this.frameRate);
 			}
 			
-			// this._derivative = newDerivative;
-			this.doCallBacks(transistionTime);
-		}
-		this.lastUpdate = curFrame;
-		this.lastMappedValue = this.mappedValue;
+			if(this._params.stream){
+				this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
+			}
 
-		let delay;
-		if(autoTrigger){
-			delay = 1 / this.frameRate;
-		} else {
-			delay = this.AVGtime(frames / this.frameRate);
+
 		}
-		
-		if(this._params.stream){
-			this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
-		}
-		
 		
 	}
 
@@ -8099,9 +8222,14 @@ class WebAudio {
 		this.master.fadeIn(0.1);
 	}
 
-	getXMLString(){
+	get XMLstring(){
+		return this.parser.XMLstring;
+	}
+
+	toString(){
 		return new XMLSerializer().serializeToString(this._xml);
 	}
+
 
 	updateFromString(str){
 		return new Promise((resolve, reject) => {
@@ -8227,6 +8355,7 @@ class WebAudio {
 
 	start(selector, options){
 		
+		if(!this._xml){return}
 		let selectStr;
 		if(!selector){
 			selectStr = "*";
@@ -8250,6 +8379,9 @@ class WebAudio {
 				XMLnode.obj.noteOn(options);
 			}
 		});
+
+		this.callPlugins("start", selector, options);
+		
 		
 	}
 
@@ -8263,7 +8395,6 @@ class WebAudio {
 			}
 			selectStr += `,${selector}`;
 		}
-
 		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
@@ -8271,9 +8402,11 @@ class WebAudio {
 				XMLnode.obj.noteOn(options);
 			}
 		});
+		this.callPlugins("trig", selector, options);
 	}
 
 	continue(selector){
+		if(!this._xml){return}
 
 		let selectStr = `*[start='${selector}']`;
 		if(!selector){
@@ -8294,6 +8427,7 @@ class WebAudio {
 	}
 
 	resume(selector){
+		if(!this._xml){return}
 
 		let selectStr = `*[start='${selector}']`;
 		if(!selector){
@@ -8331,6 +8465,7 @@ class WebAudio {
 
 	stop(selector, options){
 		this.release(selector, options);
+		this.callPlugins("stop", selector, options);
 	}
 	
 
@@ -8347,6 +8482,16 @@ class WebAudio {
 		this.plugins.push(plugin);
 		// consider returning an interface to
 		// variables here
+	}
+
+	callPlugins(fn, arg1, arg2, arg3){
+		
+		this.plugins.forEach(plugin => {
+			console.log("callPlugins", fn, arg1, arg2, arg3)
+			if(plugin.call){
+				plugin.call(fn, arg1, arg2, arg3);
+			}
+		});
 	}
 
 	addEventListener(name, fn){
@@ -8603,6 +8748,10 @@ class WebAudio {
 	// InteractionManager
 	get lastGesture(){
 		return this.ui.lastGesture;
+	}
+
+	initSensors(){
+		this.ui.initSensors();
 	}
 
 	addSequence(name = "default", events){
@@ -9480,6 +9629,7 @@ class XY_area extends HTMLElement {
 			this.style.backgroundImage = `linear-gradient(${gridColor} 1px, transparent 0),
 			linear-gradient(90deg, ${gridColor} 1px, transparent 0)`;
 			this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
+
 		}
 
 
@@ -9494,11 +9644,26 @@ class XY_area extends HTMLElement {
 
 		this.style.touchAction = "none";
 		this.style.display = "inline-block"; // not good
-		this.style.width = this.getAttribute("width") || "200px";
-		this.style.height = this.getAttribute("height") || "200px";
+
+		let w = parseFloat(this.getAttribute("width")) || 200;
+		let h = parseFloat(this.getAttribute("height")) || 200;
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
 		this.style.boxSizing = "border-box";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
 		this.style.border = this.getAttribute("border") || "1px solid black";
+
+		this.style["-webkit-touch-callout"] = "none"; /* iOS Safari */
+    	this.style["-webkit-user-select"] = "none"; /* Safari */
+    	this.style["-khtml-user-select"] = "none"; /* Konqueror HTML */
+		this.style["-moz-user-select"] = "none"; /* Old versions of Firefox */
+        this.style["-ms-user-select"] = "none"; /* Internet Explorer/Edge */
+        this.style["user-select"] = "none"; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+
+
+		this.colWidth = w / columns;
+		this.rowHeight = h / rows;
 		
 		// this.type = this.getAttribute("type") || "square";
 		switch(this.type){
@@ -9511,19 +9676,25 @@ class XY_area extends HTMLElement {
 		}
 
 
-		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch='true']");
+		this.initialRect = this.getBoundingClientRect();
+
+		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch]");
 		if(catchHandles.length){
 			this.style.cursor = "pointer";
-			this.addEventListener("pointerdown", e => {
+			let eventName = catchHandles[0].getAttribute("catch");
+			if(eventName == "true"){eventName = "pointerdown"}
+			this.addEventListener(eventName, e => {
 				let data = {
 					clientX: e.clientX,
 					clientY: e.clientY,
-					pointerId: e.pointerId
+					pointerId: e.pointerId,
+					preventDefault: () => {}
 				}
 				catchHandles.forEach(handle => {
 					let br = handle.getBoundingClientRect();
-					data.offsetX = br.width / 2;
-					data.offsetY = br.height / 2;
+					data.offsetX = -br.width / 2;
+					data.offsetY = -br.height / 2;
+					
 					handle.pointerDown(data);
 					handle.pointerMove(data);
 				});
@@ -9681,6 +9852,12 @@ class XY_handle extends HTMLElement {
 		let w = this.getAttribute("width") || this.getAttribute("size")  || "20px";
 		let h = this.getAttribute("height") || this.getAttribute("size") || "20px";
 
+		if(w == "grid"){
+			// set size to grid
+			w = `${this.parentElement.colWidth || 20}px`;
+			h = `${this.parentElement.rowHeight || 20}px`;
+		}
+
 		let icon = this.getIcon(this.getAttribute("icon"));
 		if(icon){
 			this.innerHTML = icon;
@@ -9702,8 +9879,15 @@ class XY_handle extends HTMLElement {
 			this.style.padding = "3px";
 			this.style.border = "2px solid black";
 		}
-
+		this.initialRect = this.getBoundingClientRect();
+		let parentRect = this.parentNode.initialRect;
 		this.initRects();
+		this.effectiveArea = {
+			left: this.initialRect.width / 2,
+			top: this.initialRect.height / 2,
+			width: parentRect.width - (this.initialRect.width * 1),
+			height: parentRect.height - this.initialRect.height
+		}
 
 		let dir = this.getAttribute("direction") || "xy";
 		this.direction = {
@@ -9732,10 +9916,10 @@ class XY_handle extends HTMLElement {
 		this._angleOffset = this.getAttribute("angleoffset");
 
 
-		this._minX = parseFloat(this.getAttribute("minX") || 0);
-		this._minY = parseFloat(this.getAttribute("minY") || 0);
-		this._maxX = parseFloat(this.getAttribute("maxX") || 1);
-		this._maxY = parseFloat(this.getAttribute("maxY") || 1);
+		this._minX = parseFloat(this.getAttribute("minx") || 0);
+		this._minY = parseFloat(this.getAttribute("miny") || 0);
+		this._maxX = parseFloat(this.getAttribute("maxx") || 1);
+		this._maxY = parseFloat(this.getAttribute("maxy") || 1);
 
 		this.move(this.x, this.y);
 
@@ -9762,7 +9946,7 @@ class XY_handle extends HTMLElement {
 		this.initRects();
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
-		this.setPointerCapture(e.pointerId);
+		if(e.pointerId){this.setPointerCapture(e.pointerId)};
 		this.pointerMove(e);
 	}
 
@@ -9771,17 +9955,17 @@ class XY_handle extends HTMLElement {
 		if(this.dragged){
 
 			if(this.direction.x){
-				let x = e.clientX-this.clickOffset.x-this.boundRect.left;
+				let x = e.clientX-this.boundRect.left;
 				x = Math.max(0, Math.min(x, this.boundRect.width));
 				this.x = x / this.boundRect.width;
-				this.style.left = `${x}px`;
+				this.style.left = `${this.x * this.effectiveArea.width}px`;
 			}
 
 			if(this.direction.y){
-				let y = e.clientY-this.clickOffset.y-this.boundRect.top;
+				let y = e.clientY-this.boundRect.top;
 				y = Math.max(0, Math.min(y, this.boundRect.height));
 				this.y = y / this.boundRect.height;
-				this.style.top = `${y}px`;
+				this.style.top = `${this.y * this.effectiveArea.height}px`;
 			}
 
 			if(this.parentElement.type == "circle"){
@@ -10006,8 +10190,8 @@ class XY_handle extends HTMLElement {
 		this.rect = this.getBoundingClientRect();
 		let br = this.parentNode.getBoundingClientRect();
 		this.boundRect = {
-			left: br.left,
-			top: br.top,
+			left: br.left + this.rect.width / 2,
+			top: br.top + this.rect.height / 2,
 			width: br.width - this.rect.width,
 			height: br.height - this.rect.height
 		};
