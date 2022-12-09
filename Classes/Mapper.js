@@ -84,7 +84,8 @@ class Mapper{
 			}
 
 		}
-		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
+
+		this.isNumeric = this.mapout ? this.mapout.valueOf().every(element => typeof element.valueOf() === 'number') : true;
 	}
 
 	printInfo(params){
@@ -97,6 +98,17 @@ class Mapper{
 
 	getValue(x){
 
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+		
+		
 		// truncate x if needed
 		if(typeof x == "undefined")return x;
 
@@ -106,12 +118,12 @@ class Mapper{
 			break;
 
 			case "string":
-			if(this.mapin){
-				let i = this.mapin.valueOf().indexOf(x);
+			if(mapin){
+				let i = mapin.indexOf(x);
 				if(i == -1){
 					return 0;
 				} else {
-					x = this.mapout[i];
+					x = mapout[i];
 					x = this.convert(x, i);
 					return x;
 				}
@@ -123,8 +135,8 @@ class Mapper{
 
 			default:
 			x = x.valueOf();
-			x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
-			x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
+			x = mapin ? Math.max(x, Math.min(...mapin)) : x;
+			x = mapin ? Math.min(x, Math.max(...mapin)) : x;
 			return this.mapValue(x);
 			break;
 
@@ -173,8 +185,9 @@ class Mapper{
 
 		x = this.convert(x, i);
 
-		return x;
-
+		if(!isNaN(x)){
+			return x;
+		}
   	}
 
 	inToMapInIndex(x){
@@ -187,35 +200,63 @@ class Mapper{
 	inToMapOutIndex(x, i){
 		// let e = this.mapin.filter(entry => entry <= x).pop();
 		// let i = this.mapin.indexOf(e);
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
 
-		if(this.mapout.length > this.mapin.length && i+2 == this.mapin.length){
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
+		if(mapout.valueOf().length > mapin.valueOf().length && i+2 == mapin.length){
 			// more out-values than in-values and this is the next to last in-value
 		
 			// pick an out-value from the range between next to last and last in value
-			let outValues = this.mapout.filter((val, index) => index >= i);
+			let outValues = mapout.filter((val, index) => index >= i);
 			let len = outValues.length-1;
 			let x2 = x * len; // / Math.max(...this.mapin);
 			i += Math.floor(x2);
 			x = x == 1 ? x : x2 % 1;
-		} else if(this.mapout.length >= this.mapin.length && i+1 == this.mapin.length){
+		} else if(mapout.length >= mapin.length && i+1 == mapin.length){
 			// last mapin-value is mapped to last mapout-value
-			i = this.mapout.length-1;
+			i = mapout.length-1;
 			x = 0;
 		} else {
 			// if(i+2 >= this.mapout.length){
 			// match in to out values
-			i = i % this.mapout.length;
+			i = i % mapout.length;
 		}
 		return {i:i,x:x};
 	}
 
 	in2Rel(x, i){
-		let in1 = this.mapin[i % this.mapin.length];
-		let in2 = this.mapin[(i+1) % this.mapin.length];
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+		let in1 = mapin[i % this.mapin.length];
+		let in2 = mapin[(i+1) % this.mapin.length];
 		return (x-in1)/(in2-in1);
 	}
 
 	rel2Out(x, i){
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
 		if(this.isNumeric){
 			// interpolate between two in-values
 
@@ -226,8 +267,8 @@ class Mapper{
 				}
 			}
 
-			let out1 = this.mapout[i % this.mapout.length];
-			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let out1 = mapout[i % mapout.length];
+			let out2 = mapout[(i+1) % mapout.length];
 
 			// if(i+2 >= this.mapout.length){
 			// 	// match in to out values
@@ -250,7 +291,7 @@ class Mapper{
 		} else {
 
 			// pick a string value from mapout
-			return this.mapout[i % this.mapout.length];
+			return mapout[i % mapout.length];
 		}
 	}
 
@@ -259,10 +300,19 @@ class Mapper{
 			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
+			let mapin;
+			if(this.mapin){
+				mapin = this.mapin.valueOf();
+			}
+	
+			let mapout;
+			if(this.mapout){
+				mapout = this.mapout.valueOf();
+			}
 
 		if(steps instanceof Array){
-			let out1 = this.mapout[i % this.mapout.length];
-			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let out1 = mapout[i % mapout.length];
+			let out2 = mapout[(i+1) % mapout.length];
 			let range = Math.abs(out2 - out1);
 
 			// create a pattern for range
@@ -291,8 +341,19 @@ class Mapper{
 	}
 
 	offset(x, i){
+
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
 		if(this.isNumeric){
-			return x + this.mapout[i % this.mapout.length];
+			return x + mapout[i % mapout.length];
 		} else {
 			return x;
 		}
