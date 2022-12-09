@@ -17,7 +17,7 @@
     <var name="dronemix" value="$drone" default="3" mapin="0,3" mapout="0,1"/>
 
     <OscillatorNode frequency="0.3" output="next"/>
-    <GainNode output="#lpdetune" gain="150"/>
+    <GainNode id="lfo" gain="150" output="none"/>
 
     <Chain>
 
@@ -35,9 +35,7 @@
             <GainNode id="c" />
         </Mixer>
 
-        <BiquadFilterNode transitionTime="200" frequency="$lp">
-            <detune id="lpdetune"/>
-        </BiquadFilterNode>
+        <BiquadFilterNode transitionTime="200" frequency="$lp" detune="#lfo"/>
         <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="-3dB" convolution="plugins/convolution/send1.wav"/>
     </Chain>
     
