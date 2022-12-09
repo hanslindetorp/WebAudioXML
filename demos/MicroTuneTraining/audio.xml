@@ -7,7 +7,7 @@
 
     version="1.0" 
     timeUnit="ms" 
-    gain="0dB"
+    gain="-3dB"
     controls="false">
 
 
