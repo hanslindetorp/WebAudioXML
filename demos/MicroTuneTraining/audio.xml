@@ -40,7 +40,7 @@
     <!-- Melody -->
 
     <var name="microtune" default="0" mapin="0,1" mapout="0,1"/>
-    <var name="key" default="1" mapin="-4,-3,-2,1,2,3,4,5,6,7,8" mapout="-5,-3,-2+$microtune,0,2,3+$microtune,5+$microtune,7,8+$microtune,10+$microtune,12" curve="steps"/>
+    <var name="key" default="1" mapin="-4,-3,-2,1,2,3,4,5,6,7,8" mapout="-5,-3+$microtune,-2+$microtune,0,2,3+$microtune,5+$microtune,7,8+$microtune,10+$microtune,12" curve="steps"/>
     <var name="octave" mapin="-1,0,1" mapout="4,5,6" curve="steps" default="0" />
     <var name="melodygain" />
     <Chain>
