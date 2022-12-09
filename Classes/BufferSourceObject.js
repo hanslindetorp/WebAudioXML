@@ -27,6 +27,7 @@ class BufferSourceObject {
 			this.autoStopTimer = 0;
 		}
 		let params = {}
+		if(typeof this._params.offset != "undefined"){params.offset = this._params.offset}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
 		if(typeof this._params.loopStart != "undefined"){params.loopStart = this._params.loopStart * this._params.timescale}
 		if(typeof this._params.loopEnd != "undefined"){params.loopEnd = this._params.loopEnd * this._params.timescale}
@@ -37,6 +38,8 @@ class BufferSourceObject {
 		this._node = new AudioBufferSourceNode(this._ctx, params);
 		this._node.buffer = this._buffer;
 		this._node.loopEnd = this._buffer.duration;
+
+		offset = offset || this._params.offset * this._params.timescale || 0;
 
 		if(offset >= this._buffer.duration){
 			offset = 0;
@@ -55,11 +58,14 @@ class BufferSourceObject {
 			this._node.start(time, offset * factor);
 		} else {
 			this._node.start(time, offset * factor, duration * factor);
+
+			factor = factor || 0.0001;
+
 			this.autoStopTimer = setTimeout(() => {
 				this._offset = 0;
 				this._relOffset = 0;
 				this._playing = false;
-			}, (duration - offset) * factor * 1000);
+			}, (duration - offset) / Math.abs(factor) * 1000);
 		}
 		
 	}
