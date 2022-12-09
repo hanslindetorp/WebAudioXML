@@ -66,6 +66,47 @@ section#key a {
     height: 8.1%;
 }
 
+.slidecontainer {
+    width: 95%; /* Width of the outside container */
+    margin: 0 2.5%;
+}
+  
+  /* The slider itself */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 25px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    border-radius: 10px;
+}
+  
+  /* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+  
+  /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 40px; /* Set a specific slider handle width */
+    height: 40px; /* Slider handle height */
+    background: aqua; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+    border-radius: 20px;
+}
+  
+.slider::-moz-range-thumb {
+    width: 40px; /* Set a specific slider handle width */
+    height: 40px; /* Slider handle height */
+    background: aqua; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+    border-radius: 20px;
+    border: 5px solid #666;
+}
+
 nav {
     z-index: 1000;
     display: block;
@@ -84,15 +125,16 @@ nav a {
 }
 
 h2 {
-    margin-top: 1em;
+    margin-top: 0.7em;
     color: white;
-    padding: 0.5em;
+    padding: 0.2em 0.5em;
+    font-size: 1.8em;
 }
 
 p {
-    font-size: 1.2em;
+    font-size: 1.5em;
     color: white;
-    padding: 0.5em;
+    padding: 0.6em;
 }
 
 section#mode a {
