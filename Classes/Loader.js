@@ -80,6 +80,7 @@ Loader.loadAudio = (src, ctx) => {
 	});
 }
 
+
 Loader.loadXML = (url) => {
 
 	return new Promise((resolve, reject) => {
