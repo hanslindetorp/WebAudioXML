@@ -43,6 +43,7 @@ class Parser {
 
 	initFromString(str){
 		return new Promise((resolve, reject) => {
+			this.XMLstring = str;
 			let parser = new DOMParser();
 			let xml = parser.parseFromString(str,"text/xml");
 			this._xml = xml.firstElementChild;
@@ -89,7 +90,7 @@ class Parser {
 					
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
-					.then(xmlNode => {
+					.then((xmlNode) => {
 						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
@@ -112,6 +113,7 @@ class Parser {
 			localPath = Loader.getFolder(url);
 			Loader.loadXML(url)
 			.then((externalXML) => {
+				
 				externalXML.setAttribute("localpath", localPath);
 				return resolve(this.appendXMLnode(parentXML, externalXML, localPath));
 			});
@@ -404,6 +406,12 @@ class Parser {
 
 		return this._xml.firstElementChild;
 
+	}
+
+	set XMLstring(str){
+		if(str){
+			this._XMLstring = str;
+		}		
 	}
 
 	get XMLstring(){
