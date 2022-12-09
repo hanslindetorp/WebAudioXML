@@ -112,8 +112,14 @@ class AudioObject{
 		  	break;
 
 		  	case "delaynode":
-        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime).valueOf();
-		  	maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime);
+        if(maxDelayTime){
+          maxDelayTime = maxDelayTime.valueOf();
+          maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+        } else {
+          maxDelayTime = 1;
+        }
+		  	
 			  this._node = this._ctx.createDelay(maxDelayTime);
 		  	break;
 
@@ -233,6 +239,16 @@ class AudioObject{
 		  	case "xml":
 		  	break;
 
+        case "mixer":
+        this._node = this._ctx.createGain();
+        this.inputs = [];
+        while(this.inputs.length < xmlNode.children.length){
+          let input = this._ctx.createGain();
+          input.connect(this._node);
+          this.inputs.push(input);
+        }
+        break;
+
 		  	case "audio":
         case "gainnode":
         case "mixer":
@@ -268,7 +284,7 @@ class AudioObject{
 		  	break;
 
         case "channelsplitternode":
-        this.input = new ChannelSpitterNode(this._ctx, {
+        this.input = new ChannelSplitterNode(this._ctx, {
           numberOfOutputs: this._ctx.destination.maxChannelCount,
           channelCount: this._ctx.destination.maxChannelCount,
           channelCountMode: "explicit",
@@ -840,6 +856,9 @@ class AudioObject{
   	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious, audioNode){
 
 	  	let startTime = this._ctx.currentTime + (delay || 0);
+      if(param == "delayTime"){
+        value *= this._params.timescale;
+      }
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
 
@@ -1234,7 +1253,7 @@ class AudioObject{
   	}
 
   	set delayTime(val){
-	  	this.setTargetAtTime("delayTime", val * this._params.timescale);
+	  	this.setTargetAtTime("delayTime", val);
   	}
 
   	set value(val){
@@ -1258,15 +1277,17 @@ class AudioObject{
         
       val *= targets.length; // 0 - nr of children or channelCount
 
-      let crossFadeRange = this._params.crossfaderange.valueOf();
-      crossFadeRange = typeof crossFadeRange == "undefined" ? 1 : crossFadeRange;
+      let crossFadeRange = this._params.crossfaderange;
+      if(typeof crossFadeRange != "undefined"){
+        crossFadeRange = crossFadeRange.valueOf();
+      } else {
+        crossFadeRange = 1;
+      }
       crossFadeRange = crossFadeRange || 0.000001;
       let frameWidth = 1 - crossFadeRange;
 
-      // Det vore kanske bättre att lägga ut detta i Mapper-objektet
-      // Och att ha en extra GainNode mellan child-objekt och input
       targets.forEach((target, i) => {
-        let input = target.output ? target.output : target;
+        let input = this.inputs[i]; // target.output ? target.output : target;
         let fw;
         let peak = target.getParameter("peak");
         let peakRange = false;
@@ -1311,7 +1332,8 @@ class AudioObject{
         if(isNaN(gain)){
           console.log(gain);
         }
-        input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
+        let time = this.getParameter("transitionTime");
+        input.gain.setTargetAtTime(gain, input.context.currentTime, time);
       });
     }
 
