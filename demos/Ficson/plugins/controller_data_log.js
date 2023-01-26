@@ -14,9 +14,8 @@ var gamma2;
 var gamma3;
 var today = new Date();
 var currentDateAndTime = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate()+' at '+today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-var buttonSaveString = "Saved by button press on "+currentDateAndTime;
-var timeoutSaveString = "Saved by timeout-runout on "+currentDateAndTime;
-var timeoutInMiliseconds = 5000;
+
+var timeoutInMiliseconds = 30000;
 var timeoutId; 
  
 
@@ -85,7 +84,7 @@ function coordinatesHb(event){
 			deg: deg,
 			dist: r
 		})
-		coords.push("Hb", r, theta,/* phi,*/ Date.now(), "   ");
+		coords.push(Date.now(), "Hb", r, theta, gamma1,  "   \r");
 		finalCoordsHb.push(coords);
 	}}
 
@@ -113,7 +112,7 @@ function coordinatesHb(event){
 				deg: deg,
 				dist: r
 			})
-			coords.push("Wc", r, theta, /*phi,*/ Date.now(), "   ");
+			coords.push(Date.now(),"Wc", r, theta, gamma2, "  \r");
 			finalCoordsWc.push(coords);
 		}
 	}
@@ -139,7 +138,7 @@ function coordinatesHb(event){
 				deg: deg,
 				dist: r
 			})
-			coords.push("Hf", r, theta, /*phi, */Date.now(), "   ");
+			coords.push(Date.now(),"Hf", r, theta, gamma3, "   \r");
 			finalCoordsHf.push(coords);
 		}
 	}
@@ -190,7 +189,7 @@ function startTimer(event){
 
 function timeOutSaving(){
 	let csvData = [
-		["Vehicle", "Distance", "InitAngle", "UTC Time", timeoutSaveString],
+		["UTC Time","Vehicle", "Distance", "InitAngle", "Random shift", "Timeout"],
 		[finalCoordsHb],
 		[finalCoordsWc],
 		[finalCoordsHf],
@@ -218,7 +217,7 @@ function done(event){
 		
 	let csvData = [
 		
-		["Vehicle", "Distance", "InitAngle", "UTC Time", buttonSaveString],
+		["UTC Time", "Vehicle", "Distance", "InitAngle", "Random shift", "Saved"],
 		[finalCoordsHb],
 		[finalCoordsWc],
 		[finalCoordsHf],
@@ -243,6 +242,22 @@ function done(event){
 
 
 	function reset(event){
+		let csvData = [
+		
+			["UTC Time", "Vehicle", "Distance", "InitAngle", "Random shift", "Reload"],
+			[finalCoordsHb],
+			[finalCoordsWc],
+			[finalCoordsHf],
+		]
+		let csvContent = "data:text/csv;charset=utf-8,";
+		csvData.forEach(function(rowArray) {
+			let row = rowArray.join(",");
+			csvContent += row + "\r\n";
+			
+		});
+	
+		let encodedUri = encodeURI(csvContent);
+		window.open(encodedUri);
 		location.reload();
 		clientToServer({
 			name: "reset",

@@ -40,7 +40,7 @@
                     <var name="max_pitch" mapin="48,128" default="114" convert="MIDI->frequency" step="0,2, 4, 5, 7, 9, 11, 12"></var>
       
                     <xi:include href="generator1/main.xml" />
-                    <Send output=".generator3input"></Send>
+                    <Send outputbus=".generator3input"></Send>
                     <GainNode gain="$gain"></GainNode>
 
                     <BiquadFilterNode type="bandpass" frequency="$bandpass_frequency" Q="$bandpass_Q"></BiquadFilterNode>
@@ -106,10 +106,10 @@
             <GainNode gain="$dynGain"></GainNode> -->
             <DynamicsCompressorNode></DynamicsCompressorNode>
             
-            <Send output=".reverb" gain="+3dB"></Send>
+            <Send outputbus=".reverb" gain="+3dB"></Send>
         </Chain>
 
-        <var name="origo" value="$onX*$onY" curve="3"></var>
+        <!-- <var name="origo" value="$onX*$onY" curve="3"></var> -->
         <!-- <Chain gain="$origo"> -->
         <Chain gain="$wetGain">
             <ConvolverNode class="reverb" src="convolution/r1_omni_48k_1s.wav"></ConvolverNode>

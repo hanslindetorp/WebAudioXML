@@ -24,20 +24,20 @@
 			<source src="video/ficson_test_v2.mov" />
 		</video>
 
-		<h3>Added sounds 1-4 (clockwise)</h3>
+		<!-- <h3>Added sounds 1-4 (clockwise)</h3> -->
 		
+
 		<waxml-xy-area 
 			background-color="#69CEEC" 
 			grid-color="#CBE3EA" 
 			columns="8" 
-			rows="8">
+			rows="8"
+			type="circle">
 			<div>Fleeting Board</div>
 			<waxml-xy-handle
-				data-waxml-target="x3, y3"
+				targets="x3, y3, a3, r3, d3"
 				x="0.5"
 				y="0.5"
-				data-waxml-pointerdown-solo="3"
-				data-waxml-pointerup-solo="0"
 			></waxml-xy-handle>
 		</waxml-xy-area>
 
@@ -45,14 +45,13 @@
 			background-color="#F6EDD9" 
 			grid-color="#D5CCB9" 
 			columns="8" 
-			rows="8">
+			rows="8"
+			type="circle">
 			<div>Wheelchair</div>
 			<waxml-xy-handle
-				data-waxml-target="x2, y2"
+				targets="x2, y2, a2, r2, d2"
 				x="0.5"
 				y="0.5"
-				data-waxml-pointerdown-solo="2"
-				data-waxml-pointerup-solo="0"
 			></waxml-xy-handle>
 		</waxml-xy-area>
 
@@ -60,24 +59,27 @@
 			background-color="#E5B6DD" 
 			grid-color="#F5E6F2" 
 			columns="8" 
-			rows="8">
+			rows="8"
+			type="circle">
 			<div>Hang-Flyer</div>
 			<waxml-xy-handle
-				data-waxml-target="x1, y1"
+				targets="x1, y1, a1, r1, d1"
 				x="0.5"
 				y="0.5"
-				data-waxml-pointerdown-solo="1"
-				data-waxml-pointerup-solo="0"
 			></waxml-xy-handle>
 
 		</waxml-xy-area>
+
+
+		<!-- data-waxml-pointerdown-solo="1"
+		data-waxml-pointerup-solo="0" -->
 
 		<!-- <iframe width="300" height="169" src="https://www.youtube.com/embed/o6LX3bdbnVo" title="Ficson Prototype" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> -->
 		
 		<!-- <h3>Time:</h3>
 		<input type="range" min="0" max="30" step="0.01" data-waxml-target="$time" data-waxml-xautomation="sawtooth, 1/10"/>
 		 -->
-		<h3>Mixer:</h3>
+		<!-- <h3>Mixer:</h3>
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain3" />
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain2" />
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$gain1" />
@@ -91,7 +93,7 @@
 		<button data-waxml-pointerdown-calibration="0">OFF</button>
 		Numbers: 
 		<button data-waxml-pointerdown-speaker_recognition="1">ON</button>
-		<button data-waxml-pointerdown-speaker_recognition="0">OFF</button>
+		<button data-waxml-pointerdown-speaker_recognition="0">OFF</button> -->
 
 		<!-- <h3>Speed:</h3>
 		<input type="range" min="0" max="1" step="0.01" data-waxml-target="$speed3" data-waxml-xautomation="sine, 0.5"/>

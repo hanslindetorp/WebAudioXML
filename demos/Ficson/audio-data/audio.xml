@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio transitionTime="1" version="1.0" controls="true" timeUnit="ms" gain="+6dB" xmlns:xi="http://www.w3.org/2001/XInclude">
     
+    
+	<var name="d1" default="0" />
+	<var name="d2" default="0" />
+	<var name="d3" default="0" />
+	<var name="solo" default="0" value="$d1+$d2+$d2+$d3+$d3+$d3" />
+
+    <!-- <var name="solo" value="$solo" default="0"></var> -->
 
     <var name="master" default="1"></var>
     <var name="calibration" default="0"></var>
-    <var name="solo" value="$solo" default="0"></var>
-    
+    <!-- <var name="time" default="0"></var> -->
+
+
+    <var name="deg1" value="$a1" mapin="0,1" mapout="0,360" />
+    <var name="deg2" value="$a2" mapin="0,1" mapout="0,360" />
+    <var name="deg3" value="$a3" mapin="0,1" mapout="0,360" />
+
+    <var name="dist1" value="$r1" />
+    <var name="dist2" value="$r2" />
+    <var name="dist3" value="$r3" />
     
     <Mixer output=".white-noise">
         <AudioWorkletNode src="white-noise-processor.js"></AudioWorkletNode>
@@ -13,18 +28,18 @@
 
 
     <var name="angle1" value="$time" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_rAngle.csv"></var>
-    <var name="pan1" value="$angle1" mapin="-0.066,0.423" mapout="0,1"></var>
+    <var name="pan1" default="0" value="$angle1" mapin="-0.066,0.423" mapout="0,1"></var>
         
     <Mixer gain="-7dB" output="#ch1-hang-flyer">
         <var name="zPos" value="($time+0.8)%31" mapin="0,31" mapout="AnimationData/hangFlyer/hangFlyer_Zloc.csv"></var>
         
         <var name="pan" value="$angle1" mapin="-0.066,0.423" mapout="-1,4"></var>
         <var name="speed" value="$zPos" mapin="1.036,1.758" mapout="0,1"></var>
-
+<!-- 
         <var name="x" value="$x1" default="0.5"></var>
         <var name="y" value="$y1" default="0.5"></var>
         <var name="onX" value="$y" mapin="0,0.5,1" mapout="0,1,0"></var>
-        <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0"></var>
+        <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0"></var> -->
         
         <var name="engine_gain" value="0dB"></var>
         <xi:include href="vehicle-1-hang-flyer.xml" />
@@ -35,17 +50,17 @@
     <var name="xPos" value="$time" mapin="0,31" mapout="AnimationData/gyroChair/gyroChair_rXloc.csv"></var>
     <var name="pan2" value="$xPos" mapin="-3,7" mapout="-1,1"></var>
         
-    <Mixer gain="+9dB" output="#ch2-wheel-chair">
+    <Mixer gain="0dB" output="#ch2-wheel-chair">
         <var name="wheelRotL" value="$time" mapin="0,31" mapout="AnimationData/gyroChair/gyroChair_WheelRot_Left.csv"></var>
         
         
         <var name="pan" value="$xPos" mapin="-3,7" mapout="-5,5"></var>
         <var name="speed" value="$wheelRotL.speed" mapin="0,1" mapout="0,1"></var>
-    
+<!--     
         <var name="x" value="$x2" default="0.5"></var>
         <var name="y" value="$y2" default="0.5"></var>
         <var name="onX" value="$y" mapin="0,0.5,1" mapout="0,1,0"></var>
-        <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0"></var>
+        <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0"></var> -->
 
         <xi:include href="vehicle-2-wheel-chair.xml" />
     </Mixer>
@@ -64,18 +79,18 @@
         
         <var name="HP" value="$dist" mapin="10,17" mapout="300, 600"></var>
         
-        <var name="x" value="$x3" default="0.5"></var>
+        <!-- <var name="x" value="$x3" default="0.5"></var>
         <var name="y" value="$y3" default="0.5"></var>
         <var name="onX" value="$y" mapin="0,0.5,1" mapout="0,1,0"></var>
-        <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0"></var>
+        <var name="onY" value="$x" mapin="0,0.5,1" mapout="0,1,0"></var> -->
 
         <xi:include href="vehicle-3-fleeting-board.xml" />
     </Mixer>
 
-    <var name="ch1" value="$solo" mapin="0,1,2,3" mapout="1,2,0,0" default="1"></var>
-    <var name="ch2" value="$solo" mapin="0,1,2,3" mapout="1,0,2,0" default="1"></var>
-    <var name="ch3" value="$solo" mapin="0,1,2,3" mapout="1,0,0,2" default="1"></var>
-    <var name="bg" value="$solo" mapin="0,1,2,3" mapout="1,0,0,0" default="1"></var>
+    <var name="ch1" value="$solo" mapin="-1,0,1,2,3" mapout="0,1,2,0,0" default="1"></var>
+    <var name="ch2" value="$solo" mapin="-1,0,1,2,3" mapout="0,1,0,2,0" default="1"></var>
+    <var name="ch3" value="$solo" mapin="-1,0,1,2,3" mapout="0,1,0,0,2" default="1"></var>
+    <var name="bg"  value="$solo" mapin="-1,0,1,2,3" mapout="1,1,0,0,0" default="1"></var>
     <var name="ambiencegain" default="0.5"></var> 
 
     
@@ -88,29 +103,34 @@
             
             <GainNode gain="1"></GainNode>
 
-            <Send output=".cityConvolution" gain="0"></Send>
-            <Send output="#hangflyerLP"></Send>
+            <Send outputbus=".cityConvolution" gain="0"></Send>
+            <Send outputbus="#hangflyerLP"></Send>
             <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$pan1">
-                <GainNode class="multi-out" channel="4"></GainNode>
-                <GainNode class="multi-out" channel="5"></GainNode>
+                <GainNode class="multi-out" channel="4,5"></GainNode>
+                <GainNode class="multi-out" channel="4,5"></GainNode>
             </ChannelMergerNode>
         </Chain>
 
-        <Chain id="hf-chain">
+        <Chain>
             <GainNode id="hangflyerLP" gain="+3dB"></GainNode>
-            <BiquadFilterNode type="lowpass" frequency="300"></BiquadFilterNode>
+            <BiquadFilterNode type="lowpass" frequency="200"></BiquadFilterNode>
             <GainNode output=".multi-out"></GainNode>
-            
-            <GainNode gain="-3dB"></GainNode>
+            <ChannelMergerNode pan="$pan1">
+                <GainNode class="multi-out"></GainNode>
+                <GainNode class="multi-out"></GainNode>
+                <GainNode class="multi-out"></GainNode>
+                <GainNode class="multi-out"></GainNode>
+            </ChannelMergerNode>
+            <GainNode gain="+2dB"></GainNode>
         </Chain>
 
-        <Chain id="wc-chain">
+        <Chain>
             <GainNode id="ch2-wheel-chair" gain="$ch2"></GainNode>
             
-            <GainNode gain="1"></GainNode>
+            <GainNode gain="0dB"></GainNode>
 
-            <Send output=".cityConvolution" gain="0"></Send>
+            <Send outputbus=".cityConvolution" gain="0"></Send>
             <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$pan2">
                 <GainNode class="multi-out"></GainNode>
@@ -124,9 +144,9 @@
         <Chain>
             <GainNode id="ch3-fleeting-board" gain="$ch3"></GainNode>
             
-            <GainNode gain="1"></GainNode>
+            <GainNode gain="-2dB"></GainNode>
 
-            <Send output=".cityConvolution" gain="0"></Send>
+            <Send outputbus=".cityConvolution" gain="0"></Send>
             <GainNode output=".multi-out"></GainNode>
             <ChannelMergerNode pan="$pan3">
                 <GainNode class="multi-out"></GainNode>
@@ -138,7 +158,7 @@
         
         <ConvolverNode class="cityConvolution" src="convolution/PlateSmall.wav"></ConvolverNode>
         
-        <Chain id="bg-node" gain="+3db">
+        <Chain gain="+3db">
             <!-- gain="$ambiencegain" -->
             <ChannelMergerNode>
                 <AmbientAudio src="ambience/front_atmo_w_voices.wav" start="auto" gain="-12dB" channel="4,5,7,6"></AmbientAudio>
@@ -149,7 +169,7 @@
             </ChannelMergerNode>
             <GainNode gain="$bg"></GainNode>
 
-            <GainNode gain="0"></GainNode>
+            <GainNode gain="1"></GainNode>
         </Chain>
         
     </Mixer>
@@ -172,8 +192,8 @@
 
     <xi:include href="counter.xml" />
     
-
+<!-- 
     <var name="master" default="1"></var>
-    <var name="calibration" default="0"></var>
+    <var name="calibration" default="0"></var> -->
     <var name="speaker_recognition" default="0"></var>
 </Audio>

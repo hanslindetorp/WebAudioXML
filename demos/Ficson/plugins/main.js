@@ -8,7 +8,37 @@ window.addEventListener('load', event => {
 	socket = io();
 	
 	socket.on('serverToClient', msg => {
+
+		
+
 		switch(msg.name){
+
+			case "Fb":
+				if(typeof msg.deg != "undefined"){
+					webAudioXML.setVariable("deg3", msg.deg);
+				}
+				if(typeof msg.dist != "undefined"){
+					webAudioXML.setVariable("dist3", msg.dist);
+				}
+			break;
+
+			case "Wc":
+				if(typeof msg.deg != "undefined"){
+					webAudioXML.setVariable("deg2", msg.deg);
+				}
+				if(typeof msg.dist != "undefined"){
+					webAudioXML.setVariable("dist2", msg.dist);
+				}
+			break;
+
+			case "Hf":
+				if(typeof msg.deg != "undefined"){
+					webAudioXML.setVariable("deg1", msg.deg);
+				}
+				if(typeof msg.dist != "undefined"){
+					webAudioXML.setVariable("dist1", msg.dist);
+				}
+			break;
 			
 			case "Hb":
 			//document.getElementById("show").innerHTML = "X: " + msg.x + "     " + "Y: " + msg.y;
@@ -64,6 +94,12 @@ window.addEventListener('load', event => {
 		 	webAudioXML.setVariable("x3", 0.5);
 			webAudioXML.setVariable("y3", 0.5);
 		 	break;
+
+
+			default:
+			webAudioXML.setVariable(msg.name, msg.data);
+			break;
+				
 		}
 	});
 

@@ -16,7 +16,7 @@
         <GainNode>
             <gain class="AM"></gain>
         </GainNode>
-        <Send output=".LP"></Send>
+        <Send outputbus=".LP"></Send>
 		<BiquadFilterNode type="lowpass" frequency="800"></BiquadFilterNode>
 		<BiquadFilterNode frequency="$bandpass_frequency" type="bandpass" Q="5"></BiquadFilterNode>
 	</Chain>

@@ -2671,8 +2671,8 @@ var Sequence = require('./Sequence.js');
 
 class EventTracker {
 
-	constructor(_varRouter){
-		this._variableRouter = _varRouter;
+	constructor(waxml){
+		this.waxml = waxml;
 
 		this._sequences = [];
 		this._registeredEvents = [];
@@ -2768,13 +2768,26 @@ class EventTracker {
 	}
 
 	trigEvent(name, value){
-		let ev = this._registeredEvents.find(ev => ev.name == name);
-		if(ev.execute){ev.execute(value)}
+		// Kolla vad de här två raderna gjorde i gamla tider
+		// let ev = this._registeredEvents.find(ev => ev.name == name);
+		// if(ev.execute){ev.execute(value)}
+
+		// Till Ficson har jag fixat denna istället:
+		this.waxml.setVariable(name, value, 0, true);
+		this.waxml.plugins.forEach(plugin => {
+			if(plugin.setVariable){
+				plugin.setVariable(name, value);
+			}
+		});
+
 	}
 
 	clear(name = this._curSeqName){
-
-		this.getSequence(name).clear();
+		let seq = this.getSequence(name);
+		if(seq){
+			seq.clear();
+		}
+		
 	}
 
 	allEvents(name = this._curSeqName, filter = []){
@@ -3350,7 +3363,7 @@ class InteractionManager {
 		}
 		window.addEventListener("pointerdown", initCall);
 
-		this.eventTracker = new EventTracker();
+		this.eventTracker = new EventTracker(waxml);
 		this.waxml = waxml;
 		this.inited = false;
 		this.variables = new VariableContainer();
@@ -4082,7 +4095,7 @@ class InteractionManager {
 		this._variables = this._variables || val;
 	}
 
-	setVariable(key, val, transistionTime){
+	setVariable(key, val, transistionTime, fromSequencer){
 		// 2022-03-23
 		// This is really bad design. There is a global layer of "invisible"
 		// variable objects stored in this._variables and there are global
@@ -4095,7 +4108,9 @@ class InteractionManager {
 		} else if(this._variables[key] instanceof Variable){
 			container = this._variables;
 		}
+		let updated = false;
 		if(container){
+			updated = container[key].valueOf() != val;
 			if(transistionTime){
 				// override transitionTime if specified
 				container[key].setValue(val, transistionTime);
@@ -4104,11 +4119,12 @@ class InteractionManager {
 			}
 			
 		} else {
+			updated = this._variables[key] != val;
 			this._variables[key] = val;
 		}
 
 		// store in sequencer if specified
-		if(this.variablesToStore.includes(key)){
+		if(!fromSequencer && updated && this.variablesToStore.includes(key)){
 			this.eventTracker.store(key, val);
 		}
 		
@@ -5978,14 +5994,27 @@ class Sequence {
 	getData(options = {}){
 		let data = {};
 		let timeOffset = options.timeOffset || (this._events.length ? this._events[0].time : 0);
-		let precision = options.precision || 100;
+		let precision = typeof options.precision == "undefined" ? 100 : options.precision;
 		let precisionFactor = Math.pow(10, precision);
+
+		let frameRate = options.frameRate || 1000;
 		data.name = this._name;
-		data.events = this._events.map(evt => {
+
+		let lastEvents = {};
+		let eventList = [];
+
+		this._events.forEach(evt => {
 			let time = evt.time - timeOffset;
 			let value = Math.round(evt.value * precisionFactor) / precisionFactor;
-			return {name: evt.name, time: time, value: value};
+			let name = evt.name;
+			if(!lastEvents[name] || time - lastEvents[name] > (1000 / frameRate)){
+				// add one event per 100ms
+				lastEvents[name] = time;
+				eventList.push([time, evt.name, value]);
+			}
+			
 		});
+		data.events = eventList;
 		return data;
 	}
 
@@ -7734,7 +7763,7 @@ class WebAudio {
 		this.ui.variables = val;
 	}
 
-	setVariable(key, val, transitionTime){
+	setVariable(key, val, transitionTime, fromSequencer){
 
 		// move to a separate object
 		// read transitionTime
@@ -7781,7 +7810,7 @@ class WebAudio {
 			if(val == floatVal){val = floatVal}
 		}
 		
-		this.ui.setVariable(key, val, transitionTime);
+		this.ui.setVariable(key, val, transitionTime, fromSequencer);
 
 		// this REALLY need to be worked through
 		// at the moment I just pass the variable "hand_r8y"
@@ -7814,11 +7843,11 @@ class WebAudio {
 		return this.ui.lastGesture;
 	}
 
-	addSequence(events, name){
-		this.ui.addSequence(events, name);
+	addSequence(name = "default", events){
+		this.ui.addSequence(name, events);
 	}
 
-	clearSequence(name){
+	clearSequence(name = "default"){
 		this.ui.clearSequence(name);
 	}
 
@@ -8890,8 +8919,10 @@ class XY_handle extends HTMLElement {
 
 		this.x = parseFloat(x);
 		this.y = parseFloat(y);
+		this._angle = this.XYtoAngle();
+		this._radius = this.XYtoRadius();
 
-		this.angleOffset = this.getAttribute("angleoffset");
+		this._angleOffset = this.getAttribute("angleoffset");
 
 		this.move(this.x, this.y);
 
@@ -8916,10 +8947,7 @@ class XY_handle extends HTMLElement {
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
 		this.setPointerCapture(e.pointerId);
-		this.dispatchEvent(new CustomEvent("input"));
-
-		this.classList.add("changed");
-		this.classList.add("dragged");
+		this.pointerMove(e);
 	}
 
 	pointerMove(e){
@@ -8944,13 +8972,17 @@ class XY_handle extends HTMLElement {
 				// make sure handle is inside circle boundaries
 				let radius = this.getProperty("radius");
 				if(radius > 1){
+					radius = 1;
 					let angle = (this.XYtoAngle() + 0.5) % 1;
-					this.x = (1 - Math.cos(Math.PI * 2 * angle)) / 2;
-					this.y = (1 - Math.sin(Math.PI * 2 * angle)) / 2;
-					this.style.left = `${this.x * this.boundRect.width}px`;
-					this.style.top = `${this.y * this.boundRect.height}px`;
+					let XY = this.angleRadiusToXY(angle, 1);
+					this.x = XY.x;
+					this.y = XY.y;
+					this.move(XY.x, XY.y);
+					// this.style.left = `${this.x * this.boundRect.width}px`;
+					// this.style.top = `${this.y * this.boundRect.height}px`;
 				}
-				
+				this._radius = radius;
+				this._angle = this.XYtoAngle();
 
 			}
 			this.dispatchEvent(new CustomEvent("input"));
@@ -9032,6 +9064,20 @@ class XY_handle extends HTMLElement {
 
 	}
 
+	get dragged(){
+		return this._dragged;
+	}
+
+	set dragged(state){
+		this._dragged = state;
+		if(state){
+			this.classList.add("changed");
+			this.classList.add("dragged");
+		} else {
+			this.classList.remove("dragged");
+		}
+	}
+
 	get value(){
 		// if(this.direction.x && this.direction.y){
 		// 	return [this.x, this.y];
@@ -9062,7 +9108,7 @@ class XY_handle extends HTMLElement {
 			case "angle":
 			// offset with stored value
 			let angle = this.XYtoAngle(x, y);
-			// angle = (angle + this.angleOffset) % 1;
+			angle = (angle + this._angleOffset) % 1;
 			return angle;
 			break;
 			
@@ -9070,7 +9116,7 @@ class XY_handle extends HTMLElement {
 			case "radius":
 			deltaX = (x * 2)-1;
 			deltaY = (y * 2)-1;
-			return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+			return this.XYtoRadius(x, y);
 			break;
 
 			case "dragged":
@@ -9079,6 +9125,20 @@ class XY_handle extends HTMLElement {
 
 		}
 	}	
+
+
+	angleRadiusToXY(angle = this._angle, radius = this._radius){
+		let obj = {};
+		obj.x = (radius - Math.cos(Math.PI * 2 * angle)) / 2;
+		obj.y = (radius - Math.sin(Math.PI * 2 * angle)) / 2;
+		return obj;
+	}
+
+	XYtoRadius(x = this.x, y = this.y){
+		let deltaX = (x * 2)-1;
+		let deltaY = (y * 2)-1;
+		return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+	}
 
 	XYtoAngle(x = this.x, y = this.y){
 		let deltaX = (x * 2) - 1;
@@ -9091,6 +9151,18 @@ class XY_handle extends HTMLElement {
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
+	}
+
+	set angle(val){
+		this._angle = val;
+		let XY = this.angleRadiusToXY(val);
+		this.move(XY.x, XY.y);
+	}
+
+	set radius(val){
+		this._radius = val;
+		let XY = this.angleRadiusToXY();
+		this.move(XY.x, XY.y);
 	}
 
 	set angleOffset(val = 0){

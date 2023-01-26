@@ -44,7 +44,7 @@
 
                     
                     <xi:include href="generator1/main.xml" />
-                    <Send output=".generator3input"></Send>
+                    <Send outputbus=".generator3input"></Send>
                     <GainNode gain="$gain"></GainNode>
 
                     <BiquadFilterNode type="bandpass" frequency="$bandpass_frequency" Q="$bandpass_Q"></BiquadFilterNode>
@@ -112,10 +112,10 @@
             </Mixer>
 
 
-            <Send output=".reverb" gain="+7.5dB"></Send>
+            <Send outputbus=".reverb" gain="+7.5dB"></Send>
         </Chain>
 
-        <var name="origo" value="$onX*$onY" curve="3"></var>
+        <!-- <var name="origo" value="$onX*$onY" curve="3"></var> -->
         <!-- <Chain gain="$origo"> -->
         <Chain gain="$wetGain">
             <ConvolverNode class="reverb" src="convolution/r1_omni_48k_1s.wav"></ConvolverNode>
