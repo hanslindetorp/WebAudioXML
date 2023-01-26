@@ -38,4 +38,5 @@ body input {
 video {
 	width: 80%;
 	height: auto;
+	display: block;
 }
