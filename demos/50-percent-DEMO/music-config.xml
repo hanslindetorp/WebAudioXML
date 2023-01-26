@@ -49,6 +49,10 @@ The first element contains various global settings.-->
 		<track src="bass-keys-5" output="#bass-keys-5" />
 		<track src="bass-keys-6" output="#bass-keys-6" />
 
+
+
+
+		
 		<track src="lead-1" output="#lead-1" />
 		<track src="lead-2" output="#lead-2" upbeat="2/4" />
 		<track src="lead-3" output="#lead-3" />

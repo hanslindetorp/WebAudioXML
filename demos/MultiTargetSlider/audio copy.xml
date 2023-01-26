@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+
+	<Mixer mix="$intensity">
+		<GainNode id="piano" />
+		<GainNode id="pad" />
+		<GainNode id="clav" />
+		<GainNode id="bass" />
+		<GainNode id="drums" />
+		<GainNode id="organ" />
+	</Mixer>
+	
+</Audio>
