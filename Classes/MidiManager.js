@@ -1,3 +1,4 @@
+const fnNames = ["start", "stop", "trig"];
 
 class MidiManager {
 
@@ -5,6 +6,7 @@ class MidiManager {
 		this.waxml = waxml;
 		this.keysPressed = Array(16).fill(Array(127).fill(false));
 		this.listeners = [];
+		this.eventListeners = [];
 
 		if (navigator.requestMIDIAccess) {
 			console.log('This browser supports WebMIDI!');
@@ -121,21 +123,22 @@ class MidiManager {
 	}
 
 	noteOn(ch, key, vel){
+		//console.log(ch, key, vel);)
 
 		if(!this.keysPressed[ch][key]){
 
-			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 			this.keysPressed[ch][key] = true;
+			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let ev = `MIDI:NoteOn`;
 
-			this.waxml.start(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
-			this.waxml.start(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+			fnNames.forEach(fn => {
+				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+					this.waxml[fn](targetEv, data);
+				});
+			});
 
-			this.waxml.stop(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
 
 		}
 	}
@@ -145,18 +148,30 @@ class MidiManager {
 		if(this.keysPressed[ch][key]){
 
 			this.keysPressed[ch][key] = false;
-			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 	
-			this.waxml.start(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
-			this.waxml.start(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let ev = `MIDI:NoteOff`;
 
-			this.waxml.stop(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+			fnNames.forEach(fn => {
+				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+					this.waxml[fn](targetEv, data);
+				});
+			});
+			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
+
 		}
+	}
+	addEventListener(name, fn){
+		if(typeof name !== "string"){return}
+		if(typeof fn !== "function"){return}
+		this.eventListeners[name] = this.eventListeners[name] || [];
+		this.eventListeners[name].push(fn);
+	}
+
+	dispatchEvent(e){
+		this.eventListeners[e.type] = this.eventListeners[e.type] || [];
+		this.eventListeners[e.type].forEach(fn => fn(e));
 	}
 
 }
