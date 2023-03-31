@@ -325,7 +325,7 @@ class AmbientAudio {
 
 module.exports = AmbientAudio;
 
-},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":28}],2:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":30}],2:[function(require,module,exports){
 
 const WebAudioUtils = require('./WebAudioUtils.js');
 const Loader = require('./Loader.js');
@@ -773,7 +773,7 @@ class AudioObject{
 
 	  	// set parameters
 	  	if(this._params){
-        let envName;
+        //let envName;
         Object.entries(this._params).forEach(entry => {
           const [key, value] = entry;
           if(typeof this[key] !== "function"){
@@ -813,15 +813,30 @@ class AudioObject{
                   this.setTargetAtTime(key, val, 0, time, true);
                  }
                });
-            } else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
+            //} else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
 
+              // old code
+              // // make connection to controlling Envelope
+              // let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+              // if(envNode){
+              //   envNode.obj.addListener(this._node[key], value);
+              // } else {
+              //   console.error(`No envelope matches the name '${envName}'`);
+              // }
+            } else {
+              
               // make connection to controlling Envelope
-              let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
-              if(envNode){
-                envNode.obj.addListener(this._node[key], value);
-              } else {
-                console.error(`No envelope matches the name '${envName}'`);
+              let envName = WebAudioUtils.getEnvelopeName(value);
+              if(envName){
+                let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+                if(envNode){
+                  envNode.obj.addListener(this._node[key], value);
+                } else {
+                  console.error(`No envelope matches the name '${envName}'`);
+                }
               }
+              
+
             }
 
             
@@ -2025,7 +2040,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":14,"./Mapper.js":15,"./Noise.js":17,"./ObjectBasedAudio.js":18,"./Variable.js":24,"./VariableContainer.js":25,"./Watcher.js":26,"./WebAudioUtils.js":28}],3:[function(require,module,exports){
+},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":15,"./Mapper.js":17,"./Noise.js":19,"./ObjectBasedAudio.js":20,"./Variable.js":26,"./VariableContainer.js":27,"./Watcher.js":28,"./WebAudioUtils.js":30}],3:[function(require,module,exports){
 var Loader = require('./Loader.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 
@@ -2282,7 +2297,7 @@ class BufferSourceObject {
 
 module.exports = BufferSourceObject;
 
-},{"./Loader.js":14,"./WebAudioUtils.js":28}],4:[function(require,module,exports){
+},{"./Loader.js":15,"./WebAudioUtils.js":30}],4:[function(require,module,exports){
 
 
 class Connector {
@@ -2311,20 +2326,25 @@ class Connector {
 		let nodeName = xmlNode.nodeName.toLowerCase();
 		let targetElements;
 
-		// connect AudioParameters if specified
+		// connect AudioParameters if specified. I.e. for FM synthesis
+
 		if(xmlNode.obj && xmlNode.obj.parameters){
-			Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
-				if(typeof value == "string"){
-					if(xmlNode.obj._node[key] instanceof AudioParam){
-						let modulators = this.getTargetElements(xmlNode, value);
-						if(modulators){
-							modulators.forEach(modulatorNode => {
-								modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
-							});
+			if(xmlNode.obj._node){
+				// to avoid trying to connect variables, envelopes etc.
+				Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
+					if(typeof value == "string"){
+						if(xmlNode.obj._node[key] instanceof AudioParam){
+							let modulators = this.getTargetElements(xmlNode, value);
+							if(modulators){
+								modulators.forEach(modulatorNode => {
+									modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
+								});
+							}
 						}
 					}
-				}
-			});
+				});
+			}
+			
 			
 		}
 		
@@ -2663,7 +2683,302 @@ class ConvolverNodeObject {
 
 module.exports = ConvolverNodeObject;
 
-},{"./Loader.js":14}],6:[function(require,module,exports){
+},{"./Loader.js":15}],6:[function(require,module,exports){
+
+
+class Display extends HTMLElement {
+
+	constructor(){
+		super();
+		this.sources = [];
+	}
+
+	connectedCallback(){
+		this.type = this.getAttribute("type") ||"VU";
+		this.type = this.type.toLowerCase();
+
+		let w = parseFloat(this.getAttribute("width"));
+		let h = parseFloat(this.getAttribute("height"));
+
+		// sets a lower limit for visualized amplitude
+		this.inputSelector = this.getAttribute("input");
+
+		switch(this.type){
+			case "vu":
+			this.draw = this.drawVU;
+			w = w ||200;
+			h = h ||20;
+			break;
+
+			case "fft":
+			this.draw = this.drawFFT;
+			w = w ||200;
+			h = h ||100;
+			break;
+
+			case "oscilloscope":
+			this.draw = this.drawOscilloscope;
+			w = w ||200;
+			h = h ||100;
+			break;
+
+			default:
+			this.draw = () => {};
+			break;
+
+		}
+		this.canvas = document.createElement("canvas");
+		this.appendChild(this.canvas);
+		this.canvasCtx = this.canvas.getContext("2d");
+		
+		this.canvasCtx.lineWidth = 2;
+		this.canvasCtx.strokeStyle = "rgb(0, 0, 0)";
+
+		this.width = w;
+		this.height = h;
+
+		this.canvas.width = w;
+		this.canvas.height = h;
+
+		this.style.display = "block";
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
+	}
+
+
+	init(audioContext){
+		this.inited = true;
+		this.analyser = audioContext.createAnalyser();
+		let fftSize = this.getAttribute("fftSize") || this.getAttribute("fftsize");
+		
+		switch(this.type){
+			case "vu":
+			fftSize = fftSize || 2048;
+			break;
+
+			case "fft":
+			fftSize = fftSize || 2048;
+			break;
+
+			case "oscilloscope":
+			fftSize = fftSize || 4096;
+			break;
+		}
+		if(fftSize){
+			fftSize = parseInt(fftSize);
+			let pow = Math.log2(fftSize)
+			pow = Math.round(pow);
+			this.analyser.fftSize = 2 ** pow;
+		}
+		this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+		let maxDecibels = this.getAttribute("maxDecibels") || this.getAttribute("maxdecibels");
+		if(maxDecibels){this.analyser.maxDecibels = parseFloat(maxDecibels)}
+
+		let minDecibels = this.getAttribute("minDecibels") || this.getAttribute("mindecibels");
+		if(minDecibels){this.analyser.minDecibels = parseFloat(minDecibels)}
+		this.relPeak = minDecibels;
+		
+		let halfSampleRate = audioContext.sampleRate / 2;
+		let minFrequency = this.getAttribute("minFrequency") || this.getAttribute("minfrequency");
+		minFrequency = minFrequency ? parseFloat(minFrequency) : 0;
+		this.firstIndex = Math.floor(minFrequency / halfSampleRate * this.analyser.frequencyBinCount);
+
+		let maxFrequency = this.getAttribute("maxFrequency") || this.getAttribute("maxfrequency");
+		maxFrequency = maxFrequency ? parseFloat(maxFrequency) : halfSampleRate;
+		this.lastIndex = Math.floor(maxFrequency / halfSampleRate * this.analyser.frequencyBinCount);
+
+		let colors = this.getAttribute("colors");
+		this.colors = colors ? colors.split(",") : ["green", "yellow", "red"];
+		
+		let colorRegions = this.getAttribute("colorRegions") || this.getAttribute("colorregions");
+		if(colorRegions){
+			this.colorRanges = JSON.parse(`[${colorRegions}]`);
+			let sum = this.colorRanges.reduce((a,b) => a + b);
+			this.colorRanges = this.colorRanges.map(el => el / sum).map((el, i, arr) => {
+				if(i){
+					return el + arr[i-1];
+				} else {
+					return el;
+				}
+			});
+			this.colorRanges.unshift(0);
+			this.colorRanges.pop();
+
+		} else {
+			this.colorRanges = [0,0.6,0.8];
+		}
+		this.colorBackwardsRanges = this.colorRanges.sort((a,b) => a > b)
+		
+
+		this.update();
+	}
+
+	inputFrom(source){
+		if(!source){return -1;}
+		if(!this.inited){
+			this.init(source.context);
+		}
+		this.sources.push(source);
+		source.connect(this.analyser);
+	}
+
+	connect(target){
+		this.analyser.connect(target);
+	}
+
+	disconnect(source){
+		if(source){
+			source.disconnect(0);
+			this.sources = this.sources.filter(src => src != source);
+		} else {
+			while(this.sources.length){
+				let src = this.sources.pop();
+				src.disconnect(0);
+			}
+		}
+	}
+
+	update(){
+		this.canvasCtx.clearRect(0, 0, this.width, this.height);
+		this.draw();
+		requestAnimationFrame(e => this.update());
+	}
+
+	drawVU(){
+		this.analyser.getByteTimeDomainData(this.dataArray);
+
+		let peakPower = 0;
+		for (let i = 0; i < this.dataArray.length; i++) {
+		  let power = ((this.dataArray[i]-128)/128) ** 2;
+		  peakPower = Math.max(power, peakPower);
+		}
+		let peakDecibels = 10 * Math.log10(peakPower);
+		peakDecibels = Math.max(peakDecibels, this.analyser.minDecibels);
+
+		let range = this.analyser.maxDecibels - this.analyser.minDecibels;
+		let relPeak = 1 + peakDecibels / range;
+		
+		if(relPeak > this.relPeak){
+			this.relPeak = relPeak;
+		} else {
+			let diff = relPeak - this.relPeak;
+			this.relPeak += diff / 100;
+		}
+
+	
+		this.colorRanges.forEach((range, i, arr) => {
+			if(this.relPeak > range){
+				let y = 0;
+				let x1 = range * this.width;
+				let x2 = Math.min(this.relPeak, arr[i+1] || 1) * this.width;
+				let w = x2 - x1;
+				this.canvasCtx.fillStyle = this.colors[i];
+				this.canvasCtx.fillRect(x1, y, w, this.height);
+			}
+		});
+
+		
+		
+	}
+
+	
+
+	drawFFT(){
+		this.analyser.getByteFrequencyData(this.dataArray);
+
+		const barWidth = (this.width / (this.lastIndex-this.firstIndex));
+		let barHeight;
+		this.canvasCtx.fillStyle = "red";
+	  
+		for (let i = this.firstIndex; i < this.lastIndex; i++) {
+			let relVal = this.dataArray[i] / 255;
+			barHeight = relVal * this.height;
+		//   this.canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
+			let colorIndex = this.colorRanges.reverse().findIndex(range => {
+				return relVal > range;
+			});
+
+			let color = this.colors.reverse()[colorIndex];
+			this.canvasCtx.fillStyle = color;
+			this.canvasCtx.fillRect(i * barWidth, this.height - barHeight, barWidth, barHeight);
+		}
+
+	}
+
+	drawOscilloscope() {
+		this.analyser.getByteTimeDomainData(this.dataArray);
+		let maxVal = 256;
+		let sampleCnt = this.dataArray.length / 2;
+		let sliceWidth = this.width / sampleCnt;
+
+		
+		let lastVal = this.dataArray[0];
+		let increasing = false;
+		let belowZero = false;
+		let firstCycle = true;
+		let offset = 0;
+
+		// zero crossing line
+		this.canvasCtx.beginPath();
+		this.canvasCtx.strokeStyle = "#ccc";
+		this.canvasCtx.lineWidth = 0.5;
+		this.canvasCtx.setLineDash([5,2]);
+		this.canvasCtx.moveTo(0, this.height / 2);
+		this.canvasCtx.lineTo(this.width, this.height / 2);
+		this.canvasCtx.stroke();
+
+
+
+		this.canvasCtx.beginPath();
+		this.canvasCtx.strokeStyle = "yellow";
+		this.canvasCtx.lineWidth = 1;
+		this.canvasCtx.setLineDash([]);
+
+
+		// find lowest val
+		let minVal = Math.min(...this.dataArray);
+		let minIndex = this.dataArray.indexOf(minVal);
+
+		for (let i = minIndex; i < (sampleCnt+offset); i++) {
+			let curVal = this.dataArray[i];
+
+
+			if(!offset){
+				belowZero = curVal < maxVal / 2;
+				if(!belowZero){
+					// found zero crossing
+					offset = i;
+				} else {
+					continue;
+				}
+
+				// increasing = curVal > lastVal;
+				// if(increasing && firstCycle){
+				// 	belowZero = curVal < maxVal / 2;
+				// }
+			}
+
+			let x = (i - offset) * sliceWidth;
+			let y = (curVal / maxVal) * this.height;
+
+			if (!i) {
+				this.canvasCtx.moveTo(x, y);
+			} else {
+				this.canvasCtx.lineTo(x, y);
+			}
+		}
+		//canvasCtx.lineTo(canvas.width, canvas.height / 2);
+		this.canvasCtx.stroke();
+	}
+
+
+
+}
+
+module.exports = Display;
+
+},{}],7:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -2690,12 +3005,13 @@ class Envelope {
 		
 		this._parentAudioObj = parentAudioObj;
 		this.timeScale = this.getParameter("timescale") || 1;
+		this.mono = this.getParameter("mode") == "mono";
 
 
 		// convert ADSR attribute to times and values
 		if(this._params.adsr){
 			this._params.times = [this._params.adsr.attack, this._params.adsr.decay, this._params.adsr.release];
-			this._params.values = [params.max, this._params.adsr.sustain, 0];
+			this._params.values = [params.max, params.max*this._params.adsr.sustain/100, 0];
 		}
 		if(!this._params.times){
 			console.error(`No times specified for ${this._xml}`);
@@ -2735,6 +3051,8 @@ class Envelope {
 			});
 			
 		}
+
+		this.trig = this.start;
 	}
 
 	addListener(param, expression = "x"){
@@ -2805,16 +3123,16 @@ class Envelope {
 		this._params.times = times;
 	}
 
-	start(args = []){
+	start(data = {}){
 
-		args = [...args];
-		let factor = typeof args[0] == "undefined" ? 1 : args[0];
+		// args = [...args];
+		let factor = 1; //typeof args[0] == "undefined" ? 1 : args[0];
 
-
+		// moved to variable object allowing for a trig attribute
 		// make it possible to update variables with data from event (like velocity or key)
-		this._params.targetvariables.forEach((varName, index) => {
-			this.waxml.setVariable(varName, args[index % args.length]);
-		});
+		// this._params.targetvariables.forEach((varName, index) => {
+		// 	this.waxml.setVariable(varName, args[index % args.length]);
+		// });
 
 		this.running = true;
 
@@ -2824,18 +3142,25 @@ class Envelope {
         let startTime = delay * this.timeScale + this._ctx.currentTime + 0.001;
 
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
-		let times = this._params.times.valueOf().map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
+		let times = this._params.times.valueOf().map((val, index) => {
+			return this.mapDynamicValue(val, factor, this._params.dynamictimes, index);
+		});
 		
-		if(this._params.mode == "mono" && args[2] == 0){
+		if(this.mono && data.legato){
 			// don't retrigger if legato
 		} else {
+
 			this._listeners.forEach(target => {
 				target.obj.cancelScheduledValues(startTime);
 				let timeOffset = 0;
-				let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
-			
+				//let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
+				let values = target.values.map(val => val * this.parameters.max);
+
 				// remove release value seemed good when doing ADSR but not in general
-				// values.pop();
+				if(this.parameters.adsr){
+					values.pop();
+				}
+
 				console.log("Env startTime: ", startTime);
 				values.forEach((value, index) => {
 					let time = times[index % this.timeModVal];
@@ -2862,6 +3187,7 @@ class Envelope {
 
 	}
 
+
 	mapDynamicValue(val, factor, arr, index){
 		let f;
 		let fVal = arr[index % arr.length];
@@ -2875,10 +3201,10 @@ class Envelope {
 		return f * val;
 	}
 
-	stop(args = []){
+	stop(data = {}){
 
-		args = [...args];
-		let factor = typeof args[0] == "undefined" ? 1 : args[0];
+		// args = [...args];
+		let factor = 1; // typeof args[0] == "undefined" ? 1 : args[0];
 
 		this.running = false;
 		this.nextStartTime = 0;
@@ -2893,7 +3219,7 @@ class Envelope {
 		let t = this._params.times.valueOf()[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
-		if(this._params.mode == "mono" && args[2] == 0){
+		if(this.mono && data.legato){
 			// Don't release if mono mode and still keys down
 		} else {
 			this._listeners.forEach(target => {
@@ -2968,7 +3294,7 @@ class Envelope {
 
 module.exports = Envelope;
 
-},{"./WebAudioUtils.js":28}],7:[function(require,module,exports){
+},{"./WebAudioUtils.js":30}],8:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -3127,7 +3453,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":21}],8:[function(require,module,exports){
+},{"./Sequence.js":23}],9:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -3708,7 +4034,7 @@ module.exports = GUI;
 
 
 
-},{"./Mapper.js":15,"./WebAudioUtils.js":28,"./XY_area.js":29}],9:[function(require,module,exports){
+},{"./Mapper.js":17,"./WebAudioUtils.js":30,"./XY_area.js":31}],10:[function(require,module,exports){
 
 
 
@@ -3731,7 +4057,7 @@ const HL1 = (bc) => class extends bc {
 
 module.exports = HL1;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 const HL1 = require("./HL1.js");
 
 
@@ -3752,7 +4078,7 @@ class HL2 extends HL1(OscillatorNode) {
 }
 
 module.exports = HL2;
-},{"./HL1.js":9}],11:[function(require,module,exports){
+},{"./HL1.js":10}],12:[function(require,module,exports){
 class InputBusses {
 
     constructor(ctx){
@@ -3786,14 +4112,12 @@ class InputBusses {
 }
 
 module.exports = InputBusses;
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
 var Watcher = require('./Watcher.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
-var XY_area = require('./XY_area.js');
-var XY_handle = require('./XY_handle.js');
 var Variable = require("./Variable.js");
 var KeyboardManager = require("./KeyboardManager.js");
 var MidiManager = require("./MidiManager.js");
@@ -3802,7 +4126,6 @@ var MidiManager = require("./MidiManager.js");
 class InteractionManager {
 
 	constructor(waxml){
-		this.defineCustomElements();
 
 		
 
@@ -3867,11 +4190,6 @@ class InteractionManager {
 		return this._variablesToStore;
 	}
 
-	defineCustomElements(){
-		customElements.define('waxml-xy-area', XY_area);
-		customElements.define('waxml-xy-handle', XY_handle);
-	}
-
 
 	init(){
 		this.inited = true;
@@ -3925,6 +4243,32 @@ class InteractionManager {
 
 
 	connectToHTMLelements(){
+
+		// init display elements
+		document.querySelectorAll("waxml-display").forEach( el => {
+			let inputSelector = el.inputSelector || "master";
+			if(inputSelector){
+				el.init(this.waxml._ctx);
+				this.waxml.querySelectorAll(inputSelector).forEach(obj => {
+					el.inputFrom(obj.output);
+				});
+			}
+		});
+
+		document.querySelectorAll("waxml-midi-controller").forEach( el => {
+			el.addEventListener("keydown", e => {
+				this.midiManager.noteOn(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+			});
+			el.addEventListener("keyup", e => {
+				this.midiManager.noteOff(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+			});
+			if(el.midiIn){
+				this.midiManager.addEventListener("MIDI:NoteOn", e => el.indicateKey(e.detail.keyNum, true));
+				this.midiManager.addEventListener("MIDI:NoteOff", e => el.indicateKey(e.detail.keyNum, false));
+			}
+		});
+		
+
 
 		// add waxml commands to HTML elements
 		[...document.querySelectorAll("*")].forEach( el => {
@@ -4619,7 +4963,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./MidiManager.js":16,"./Variable.js":24,"./VariableContainer.js":25,"./Watcher.js":26,"./WebAudioUtils.js":28,"./XY_area.js":29,"./XY_handle.js":30}],13:[function(require,module,exports){
+},{"./EventTracker.js":8,"./KeyboardManager.js":14,"./MidiManager.js":18,"./Variable.js":26,"./VariableContainer.js":27,"./Watcher.js":28,"./WebAudioUtils.js":30}],14:[function(require,module,exports){
 
 
 class KeyboardManager {
@@ -4630,9 +4974,11 @@ class KeyboardManager {
 		document.addEventListener("keyup", e => this.keyUp(e));
 		this.keysPressed = {};
 		this.waxml = waxml;
+		this.blockKeys = `.,;:#'*¨^´?+=)(/&%€#!"${"`"}`;
 	}
 
 	keyDown(e){
+		if(this.blockKeys.includes(e.key)){return}
 		if(!this.keysPressed[e.key]){
 
 			let monoTrig = false;
@@ -4657,6 +5003,7 @@ class KeyboardManager {
 	}
 
 	keyUp(e){
+		if(this.blockKeys.includes(e.key)){return}
 		if(this.keysPressed[e.key]){
 
 			this.keysPressed[e.key] = false;
@@ -4684,7 +5031,7 @@ class KeyboardManager {
 
 module.exports = KeyboardManager;
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 const InteractionManager = require("./InteractionManager");
 
 
@@ -4826,7 +5173,445 @@ Loader.filesLoading = [];
 
 module.exports = Loader;
 
-},{"./InteractionManager":12}],15:[function(require,module,exports){
+},{"./InteractionManager":13}],16:[function(require,module,exports){
+
+const noteNames = "c,c#,d,d#,e,f,f#,g,g#,a,a#,b".split(",");
+
+class MIDIController extends HTMLElement {
+
+
+	constructor(){
+		super();
+
+		document.addEventListener("keydown", e => this.keyCommandDown(e));
+		document.addEventListener("keyup", e => this.keyCommandUp(e));
+	}
+
+	keyCommandDown(e){
+
+		let el = this.elements.find(el => el.keyCommand == e.key);
+		if(el){
+			el.dispatchEvent(new CustomEvent("pointerdown"))
+		}
+	}
+	keyCommandUp(e){
+		let el = this.elements.find(el => el.keyCommand == e.key);
+		if(el){
+			el.dispatchEvent(new CustomEvent("pointerup"))
+		}
+	}
+
+	connectedCallback(){
+		
+		let shadowElement = this.attachShadow({mode: 'open'});
+
+		let hoverColor = this.getAttribute("hoverColor") || this.getAttribute("hovercolor") || "#ccc";
+		let activeColor = this.getAttribute("activeColor") || this.getAttribute("activecolor") || "#66f";
+		let selectedColor = this.getAttribute("selectedColor") || this.getAttribute("selectedcolor") || "red";
+		let rootColor = this.getAttribute("rootColor") || this.getAttribute("rootcolor") || "#ccf";
+		this.type = (this.getAttribute("type") || "keyboard").toLowerCase();
+		this.rows = parseInt(this.getAttribute("rows") || 8);
+		this.cols = parseInt(this.getAttribute("cols") || 8);
+		this.scaleType = (this.getAttribute("scale") || "major").toLowerCase();
+		this.midiIn = (this.getAttribute("midiIn") || this.getAttribute("midiin")) == "true";
+		
+		let keyCommands = this.getAttribute("keyCommands") || this.getAttribute("keycommands") || "";
+		let delimiter = keyCommands.includes(",") ? "," : "";
+		this.keyCommands = keyCommands.split(delimiter);
+		
+		let labels = this.getAttribute("labels") || "";
+		delimiter = labels.includes(",") ? "," : "";
+		this.labels = labels.split(delimiter);
+
+		
+		this.overlap = parseInt(this.getAttribute("overlap") || 0);
+
+		
+
+		this.padMargin = parseInt(this.getAttribute("padMargin") || this.getAttribute("padmargin") || 5)
+		
+		switch(this.scaleType){
+			case "major":
+			this.scale = [0,2,4,5,7,9,11,12];
+			break;
+
+			case "minor":
+			this.scale = [0,2,3,5,7,8,10,12];
+			break;
+			
+			case "chromatic":
+			this.scale = [0,1,2,3,4,5,6,7,8,9,10,11,12];
+			break;
+			
+			case "pentatonic":
+			this.scale = [0,2,4,7,9,12];
+			break;
+			
+			case "blues":
+			this.scale = [0,3,5,6,7,10,12];
+			break;
+
+			default:
+			// defined with numbers
+			let scale;
+			let useLetters = false;
+			let delimiter = this.scaleType.includes(",") ? "," : "";
+			scale = this.scaleType.split(delimiter).map(str => {			
+				let keyNum = parseInt(str);
+				if(isNaN(keyNum)){
+					// map letters to numbers
+					keyNum = Math.max(0,noteNames.indexOf(str));
+					useLetters = true;
+				}
+				return keyNum;
+			});
+			if(useLetters){
+				// add octave
+				scale.push(12);
+			}
+			this.scale = scale.length ? scale : [0,2,4,5,7,9,11,12];
+			break;
+		}
+		this.scaleMod = this.scale.pop();
+
+
+		let style = document.createElement("style");
+		style.innerHTML = `
+			.controller {
+				display: block;
+				position: absolute;
+			}
+
+			.pad {
+				display: flex;
+				position: absolute;
+				border: 1px solid black;
+				border-radius: 5px;
+				box-sizing: border-box;
+				background-color: white;
+				justify-content: center;
+				align-items: center;
+				font-size: 120%;
+				user-select: none;
+			}
+			.pad.root {
+				background-color: ${rootColor};
+			}
+			.key {
+				display: flex;
+				position: absolute;
+				border: 1px solid black;
+				user-select: none;
+				font-size: 100%;
+				justify-content: center;
+				align-items: end;
+			}
+			.key.white {
+				height: 100%;
+				background-color: white;
+				z-index: 0;
+			}
+			.key.black {
+				height: 100%;
+				background-color: black;
+				z-index: 1;
+				color: white;
+				font-size: 70%;
+			}
+			.key:hover, .pad:hover {
+				background-color: ${hoverColor};
+			}
+			.key.active, .pad.active  {
+				background-color: ${activeColor};
+			}
+			.key.selected, .pad.selected {
+				background-color: ${selectedColor};
+			}
+			.key.selected:hover, .pad.selected:hover {
+				background-color: ${hoverColor};
+			}
+			.key.selected.active, .pad.selected.active {
+				background-color: ${activeColor};
+			}
+		`;
+
+
+		let w = parseFloat(this.getAttribute("width"));
+		let h = parseFloat(this.getAttribute("height"));
+
+		let channel = this.getAttribute("channel");
+		this.channel = channel ? parseInt(channel) : 1;
+		
+		let velocity = this.getAttribute("velocity");
+		this.velocity = velocity ? parseInt(velocity) : 127;
+
+
+		let min = this.getAttribute("min");
+		min = min ? nearestWhiteKey(parseInt(min), -1) : 36;
+		let max = this.getAttribute("max");
+		max = max ? nearestWhiteKey(parseInt(max), 1) : 84;
+		this.min = min;
+		this.max = max;
+
+		this.width = w;
+		this.height = h;
+
+		this.minIndex = whiteKeyIndex(this.min);
+		this.maxIndex = whiteKeyIndex(this.max);
+		this.range = this.maxIndex - this.minIndex + 1;
+		this.whiteKeyWidth = this.width / this.range;
+
+		this.style.display = "block";
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
+		//this.style.backgroundColor = "red";
+
+		shadowElement.appendChild(style);
+
+		let controllerElement =	this.generateController(min, max);
+		shadowElement.appendChild(controllerElement);
+
+		this.keys = [];
+
+		this.addEventListener("down", e => {
+			let keyNum = e.detail.key.value;
+			this.keys[keyNum] = true;
+			this.value = keyNum;
+
+			let data = {channel: this.channel, keyNum: keyNum, velocity: this.velocity};
+			this.dispatchEvent(new CustomEvent("keydown", {detail:data}));
+			this.indicateKey(keyNum, true);
+		});
+		this.addEventListener("up", e => {
+			let keyNum = e.detail.key.value;
+			this.keys[keyNum] = false;
+			this.value = keyNum;
+
+			let data = {channel: this.channel, keyNum: keyNum, velocity: this.velocity};
+			this.dispatchEvent(new CustomEvent("keyup", {detail:data}));
+			this.indicateKey(keyNum, false);
+		});
+		this.addEventListener("pointerleave", e => {
+			if(this.pointerDown){
+				this.pointerDown = false;
+				this.releaseAllKeys();
+			}
+		});
+		this.addEventListener("pointerup", e => {
+			if(this.pointerDown){
+				this.pointerDown = false;
+				this.releaseAllKeys();
+			}
+		});
+		
+	}
+
+	indicateKey(keyNum, state = false){
+		this.elements.forEach(el => {
+			if(el.keyNum == keyNum){
+				if(state){
+					el.classList.add("active");
+				} else {
+					el.classList.remove("active");
+				}
+				
+			}
+		});
+	}
+
+	generateController(min, max){
+		let el = document.createElement("div");
+		el.classList.add("controller");
+		this.elements = [];
+		
+		let child;
+		switch(this.type){
+			case "launchpad":
+			for(let row = 0; row<this.rows; row++){
+				for(let col = 0; col<this.cols; col++){
+					child = this.generatePad(row,col);
+					el.appendChild(child);
+					this.elements.push(child);
+				}
+			}
+			
+			break;
+
+			default:
+			for(let keyNum = min; keyNum<=max; keyNum++){
+				child = this.generateKey(keyNum);
+				el.appendChild(child);
+				this.elements.push(child);
+			}
+			break;
+
+		}
+			
+		
+		return el;
+	}
+
+	generatePad(row,col){
+		let el = document.createElement("div");
+		el.classList.add("pad");
+		let rect = this.rowAndColToRect(row,col);
+		setElementRect(el, rect);
+		
+
+		let index = row * this.cols + col - (row * this.overlap);
+		let octave = Math.floor(index / this.scale.length);
+		let relIndex = index % this.scale.length;
+		let keyNum = this.min + octave * this.scaleMod + this.scale[relIndex];
+		
+
+		if(!relIndex){
+			el.classList.add("root");
+		}
+		el.keyDown = false;
+		el.keyNum = keyNum;
+		el.value = keyNum;
+		this.addLabel(el, index);
+		this.addKeyCommand(el, index)
+
+		this.addEventListeners(el);
+		return el;
+	}
+
+	rowAndColToRect(row,col){
+		let rect = {};
+		rect.x = col / this.cols * (this.width + this.padMargin);
+		rect.y = (1 - (row+1) / this.rows) * (this.height + this.padMargin);
+		rect.width = (this.width - this.padMargin * (this.cols-1)) / this.cols;
+		rect.height = (this.height - this.padMargin * (this.rows -1)) / this.rows;
+		return rect;
+	}
+
+	generateKey(keyNum){
+
+		let el = document.createElement("div");
+		el.classList.add("key");
+		el.classList.add(isBlackKey(keyNum) ? "black" : "white");
+
+		let rect = this.keyNumToRect(keyNum);
+		setElementRect(el, rect);
+
+		el.keyDown = false;
+		el.keyNum = keyNum;
+		el.value = keyNum;
+
+		let index = keyNum-this.min;
+		this.addLabel(el, index);
+		this.addKeyCommand(el, index)
+		this.addEventListeners(el);
+		return el;
+	}
+
+	addEventListeners(el){
+
+		this.pointerDown = false;
+
+		el.addEventListener("pointerenter", e => {
+			if(this.pointerDown && !el.keyDown){
+				el.keyDown = true;
+				this.dispatchEvent(new CustomEvent("down", {detail:{key: el}}));
+				this.releaseAllKeys([el]);	
+			}
+		});
+		el.addEventListener("pointerdown", e => {
+			e.preventDefault();
+			this.pointerDown = true;
+			el.keyDown = true;
+			// el.classList.add("active");
+			this.dispatchEvent(new CustomEvent("down", {detail:{key: el}}));
+		});
+		el.addEventListener("pointerup", e => {
+			el.keyDown = false;
+			this.pointerDown = false;
+			// el.classList.remove("active");
+			this.dispatchEvent(new CustomEvent("up", {detail:{key: el}}));
+		});
+	}
+
+
+
+	
+
+	releaseAllKeys(omit = []){
+		this.elements.forEach(el => {
+			if(el.keyDown && !omit.includes(el)){
+				el.keyDown = false;
+				el.classList.remove("active");
+				this.dispatchEvent(new CustomEvent("up", {detail:{key: el}}));
+			}
+		});
+	}
+	
+	
+	keyNumToRect(keyNum){
+		let rect = {};
+		rect.x = this.whiteKeyNumToX(keyNum);
+		rect.y = 0;
+
+		if(isBlackKey(keyNum)){
+			let blackKeyWidth = this.whiteKeyWidth * 0.7;
+			let blackKeyHeight = this.height * 0.6;
+			rect.x += this.whiteKeyWidth - blackKeyWidth / 2;
+			rect.width = blackKeyWidth;
+			rect.height = blackKeyHeight;
+		} else {
+			rect.width = this.whiteKeyWidth;
+			rect.height = this.height;
+		}
+		return rect;
+	}
+	
+
+	whiteKeyNumToX(keyNum){
+		let keyIndex = whiteKeyIndex(keyNum);
+		return (keyIndex - this.minIndex) / this.range * this.width;
+	}
+	addLabel(el, index){
+		if(this.labels.length){
+			el.innerHTML = this.labels[index % this.labels.length];
+		}
+	}
+
+	addKeyCommand(el, index){
+		if(index<this.keyCommands.length){
+			el.keyCommand = this.keyCommands[index];
+		}
+	}
+
+}
+
+function isBlackKey(keyNum){
+	return [1,3,6,8,10].includes(keyNum % 12);
+}
+function nearestWhiteKey(keyNum, dir = -1){
+	return isBlackKey(keyNum) ? keyNum + dir : keyNum;
+}
+
+function whiteKeyIndex(keyNum){
+	let wk = nearestWhiteKey(keyNum);
+	let octave = Math.floor(wk / 12);
+	let relKey = wk % 12;
+	return [0,2,4,5,7,9,11].indexOf(relKey) + octave * 7;
+}
+
+function setElementRect(el, rect){
+	el.style.left = `${rect.x}px`;
+	el.style.top = `${rect.y}px`;
+	el.style.width = `${rect.width}px`;
+	el.style.height = `${rect.height}px`;
+}
+
+
+
+
+
+module.exports = MIDIController;
+
+},{}],17:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
@@ -5367,7 +6152,8 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":20,"./WebAudioUtils.js":28}],16:[function(require,module,exports){
+},{"./Range.js":22,"./WebAudioUtils.js":30}],18:[function(require,module,exports){
+const fnNames = ["start", "stop", "trig"];
 
 class MidiManager {
 
@@ -5375,6 +6161,7 @@ class MidiManager {
 		this.waxml = waxml;
 		this.keysPressed = Array(16).fill(Array(127).fill(false));
 		this.listeners = [];
+		this.eventListeners = [];
 
 		if (navigator.requestMIDIAccess) {
 			console.log('This browser supports WebMIDI!');
@@ -5491,21 +6278,22 @@ class MidiManager {
 	}
 
 	noteOn(ch, key, vel){
+		//console.log(ch, key, vel);)
 
 		if(!this.keysPressed[ch][key]){
 
-			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 			this.keysPressed[ch][key] = true;
+			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let ev = `MIDI:NoteOn`;
 
-			this.waxml.start(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
-			this.waxml.start(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+			fnNames.forEach(fn => {
+				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+					this.waxml[fn](targetEv, data);
+				});
+			});
 
-			this.waxml.stop(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
 
 		}
 	}
@@ -5515,24 +6303,36 @@ class MidiManager {
 		if(this.keysPressed[ch][key]){
 
 			this.keysPressed[ch][key] = false;
-			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 	
-			this.waxml.start(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
-			this.waxml.start(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let ev = `MIDI:NoteOff`;
 
-			this.waxml.stop(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+			fnNames.forEach(fn => {
+				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+					this.waxml[fn](targetEv, data);
+				});
+			});
+			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
+
 		}
+	}
+	addEventListener(name, fn){
+		if(typeof name !== "string"){return}
+		if(typeof fn !== "function"){return}
+		this.eventListeners[name] = this.eventListeners[name] || [];
+		this.eventListeners[name].push(fn);
+	}
+
+	dispatchEvent(e){
+		this.eventListeners[e.type] = this.eventListeners[e.type] || [];
+		this.eventListeners[e.type].forEach(fn => fn(e));
 	}
 
 }
 
 module.exports = MidiManager;
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 
 var processorName = 'white-noise-processor';
 var _noise;
@@ -5595,7 +6395,7 @@ class Noise {
 module.exports = Noise;
 
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 
@@ -6026,7 +6826,7 @@ class ObjectBasedAudio {
 
 module.exports = ObjectBasedAudio;
 
-},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],19:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],21:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -6470,7 +7270,7 @@ class Parser {
 
 module.exports = Parser;
 
-},{"./AudioObject.js":2,"./Envelope.js":6,"./Loader.js":14,"./Synth.js":22,"./Variable.js":24,"./Watcher.js":26,"./WebAudioUtils.js":28}],20:[function(require,module,exports){
+},{"./AudioObject.js":2,"./Envelope.js":7,"./Loader.js":15,"./Synth.js":24,"./Variable.js":26,"./Watcher.js":28,"./WebAudioUtils.js":30}],22:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -6604,7 +7404,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":28}],21:[function(require,module,exports){
+},{"./WebAudioUtils.js":30}],23:[function(require,module,exports){
 
 
 
@@ -6766,7 +7566,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -7024,7 +7824,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":23,"./Watcher.js":26,"./WebAudioUtils.js":28}],23:[function(require,module,exports){
+},{"./Trigger.js":25,"./Watcher.js":28,"./WebAudioUtils.js":30}],25:[function(require,module,exports){
 
 
 
@@ -7133,7 +7933,7 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -7187,9 +7987,14 @@ class Variable {
 		// 		}
 		// 	});
 		// }
+
+		if(params.trig){
+			//this.argumentIndex = parseInt((params.value || "").split("[").pop()) || 0;
+			this.targetParameter = params.value;
+		}	
 		if(typeof params.default != "undefined"){
 			this.value = params.default;
-		} else if(typeof params.value != "undefined"){
+		} else if(!params.trig && typeof params.value != "undefined"){
 			this.value = params.value.valueOf();
 		}
 
@@ -7204,6 +8009,12 @@ class Variable {
 		if(typeof this.value != "undefined"){
 			callBack(this[prop]);
 		}
+	}
+
+	trig(){
+		// this feature lets the variable update to one argument 
+		// passed to the function. I.e. MIDI:NoteOn, {channel: ch, keyNum: nr, velocity: vel}
+		this.setValue(arguments[0][this.targetParameter]);
 	}
 
 	valueOf(){
@@ -7639,7 +8450,7 @@ class Variable {
 
 module.exports = Variable;
 
-},{"./Mapper.js":15,"./WebAudioUtils.js":28}],25:[function(require,module,exports){
+},{"./Mapper.js":17,"./WebAudioUtils.js":30}],27:[function(require,module,exports){
 
 
 
@@ -7675,7 +8486,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -8057,7 +8868,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":24,"./WebAudioUtils.js":28}],27:[function(require,module,exports){
+},{"./Variable.js":26,"./WebAudioUtils.js":30}],29:[function(require,module,exports){
 /*
 MIT License
 
@@ -8093,6 +8904,11 @@ var InteractionManager = require('./InteractionManager.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 var Variable = require('./Variable.js');
 var InputBusses = require('./InputBusses.js');
+
+var XY_area = require('./XY_area.js');
+var XY_handle = require('./XY_handle.js');
+var Display = require('./Display.js');
+var MIDIController = require('./MIDIController.js');
 
 
 
@@ -8192,6 +9008,9 @@ class WebAudio {
 			console.warn("No WebAudioXML source specified")
 		}
 
+		
+		this.defineCustomElements();
+
 		this.ui = new InteractionManager(this);
 
 
@@ -8217,6 +9036,14 @@ class WebAudio {
 	// 	}
 	// }
 
+	
+
+	defineCustomElements(){
+		customElements.define('waxml-xy-area', XY_area);
+		customElements.define('waxml-xy-handle', XY_handle);
+		customElements.define('waxml-display', Display);
+		customElements.define('waxml-midi-controller', MIDIController);		
+	}
 
 	init(){
 		if(!this.audioInited){
@@ -8420,6 +9247,8 @@ class WebAudio {
 				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
 				XMLnode.obj.noteOn(options);
+			} else if(XMLnode.obj.trig){
+				XMLnode.obj.trig(options);
 			}
 		});
 		this.callPlugins("trig", selector, options);
@@ -8806,16 +9635,35 @@ class WebAudio {
 
 	querySelectorAll(selector){
 		let arr = [];
-		this._xml.querySelectorAll(selector).forEach(xml => {
-			let audioObject = xml.obj;
-			arr.push(xml.obj);
-		});
+		switch(selector){
+			case "master":
+			arr.push(this.master);
+			break;
+
+			default:
+			this._xml.querySelectorAll(selector).forEach(xml => {
+				let audioObject = xml.obj;
+				arr.push(xml.obj);
+			});
+			break;
+		}
+
+		
 		return arr;
 	}
 	querySelector(selector){
-		let xml = this._xml.querySelector(selector);
-		if(xml){
-			return xml.obj;
+
+		switch(selector){
+			case "master":
+			this.master;
+			break;
+
+			default:
+			let xml = this._xml.querySelector(selector);
+			if(xml){
+				return xml.obj;
+			}
+			break;
 		}
 		return -1;
 	}
@@ -8946,7 +9794,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":8,"./HL2.js":10,"./InputBusses.js":11,"./InteractionManager.js":12,"./Parser.js":19,"./Variable.js":24,"./WebAudioUtils.js":28}],28:[function(require,module,exports){
+},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./Display.js":6,"./GUI.js":9,"./HL2.js":11,"./InputBusses.js":12,"./InteractionManager.js":13,"./MIDIController.js":16,"./Parser.js":21,"./Variable.js":26,"./WebAudioUtils.js":30,"./XY_area.js":31,"./XY_handle.js":32}],30:[function(require,module,exports){
 
 class WebAudioUtils {
 
@@ -9625,7 +10473,7 @@ WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
 
 module.exports = WebAudioUtils;
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
@@ -9686,7 +10534,7 @@ class XY_area extends HTMLElement {
 		this.colWidth = w / columns;
 		this.rowHeight = h / rows;
 		
-		// this.type = this.getAttribute("type") || "square";
+		this.type = this.getAttribute("type") || "square";
 		switch(this.type){
 			case "square":
 			break;
@@ -9851,7 +10699,7 @@ class XY_area extends HTMLElement {
 
 module.exports = XY_area;
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 class XY_handle extends HTMLElement {
@@ -10235,4 +11083,4 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{"./WebAudioUtils.js":28}]},{},[27]);
+},{"./WebAudioUtils.js":30}]},{},[29]);
