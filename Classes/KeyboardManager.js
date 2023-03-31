@@ -8,9 +8,11 @@ class KeyboardManager {
 		document.addEventListener("keyup", e => this.keyUp(e));
 		this.keysPressed = {};
 		this.waxml = waxml;
+		this.blockKeys = `.,;:#'*¨^´?+=)(/&%€#!"${"`"}`;
 	}
 
 	keyDown(e){
+		if(this.blockKeys.includes(e.key)){return}
 		if(!this.keysPressed[e.key]){
 
 			let monoTrig = false;
@@ -35,6 +37,7 @@ class KeyboardManager {
 	}
 
 	keyUp(e){
+		if(this.blockKeys.includes(e.key)){return}
 		if(this.keysPressed[e.key]){
 
 			this.keysPressed[e.key] = false;
