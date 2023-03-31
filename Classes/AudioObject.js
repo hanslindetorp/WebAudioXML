@@ -445,7 +445,7 @@ class AudioObject{
 
 	  	// set parameters
 	  	if(this._params){
-        let envName;
+        //let envName;
         Object.entries(this._params).forEach(entry => {
           const [key, value] = entry;
           if(typeof this[key] !== "function"){
@@ -485,15 +485,30 @@ class AudioObject{
                   this.setTargetAtTime(key, val, 0, time, true);
                  }
                });
-            } else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
+            //} else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
 
+              // old code
+              // // make connection to controlling Envelope
+              // let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+              // if(envNode){
+              //   envNode.obj.addListener(this._node[key], value);
+              // } else {
+              //   console.error(`No envelope matches the name '${envName}'`);
+              // }
+            } else {
+              
               // make connection to controlling Envelope
-              let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
-              if(envNode){
-                envNode.obj.addListener(this._node[key], value);
-              } else {
-                console.error(`No envelope matches the name '${envName}'`);
+              let envName = WebAudioUtils.getEnvelopeName(value);
+              if(envName){
+                let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+                if(envNode){
+                  envNode.obj.addListener(this._node[key], value);
+                } else {
+                  console.error(`No envelope matches the name '${envName}'`);
+                }
               }
+              
+
             }
 
             
