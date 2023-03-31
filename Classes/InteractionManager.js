@@ -3,8 +3,6 @@ var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
 var Watcher = require('./Watcher.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
-var XY_area = require('./XY_area.js');
-var XY_handle = require('./XY_handle.js');
 var Variable = require("./Variable.js");
 var KeyboardManager = require("./KeyboardManager.js");
 var MidiManager = require("./MidiManager.js");
@@ -13,7 +11,6 @@ var MidiManager = require("./MidiManager.js");
 class InteractionManager {
 
 	constructor(waxml){
-		this.defineCustomElements();
 
 		
 
@@ -78,11 +75,6 @@ class InteractionManager {
 		return this._variablesToStore;
 	}
 
-	defineCustomElements(){
-		customElements.define('waxml-xy-area', XY_area);
-		customElements.define('waxml-xy-handle', XY_handle);
-	}
-
 
 	init(){
 		this.inited = true;
@@ -136,6 +128,32 @@ class InteractionManager {
 
 
 	connectToHTMLelements(){
+
+		// init display elements
+		document.querySelectorAll("waxml-display").forEach( el => {
+			let inputSelector = el.inputSelector || "master";
+			if(inputSelector){
+				el.init(this.waxml._ctx);
+				this.waxml.querySelectorAll(inputSelector).forEach(obj => {
+					el.inputFrom(obj.output);
+				});
+			}
+		});
+
+		document.querySelectorAll("waxml-midi-controller").forEach( el => {
+			el.addEventListener("keydown", e => {
+				this.midiManager.noteOn(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+			});
+			el.addEventListener("keyup", e => {
+				this.midiManager.noteOff(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+			});
+			if(el.midiIn){
+				this.midiManager.addEventListener("MIDI:NoteOn", e => el.indicateKey(e.detail.keyNum, true));
+				this.midiManager.addEventListener("MIDI:NoteOff", e => el.indicateKey(e.detail.keyNum, false));
+			}
+		});
+		
+
 
 		// add waxml commands to HTML elements
 		[...document.querySelectorAll("*")].forEach( el => {
