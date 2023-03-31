@@ -24,12 +24,13 @@ class Envelope {
 		
 		this._parentAudioObj = parentAudioObj;
 		this.timeScale = this.getParameter("timescale") || 1;
+		this.mono = this.getParameter("mode") == "mono";
 
 
 		// convert ADSR attribute to times and values
 		if(this._params.adsr){
 			this._params.times = [this._params.adsr.attack, this._params.adsr.decay, this._params.adsr.release];
-			this._params.values = [params.max, this._params.adsr.sustain, 0];
+			this._params.values = [params.max, params.max*this._params.adsr.sustain/100, 0];
 		}
 		if(!this._params.times){
 			console.error(`No times specified for ${this._xml}`);
@@ -69,6 +70,8 @@ class Envelope {
 			});
 			
 		}
+
+		this.trig = this.start;
 	}
 
 	addListener(param, expression = "x"){
@@ -139,16 +142,16 @@ class Envelope {
 		this._params.times = times;
 	}
 
-	start(args = []){
+	start(data = {}){
 
-		args = [...args];
-		let factor = typeof args[0] == "undefined" ? 1 : args[0];
+		// args = [...args];
+		let factor = 1; //typeof args[0] == "undefined" ? 1 : args[0];
 
-
+		// moved to variable object allowing for a trig attribute
 		// make it possible to update variables with data from event (like velocity or key)
-		this._params.targetvariables.forEach((varName, index) => {
-			this.waxml.setVariable(varName, args[index % args.length]);
-		});
+		// this._params.targetvariables.forEach((varName, index) => {
+		// 	this.waxml.setVariable(varName, args[index % args.length]);
+		// });
 
 		this.running = true;
 
@@ -158,18 +161,25 @@ class Envelope {
         let startTime = delay * this.timeScale + this._ctx.currentTime + 0.001;
 
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
-		let times = this._params.times.valueOf().map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
+		let times = this._params.times.valueOf().map((val, index) => {
+			return this.mapDynamicValue(val, factor, this._params.dynamictimes, index);
+		});
 		
-		if(this._params.mode == "mono" && args[2] == 0){
+		if(this.mono && data.legato){
 			// don't retrigger if legato
 		} else {
+
 			this._listeners.forEach(target => {
 				target.obj.cancelScheduledValues(startTime);
 				let timeOffset = 0;
-				let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
-			
+				//let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
+				let values = target.values.map(val => val * this.parameters.max);
+
 				// remove release value seemed good when doing ADSR but not in general
-				// values.pop();
+				if(this.parameters.adsr){
+					values.pop();
+				}
+
 				console.log("Env startTime: ", startTime);
 				values.forEach((value, index) => {
 					let time = times[index % this.timeModVal];
@@ -196,6 +206,7 @@ class Envelope {
 
 	}
 
+
 	mapDynamicValue(val, factor, arr, index){
 		let f;
 		let fVal = arr[index % arr.length];
@@ -209,10 +220,10 @@ class Envelope {
 		return f * val;
 	}
 
-	stop(args = []){
+	stop(data = {}){
 
-		args = [...args];
-		let factor = typeof args[0] == "undefined" ? 1 : args[0];
+		// args = [...args];
+		let factor = 1; // typeof args[0] == "undefined" ? 1 : args[0];
 
 		this.running = false;
 		this.nextStartTime = 0;
@@ -227,7 +238,7 @@ class Envelope {
 		let t = this._params.times.valueOf()[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
-		if(this._params.mode == "mono" && args[2] == 0){
+		if(this.mono && data.legato){
 			// Don't release if mono mode and still keys down
 		} else {
 			this._listeners.forEach(target => {
