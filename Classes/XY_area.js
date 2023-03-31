@@ -58,7 +58,7 @@ class XY_area extends HTMLElement {
 		this.colWidth = w / columns;
 		this.rowHeight = h / rows;
 		
-		// this.type = this.getAttribute("type") || "square";
+		this.type = this.getAttribute("type") || "square";
 		switch(this.type){
 			case "square":
 			break;
