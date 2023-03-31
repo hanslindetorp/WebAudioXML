@@ -26,20 +26,25 @@ class Connector {
 		let nodeName = xmlNode.nodeName.toLowerCase();
 		let targetElements;
 
-		// connect AudioParameters if specified
+		// connect AudioParameters if specified. I.e. for FM synthesis
+
 		if(xmlNode.obj && xmlNode.obj.parameters){
-			Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
-				if(typeof value == "string"){
-					if(xmlNode.obj._node[key] instanceof AudioParam){
-						let modulators = this.getTargetElements(xmlNode, value);
-						if(modulators){
-							modulators.forEach(modulatorNode => {
-								modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
-							});
+			if(xmlNode.obj._node){
+				// to avoid trying to connect variables, envelopes etc.
+				Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
+					if(typeof value == "string"){
+						if(xmlNode.obj._node[key] instanceof AudioParam){
+							let modulators = this.getTargetElements(xmlNode, value);
+							if(modulators){
+								modulators.forEach(modulatorNode => {
+									modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
+								});
+							}
 						}
 					}
-				}
-			});
+				});
+			}
+			
 			
 		}
 		
