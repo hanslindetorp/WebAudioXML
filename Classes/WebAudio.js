@@ -34,6 +34,11 @@ var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 var Variable = require('./Variable.js');
 var InputBusses = require('./InputBusses.js');
 
+var XY_area = require('./XY_area.js');
+var XY_handle = require('./XY_handle.js');
+var Display = require('./Display.js');
+var MIDIController = require('./MIDIController.js');
+
 
 
 
@@ -132,6 +137,9 @@ class WebAudio {
 			console.warn("No WebAudioXML source specified")
 		}
 
+		
+		this.defineCustomElements();
+
 		this.ui = new InteractionManager(this);
 
 
@@ -157,6 +165,14 @@ class WebAudio {
 	// 	}
 	// }
 
+	
+
+	defineCustomElements(){
+		customElements.define('waxml-xy-area', XY_area);
+		customElements.define('waxml-xy-handle', XY_handle);
+		customElements.define('waxml-display', Display);
+		customElements.define('waxml-midi-controller', MIDIController);		
+	}
 
 	init(){
 		if(!this.audioInited){
@@ -360,6 +376,8 @@ class WebAudio {
 				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
 				XMLnode.obj.noteOn(options);
+			} else if(XMLnode.obj.trig){
+				XMLnode.obj.trig(options);
 			}
 		});
 		this.callPlugins("trig", selector, options);
@@ -746,16 +764,35 @@ class WebAudio {
 
 	querySelectorAll(selector){
 		let arr = [];
-		this._xml.querySelectorAll(selector).forEach(xml => {
-			let audioObject = xml.obj;
-			arr.push(xml.obj);
-		});
+		switch(selector){
+			case "master":
+			arr.push(this.master);
+			break;
+
+			default:
+			this._xml.querySelectorAll(selector).forEach(xml => {
+				let audioObject = xml.obj;
+				arr.push(xml.obj);
+			});
+			break;
+		}
+
+		
 		return arr;
 	}
 	querySelector(selector){
-		let xml = this._xml.querySelector(selector);
-		if(xml){
-			return xml.obj;
+
+		switch(selector){
+			case "master":
+			this.master;
+			break;
+
+			default:
+			let xml = this._xml.querySelector(selector);
+			if(xml){
+				return xml.obj;
+			}
+			break;
 		}
 		return -1;
 	}
