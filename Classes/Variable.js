@@ -51,9 +51,14 @@ class Variable {
 		// 		}
 		// 	});
 		// }
+
+		if(params.trig){
+			//this.argumentIndex = parseInt((params.value || "").split("[").pop()) || 0;
+			this.targetParameter = params.value;
+		}	
 		if(typeof params.default != "undefined"){
 			this.value = params.default;
-		} else if(typeof params.value != "undefined"){
+		} else if(!params.trig && typeof params.value != "undefined"){
 			this.value = params.value.valueOf();
 		}
 
@@ -68,6 +73,12 @@ class Variable {
 		if(typeof this.value != "undefined"){
 			callBack(this[prop]);
 		}
+	}
+
+	trig(){
+		// this feature lets the variable update to one argument 
+		// passed to the function. I.e. MIDI:NoteOn, {channel: ch, keyNum: nr, velocity: vel}
+		this.setValue(arguments[0][this.targetParameter]);
 	}
 
 	valueOf(){
