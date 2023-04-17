@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<imusic
+
+  xmlns="https://www.w3schools.com"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/imusic/scheme_1.1.7.xsd"
+  
+  version="1.0" 
+  tempo="100" 
+  timeSign="4/4"
+  loopLength="16"
+  changeOnNext="bar" 
+  fadeTime="10"
+  showGUI="true">
+
+  <arrangement class="A">
+    <track/>
+    <leadin class="B"/>
+  </arrangement>
+
+
+  <arrangement class="B">
+    <track/>
+    <leadin class="A"/>
+  </arrangement>
+
+
+</imusic>

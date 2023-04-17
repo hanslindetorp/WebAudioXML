@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>3D-audio</title>
+		<link href="plugins/default-style.css" rel="stylesheet" type="text/css" />
+		<link href="style.css" rel="stylesheet" type="text/css" />
+		<script src="plugins/max.size.js"></script>
+		<script>
+			// Här bestäms vilken sida som visas först
+			window.addEventListener("load", () => location.href = "#page1");
+		</script>
+	</head>
+
+
+	<body>
+
+		<main class="max-size pages">
+
+			<section id="page1">
+				<h1>3D-audio</h1>
+				<h3>ObjectBasedAudio</h3>
+				<p>I WebAudioXML finns ett object som heter ObjectBasedAudio. Med hjälp av det går det att placera ut
+					ljud i en virtuell, tredimensionell miljö. Uppspelning sker med hjälp av biaural-teknik och placeringen
+					bestäms av attributen positionX och positionZ. (positionY påverkar ljudets placering i höjdled och är svårare
+					att höra. Enheten är i typ 'meter', men det är ingen exakt skala. Alla ljud hörs i förhållande till en 
+					virtuell 'lyssnare' som också går att flytta och vrida åt alla håll. Öppna mixern och testa att flytta runt
+					ljuden och lyssnaren. Klicka på bakgrunden i rutan för att vrida lyssanren. Värdena som används visas under rutan.<br/>
+					Obs! ObjectBasedAudio kan gärna vara i MONO.</p>
+					<h3>AmbientAudio</h3>
+					<p>I WebAudioXML finns också ett AmbientAudio-objekt. Med det är det enkelt att lägga loopade bakgrundsljud i stereo. Looparna 
+						tonar in och ut själva och överlappar utan att det hörs några klipp.</p> 
+					</p>
+				</p>
+				<a data-waxml-click-play="bird1, bird2">Bird 1 & 2</a>
+			</section>
+
+		</main>
+		<script src="plugins/WebAudioXML.js" data-source="audio.xml"></script>
+		<script src="plugins/imusic_091.js" data-music-structure="music.xml"></script>
+		<script src="plugins/script.js"></script>
+	</body>
+</html>

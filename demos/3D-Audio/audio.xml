@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+
+    xmlns="https://www.w3schools.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.5.xsd"
+
+    version="1.0" 
+    timeUnit="ms" 
+    gain="0dB"
+    controls="true">
+
+
+    <AmbientAudio class="ambience" src="audio/ambience.mp3" />
+    <ObjectBasedAudio class="footsteps" positionX="10" positionZ="-10" src="audio/footsteps.mp3" loop="true"/>
+    <ObjectBasedAudio class="bird1" positionX="-10" positionZ="-10" src="audio/bird1.mp3"/>
+    <ObjectBasedAudio class="bird2" positionX="0" positionZ="10" src="audio/bird2.mp3"/>
+    <ObjectBasedAudio class="bird3" positionX="-10" positionZ="10" src="audio/bird3.mp3"/>
+
+
+
+    <var name="intensity" default="0" mapin="0,5" mapout="0,1"/>
+    <var name="crossFadeSmoothing" default="0" mapin="0,1"/>
+    <var name="transitionTime" default="1000" mapin="0,3000"/>
+
+    <var name="ch1_gain" default="1" mapin="0,1"/>
+    <var name="ch1_pan" default="0" mapin="-1,1"/>
+    <var name="ch1_lowpass" default="12000" mapin="0,12000"/>
+    <var name="ch1_highpass" default="0" mapin="0,12000"/>
+    <var name="ch1_send1" default="0" mapin="0,1"/>
+    <var name="ch1_send2" default="0" mapin="0,1"/>
+    <var name="ch1_send3" default="0" mapin="0,1"/>
+
+
+    <var name="ch2_gain" default="1" mapin="0,1"/>
+    <var name="ch2_pan" default="0" mapin="-1,1"/>
+    <var name="ch2_lowpass" default="12000" mapin="0,12000"/>
+    <var name="ch2_highpass" default="0" mapin="0,12000"/>
+    <var name="ch2_send1" default="0" mapin="0,1"/>
+    <var name="ch2_send2" default="0" mapin="0,1"/>
+    <var name="ch2_send3" default="0" mapin="0,1"/>
+
+
+    <var name="ch3_gain" default="1" mapin="0,1"/>
+    <var name="ch3_pan" default="0" mapin="-1,1"/>
+    <var name="ch3_lowpass" default="12000" mapin="0,12000"/>
+    <var name="ch3_highpass" default="0" mapin="0,12000"/>
+    <var name="ch3_send1" default="0" mapin="0,1"/>
+    <var name="ch3_send2" default="0" mapin="0,1"/>
+    <var name="ch3_send3" default="0" mapin="0,1"/>
+
+
+
+    <var name="ch4_gain" default="1" mapin="0,1"/>
+    <var name="ch4_pan" default="0" mapin="-1,1"/>
+    <var name="ch4_lowpass" default="12000" mapin="0,12000"/>
+    <var name="ch4_highpass" default="0" mapin="0,12000"/>
+    <var name="ch4_send1" default="0" mapin="0,1"/>
+    <var name="ch4_send2" default="0" mapin="0,1"/>
+    <var name="ch4_send3" default="0" mapin="0,1"/>
+
+    <var name="compressor_ratio" default="1" mapin="1,20"/>
+    <var name="compressor_threshold" default="-24" mapin="-100,0"/>
+
+
+    <Mixer id="intensity-mixer" mix="$intensity" crossFadeRange="$crossFadeSmoothing">
+        <GainNode id="intensity1" />
+        <GainNode id="intensity2" />
+        <GainNode id="intensity3" />
+        <GainNode id="intensity4" />
+        <GainNode id="intensity5" />
+    </Mixer>
+
+    <include id="stereo-mixer-4ch" href="plugins/mixer.xml" transitionTime="$transitionTime" />
+    
+</Audio>
