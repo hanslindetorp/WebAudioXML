@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>WebAudioXML - arpeggio demo</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+
+
+	<body>
+
+		<waxml-meter fftSize="8192" width="305" height="200" type="oscilloscope"></waxml-meter>
+		<waxml-meter width="305" height="200" type="FFT" maxFrequency="10000" colors="#00f, #44f, #99f" ></waxml-meter>
+		<waxml-meter width="620" height="20" type="loudness" timeframe="2s" maxDecibels="0" minDecibels="-40" colors="green, yellow, red" segments="60,20,20"></waxml-meter>
+		
+
+
+
+		<div class="synth subtractive">
+			<h3>WAXML-SUBTRACTIVE</h3>
+			<label>
+				LFO:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:1:1=this.value"/>
+			</label>
+			<label>
+				LFO speed:
+				<input type="range" value="5" min="2" max="10" step="0.01" data-waxml-input-set="LFOspeed=this.value"/>
+			</label>
+			<label>
+				Waveform:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:1:11=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="1234567890" channel="1"></waxml-midi-controller>
+		</div>
+		
+		<div class="synth additive">
+			<h3>WAXML-ADDITIVE</h3>
+			<label>
+				LFO:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:2:1=this.value"/>
+			</label>
+			<label>
+				Spread:
+				<input type="range" value="0" min="0" max="1" step="0.2" data-waxml-input-set="MIDI:ControlChange:2:11=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="qwertyuiopå" channel="2"></waxml-midi-controller>
+		</div>
+
+
+		<div class="synth FM">
+			<h3>WAXML-FM</h3>
+			<label>
+				LFO:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:3:1=this.value"/>
+			</label>
+			<label>
+				FM Octave:
+				<input type="range" value="1" min="-2" max="4" data-waxml-input-set="switch=this.value"/>
+			</label>
+			<label>
+				FM Amount:
+				<input type="range" value="0.5" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:3:11=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="asdfghjklöä" channel="3"></waxml-midi-controller>
+		</div>
+
+
+
+		<!-- <div class="synth granular">
+			<h3>WAXML-GRANULAR</h3>
+			<label>
+				LoopStart:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:4:11=this.value"/>
+			</label>
+			<label>
+				LoopLength:
+				<input type="range" value="0.5" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:4:12=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="zxcvbnm" channel="4"></waxml-midi-controller>
+		</div> -->
+
+
+		<div class="synth sample-player">
+			<h3>WAXML-SAMPLE-PLAYER</h3>
+			<label>
+				Reverb:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:10:1=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="ZXCVBNM" channel="10"></waxml-midi-controller>
+		</div>
+
+		
+		
+		<script src="WebAudioXML.js" data-source="audio-config.xml"></script>
+		
+	</body>
+</html>

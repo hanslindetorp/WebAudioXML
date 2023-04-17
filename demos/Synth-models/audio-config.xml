@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-2dB" controls="true">
+
+    <var name="root"/>
+    
+    <include href="synth-subtractive.xml" />
+    <include href="synth-additive.xml" />
+    <include href="synth-FM.xml" />
+    <include href="synth-granular.xml" />
+    <include href="synth-sample-player.xml" />
+    
+</Audio>
