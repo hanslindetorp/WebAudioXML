@@ -1,4 +1,4 @@
- <iframe width="560" height="315" src="https://www.youtube.com/embed/QVAACgCzOII" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
         
         <p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
         <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. I was inspired by the great idea from 
