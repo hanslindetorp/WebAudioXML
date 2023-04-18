@@ -1,6 +1,4 @@
-
-        
-        <p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
+<p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
         <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. I was inspired by the great idea from 
         <a href="https://github.com/monlim/Handmate-MIDI">Handmate-MIDI</a> to control
         audio data with the fantastic MediaPipe library. AudioPipe is an online, fully programmable,
