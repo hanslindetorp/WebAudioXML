@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB" controls="true">
+
+	<var name="gain" default="0" mapin="0,1" />
+	<var name="intensity" value="$pose0x" default="0" mapin="0.2,0.9" mapout="0,100" />
+
+	<var name="pad" default="1" value="$intensity" mapin="30,60" mapout="1,0" />
+	<var name="clav" default="0" value="$intensity" mapin="50,60" mapout="0,0,1" />
+	<var name="piano" default="0" value="$intensity" mapin="0,10,30,40" mapout="0,1,1,0" />
+	<var name="rhodes" default="0" value="$intensity" mapin="10,20" mapout="0,1" />
+	<var name="organ" default="0" value="$intensity" mapin="70,80" mapout="0,1" />
+	<var name="shaker" default="0" value="$intensity" mapin="20,30" mapout="0,1" />
+	<var name="bass1" default="0" value="$intensity" mapin="30,40,60,61" mapout="0,2,2,0" />
+	<var name="bass2" default="0" value="$intensity" mapin="60,61" mapout="0,1" />
+	<var name="drums1" default="0" value="$intensity" mapin="30,40,60,61" mapout="0,1,1,0" />
+	<var name="drums2" default="0" value="$intensity" mapin="60,61" mapout="0,1" />
+
+	<var name="lowpass" default="20000" value="$pose0y" mapin="0.4, 0.7" mapout="20000, 100" curve="0.1" />
+	<var name="highpass" default="20" value="$pose0y-$pose21y" mapin="0, 0.1" mapout="20, 800" curve="easeInCubic" />
+
+	<Chain>
+		<Mixer>
+			<GainNode id="pad" gain="$pad" />
+			<GainNode id="clav" gain="$clav"  />
+			<GainNode id="piano" gain="$piano" />
+			<GainNode id="rhodes" gain="$rhodes" />
+			<GainNode id="organ" gain="$organ" />
+			<GainNode id="shaker" gain="$shaker" />
+			<GainNode id="bass1" gain="$bass1" />
+			<GainNode id="bass2" gain="$bass2" />
+			<GainNode id="drums1" gain="$drums1" />
+			<GainNode id="drums2" gain="$drums2" />
+		</Mixer>
+
+		<GainNode gain="$gain" transitionTime="200" />
+
+		<BiquadFilterNode type="lowpass" frequency="$lowpass" />
+		<BiquadFilterNode type="highpass" frequency="$highpass" />
+
+		<DynamicsCompressorNode ratio="12" threshold="-35"></DynamicsCompressorNode>
+
+	</Chain>
+
+</Audio>

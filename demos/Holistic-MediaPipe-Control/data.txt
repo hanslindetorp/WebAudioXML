@@ -1,0 +1,342 @@
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+1. Simple Gain - 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+	<OscillatorNode output="next"></OscillatorNode>
+    <GainNode gain="$hand_r8y"></GainNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+2. Inverted Gain - 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+    <var name="g" value="$hand_r8y" mapin="0,1" mapout="1,0"></var>
+
+	<OscillatorNode output="next"></OscillatorNode>
+    <GainNode gain="$g"></GainNode>
+</Audio>
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+3. Filter Cutoff 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-20dB">
+    <var name="f" value="$hand_r8y" mapin="0,1" mapout="5000, 20"></var>
+
+	<OscillatorNode type="sawtooth" output="next"></OscillatorNode>
+    <BiquadFilterNode frequency="$f"></BiquadFilterNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+4. Pitch
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-3dB">
+    <var name="p" value="$hand_r8x" mapin="0,1" mapout="60,62,64,65,67,69,71,72" curve="step" convert="MIDI->frequency"></var>
+
+	<OscillatorNode frequency="$p"></OscillatorNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+5. Distance
+* * * * * * * * * * * * * * * * * * * * * * * * * * * 
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-3dB" transitionTime="10">
+    <var name="p" value="$hand_r8x" mapin="0,1" mapout="60,62,64,65,67,69,71,72" curve="step" convert="MIDI->frequency"></var>
+    <var name="g" value="$hand_r4tor8" mapin="0.1,0.2" mapout="1,0"></var>
+	
+    <OscillatorNode frequency="$p" output="next"></OscillatorNode>
+    <GainNode gain="$g"></GainNode>
+</Audio>
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+Two parts
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-12dB" transitionTime="20">
+    
+	<var name="pitch1" value="$hand_r4y" mapin="0.1,0.8" mapout="77,65" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="cutoff1" value="$hand_r8tor4" mapin="0.01,0.1" mapout="1000,0" curve="3"></var>
+
+	<OscillatorNode type="sawtooth" frequency="$pitch1" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="$cutoff1" output="next"></BiquadFilterNode>
+	<PannerNode panningModel="HRTF" positionX="4" output="next"></PannerNode>
+	<Send bus="ConvolverNode" gain="-6dB"></Send>
+ 
+    
+	<var name="pitch2" value="$hand_l4y" mapin="0.1,0.8" mapout="53,41" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="cutoff2" value="$hand_l8tol4" mapin="0.01,0.1" mapout="400,0" curve="3"></var>
+
+	<OscillatorNode type="sawtooth" frequency="$pitch2" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="$cutoff2" output="next"></BiquadFilterNode>
+	<PannerNode panningModel="HRTF" positionX="-4" output="next"></PannerNode>
+	<Send bus="ConvolverNode" gain="-6dB"></Send>
+  
+  <ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
+  
+</Audio>
+
+
+
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Cello
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-9dB" transitionTime="30">
+
+	<var name="pitch" value="$hand_l8y" mapin="0.2,0.8" mapout="36,48" steps="0,2,4,5,7,9,11,12" convert="MIDI->frequency"></var>
+	<var name="gain" value="$hand_r8x.speed" mapin="0.001,0.02" mapout="0,1"></var>
+
+	<OscillatorNode type="sawtooth" frequency="$pitch" output="next"></OscillatorNode>
+	<BiquadFilterNode type="lowpass" frequency="400" output="next"></BiquadFilterNode>
+	<GainNode gain="$gain"></GainNode>
+
+</Audio>
+
+
+
+
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Noise
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="+3dB" transitionTime="10">
+
+    <var name="frequency1" value="$hand_r4y" mapin="0.1,0.9" mapout="84,48" steps="0,2" convert="MIDI->frequency"></var>
+    <var name="lowpass" value="$hand_l8tol4" mapin="0,0.2" mapout="50,120" convert="MIDI->frequency"></var>
+    <var name="highpass" value="$hand_l8tol4" mapin="0,0.2" mapout="10, 120" convert="MIDI->frequency"></var>
+    
+    <var name="gain" value="$hand_r8tor4" mapin="0,0.05" mapout="1,0" curve="4"></var>
+    <var name="Q" value="$hand_l4y" mapin="0,1" mapout="50,5" curve="4"></var>
+    <var name="pan" value="$hand_r4x" mapin="0,1" mapout="-4,4"></var>
+    
+    <Chain>
+        <Noise></Noise>
+        <BiquadFilterNode type="bandpass" frequency="$frequency1" Q="$Q" transitionTime="200"></BiquadFilterNode>
+        <BiquadFilterNode type="lowpass" frequency="$lowpass"></BiquadFilterNode>
+        <BiquadFilterNode type="highpass" frequency="$highpass"></BiquadFilterNode>
+        
+        <GainNode gain="-6dB"></GainNode>
+        <GainNode gain="$gain"></GainNode>
+        <DynamicsCompressorNode ratio="20" threshold="-35"></DynamicsCompressorNode>
+        
+        <Send outputBus="#delay" gain="-6dB"></Send>
+
+        <PannerNode panningModel="HRTF" positionX="$pan" positionZ="-3"></PannerNode>
+        
+        <Send outputBus="ConvolverNode" gain="+3dB"></Send>
+    </Chain>
+
+    <Chain>
+        <DelayNode id="delay" delayTime="500" maxDelayTime="500"></DelayNode>
+        <Send outputBus="#delay" gain="-6dB"></Send>
+    </Chain>
+
+    <ConvolverNode src="audio/convolution1.wav"></ConvolverNode>
+
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Full band
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+
+	<var name="intensity" value="$hand_r8x-$hand_l8x" mapin="0.1,0.9" mapout="0,100"></var>
+
+    <var name="padGain" value="$intensity" mapin="30,60" mapout="1,0"></var>
+    <var name="padFrequency" value="$intensity" mapin="0,10" mapout="1000,0"></var>
+    <var name="padQ" value="$intensity" mapin="0,10" mapout="25,0"></var>
+
+    <var name="clavGain" value="$intensity" mapin="0,10,50,60" mapout="0.5,0,0,1"></var>
+    <var name="pianoGain" value="$intensity" mapin="0,10,30,40" mapout="0,1,1,0"></var>
+    <var name="rhodesGain" value="$intensity" mapin="10,20" mapout="0,1"></var>
+    <var name="organGain" value="$intensity" mapin="70,80" mapout="0,1"></var>
+    <var name="shakerGain" value="$intensity" mapin="20,30" mapout="0,1"></var>
+    <var name="bass1Gain" value="$intensity" mapin="30,40,60,61" mapout="0,2,2,0"></var>
+    <var name="bass2Gain" value="$intensity" mapin="60,61" mapout="0,1"></var>
+    <var name="drums1Gain" value="$intensity" mapin="30,40,60,61" mapout="0,1,1,0"></var>
+    <var name="drums2Gain" value="$intensity" mapin="60,61" mapout="0,1"></var>
+
+    <var name="lowpassFrequency" value="$intensity" mapin="0,20" mapout="100, 20000" curve="2"></var>
+    
+	<Chain>
+
+		<Mixer>
+			<GainNode id="pad" gain="$padGain"></GainNode>
+			<GainNode id="clav" gain="$clavGain"></GainNode>
+			<GainNode id="piano" gain="$pianoGain"></GainNode>
+			<GainNode id="rhodes" gain="$rhodesGain"></GainNode>
+			<GainNode id="organ" gain="$organGain"></GainNode>
+			<GainNode id="shaker" gain="$shakerGain"></GainNode>
+			<GainNode id="bass1" gain="$bass1Gain"></GainNode>
+			<GainNode id="bass2" gain="$bass2Gain"></GainNode>
+			<GainNode id="drums1" gain="$drums1Gain"></GainNode>
+			<GainNode id="drums2" gain="$drums2Gain"></GainNode>
+		</Mixer>
+
+
+		<BiquadFilterNode type="lowpass" frequency="$lowpassFrequency"></BiquadFilterNode>
+		<DynamicsCompressorNode ratio="12" threshold="-35"></DynamicsCompressorNode>
+
+	</Chain>
+
+</Audio>
+
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Drums lowpass
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+	<var name="lowpassFrequency" value="$hand_r8tol8" mapin="0.1,0.9" mapout="20, 20000" curve="3"></var>
+	<BiquadFilterNode id="drums2" type="lowpass" frequency="$lowpassFrequency"></BiquadFilterNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Finger Counting
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="20">
+	<var name="frequency" value="$hand_fingersUp - 1" mapin="0,10" mapout="60,62,64,65,67,69,71,72,74,76,77" curve="step" convert="MIDI->frequency"></var>
+	<var name="gain" value="$hand_fingersUp" mapin="0,1" mapout="0,1"></var>
+	
+	<OscillatorNode type="sine" frequency="$frequency" output="next"></OscillatorNode>
+	<GainNode gain="$gain"></GainNode>
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Drums
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-6dB">
+
+	<ObjectBasedAudio src="audio/bd.mp3" start="hand_r4tor8"></ObjectBasedAudio>
+	<ObjectBasedAudio src="audio/sn.mp3" start="hand_r4tor12"></ObjectBasedAudio>
+	<ObjectBasedAudio src="audio/hh.mp3" start="hand_l4tol8"></ObjectBasedAudio>
+
+</Audio>
+
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Synth Bass
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-6dB" transitionTime="10">
+
+    <var name="frequency" value="$hand_r8x" mapin="0.1,0.9" mapout="28,29,31,33,36" curve="step" convert="MIDI->frequency"></var>
+    
+
+    <OscillatorNode type="sawtooth" frequency="$frequency" output="next"></OscillatorNode>
+    <GainNode output="next">
+        <gain>
+            <Envelope start="hand_r4tor8" stop="hand_r4tor8" ADSR="5,100,50,50"></Envelope>
+        </gain>
+    </GainNode>
+    <BiquadFilterNode>
+        <frequency>
+            <Envelope start="hand_r4tor8" stop="hand_r4tor8" ADSR="1,100,5,50" max="4000"></Envelope>
+        </frequency>
+    </BiquadFilterNode>
+
+</Audio>
+
+
+<!-- 
+* * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+On-screen controllers
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="+3dB">
+
+    <var name="slider1" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+    <var name="slider2" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+    <var name="slider3" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+    <var name="slider4" value="0.2" mapin="0,1" mapout="0,-30" convert="dB->power"></var>
+
+    <var name="x1" mapin="0,1" mapout="-5,5"></var>
+    <var name="x2" mapin="0,1" mapout="-5,5"></var>
+    <var name="x3" mapin="0,1" mapout="-5,5"></var>
+    <var name="x4" mapin="0,1" mapout="-5,5"></var>
+
+    <var name="y1" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y2" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y3" mapin="0,1" mapout="-8,-2"></var>
+    <var name="y4" mapin="0,1" mapout="-8,-2"></var>
+
+    <var name="x5" default="1" mapin="0.1,0.7" mapout="100,20000" curve="2"></var>
+    <var name="y5" default="1" mapin="0.3,0.9" mapout="8000,20" curve="2"></var>
+    
+	<Chain>
+
+		<Mixer>
+			<ObjectBasedAudio class="pad piano" gain="$slider1" positionX="$x1" positionZ="$y1"></ObjectBasedAudio>
+			<ObjectBasedAudio class="rhodes clav organ" gain="$slider2" positionX="$x2" positionZ="$y2"></ObjectBasedAudio>
+			<ObjectBasedAudio class="bass2 drums2" gain="$slider3" positionX="$x3" positionZ="$y3"></ObjectBasedAudio>
+			<ObjectBasedAudio class="shaker" gain="$slider4" positionX="$x4" positionZ="$y4"></ObjectBasedAudio>
+		</Mixer>
+
+        <BiquadFilterNode type="lowpass" frequency="$x5"></BiquadFilterNode>
+        <BiquadFilterNode type="highpass" frequency="$y5"></BiquadFilterNode>
+
+	</Chain>
+
+</Audio>

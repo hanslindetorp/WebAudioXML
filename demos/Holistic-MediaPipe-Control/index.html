@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>AudioPipe - Gesture Controlled Musical Instrument</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <link rel="stylesheet" type="text/css" href="style/codemirror.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+    
+    <script type="text/javascript" src="script/XML.js"></script>
+    <script type="text/javascript" src="script/lzw_encoder.js"></script>
+    <script type="text/javascript" src="script/codemirror.js"></script>
+    <script type="text/javascript" src="script/max.size.js"></script>
+  </head>
+
+  <body>
+    <main class="xmax-size pages">
+      <section id="play">
+        <video class="input_video" width="1000" height="567.5"></video>
+        <canvas class="output_canvas" width="1000" height="567.5"></canvas>
+      </section>
+      
+      <section id="edit">
+        <div id="statistics-container">
+          <table id="statistics">
+            <tbody></tbody>
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td id="elementCount"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        </table>
+        <input class="block" id="instrument-name" value="" placeholder="Intrument Name" />
+        <input class="block" id="author-name" value="" placeholder="Your Name" />
+        <input id="demo-URL" placeholder="URL to demo video" />
+
+
+
+        <a target="_blank" href="data.txt">Example code</a>
+        
+        <textarea id="xml-edit"></textarea>
+      </section>
+
+      <section id="share">
+        <textarea id="shareURL"></textarea>
+      </section>
+
+      <section id="help">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/QVAACgCzOII" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        
+        <p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
+        <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. I was inspired by the great idea from 
+        <a href="https://github.com/monlim/Handmate-MIDI">Handmate-MIDI</a> to control
+        audio data with the fantastic MediaPipe library. AudioPipe is an online, fully programmable,
+      gesture controlled musical instrument. You can play with the presets or edit the code and make your own sound
+      synthesis and mappings. Please read the documentation for WebAudioXML to take advantage of all the possibilities.
+      </p>
+      <p>The image below indicates the 21 available points for each hand. In WebAudioXML all those variables can be 
+        mapped to any audio parameter using the &lt;var&gt;-element. Please not that all variable names shall be prefixed 
+        with a dollar sign. The naming convention for the variables follow the 
+        following scheme:
+      </p>
+      <div>
+        <h3>Position on the axis (0 - 1) for each point on each hand:</h3>
+        <ul>
+          <li>hand_l0x</li>
+          <li>hand_l0y</li>
+          <li>hand_l1x</li>
+          <li>etc...to hand_l21y</li>
+          <li>hand_r0x</li>
+          <li>hand_r0y</li>
+          <li>hand_r1x</li>
+          <li>etc...to hand_r21y</li>
+        </ul>
+        <code>
+          Example:<br />
+          &lt;var name="f" value="$hand_r8y" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
+          &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
+        </code>
+
+        <h3>Distance (0 - 1) between each point and all other points</h3>
+        <ul>
+          <li>hand_r4tor8 (distance between the pointing finger and the thumb on the right hand)</li>
+          <li>hand_l8tor8 (distance between the two pointing fingers)</li>
+        </ul>
+        <code>
+          Example:<br />
+          &lt;var name="f" value="$hand_r8tor4" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
+          &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
+        </code>
+
+        <h3>Events</h3>
+        <p>Events can trigger Envelopes and AudioFiles using trig="&#91eventName&#93" and/or 
+          release="&#91eventName&#93". Please note event names are NOT prefixed with dollar sign.</p>
+        <ul>
+          <li>trig=&quot;hand_r4tor8&quot; (right hand pointing finger and thumb are touching each other)</li>
+          <li>release=&quot;hand_r4tor8&quot; (right hand pointing finger and thumb are releasing each other)</li>
+        </ul>
+        <code>
+          Example:<br />
+          &lt;OscillatorNode frequency="440"&gt;&lt;/OscillatorNode&gt;<br />
+          &lt;GainNode&gt;&lt;gain&gt;</br>
+            &lt;Envelope start=&quot;hand_r4tor4&quot; max=&quot;1&quot; ADSR=&quot;10,100,20,50&quot;&gt&lt;/Envelope&gt;</br>
+          &lt;/gain&gt;&lt;/GainNode&gt;<br />
+        </code><br />
+        <img src="images/hand.png" />
+      </div>
+
+      <p>AudioPipe is part of a reasearch project at the <a href="https://www.kmh.se/">Royal College 
+        of Music</a> and <a href="https://www.kth.se/">Royal Institute of Technology</a> in Stockholm by 
+        Hans Lindetorp. Please follow my blog at <a href="https://hans.arapoviclindetorp.se/">hans.arapoviclindetorp.se/</a></p>
+      </section>
+
+      <navigation>
+        <input id="playMusicBtn" type="checkbox" data-waxml-change-set="gain=this.checked">Play</a>
+        <a id="playBtn" href="#play">Run</a>
+        <a id="editBtn" href="#edit">Edit</a>
+        <a id="shareBtn" href="#share">Share</a>
+        <a id="helpBtn" href="#help">Help</a>
+       
+        <select>
+          <option>Preset...</option>
+          <option value="?data=%7B%22title%22%3A%221.%20Simp%C4%85%20Gain%22%2C%22nam%C4%86%C4%88Hans%20L%C4%95detorp%C4%97%22url%C4%87%22%C4%ACxm%C4%B0%C4%88%3C%3F%C4%B4l%20version%3D%5C%C4%89.0%C5%85%20encod%C4%95g%C5%84%22UTF-8%C5%85%3F%3E%5Cn%3CAu%C5%8Fo%C4%BC%C4%BE%C5%80%C5%82%C5%92%C4%8A%C5%88%22%20%C4%82%C4%9CUn%C4%83%C5%92ms%C5%89g%C4%94%C5%83%C5%850dB%C5%85%C5%9Bn%5Ct%3COscilla%C4%A8rN%C5%8Ee%20outp%C6%90%C5%92next%C5%BC%3C%2F%C6%82%C6%84%C6%86%C6%88%C4%A9%C6%8B%C4%A6%C5%BD%20%C6%A4%20%3C%C4%93%C4%95%C6%A1%C6%8D%C5%B5%C4%95%C5%92%24h%C4%A0d_r8y%C6%99%2F%C6%A8n%C6%AA%C5%BD%C6%9A%C5%9F%C5%A1%3E%22%7D">1. Simple Gain</option>
+          <option value="?data=%7B%22title%22%3A%222.%20Inverted%20Gain%22%2C%22nam%C4%86%C4%88Hans%20L%C4%98detorp%C4%9A%22url%C4%87%22%C4%AFxm%C4%B3%C4%88%3CAudio%20%C4%8Frs%C4%BFn%3D%5C%221.0%C5%88%20%C4%82%C4%9FUn%C4%83%C5%87%22ms%C5%8Dg%C4%97%C5%86%C5%880dB%C5%88%3E%5Cn%5Ct%C5%A2%C5%A4%3Cvar%20%C4%9D%C4%9F%C5%94g%C5%8D%C5%A9lue%C5%94%24h%C4%A3d_r8y%C5%8Dmap%C4%98%C5%940%2C1%C5%BF%C6%81out%C5%941%2C%C5%8C%22%20%2F%C5%A1%C5%A3%C5%A5%C6%95%3COscilla%C4%ABrNo%C4%A9%20%C6%8Atp%C6%8B%C5%94nex%C5%A5%C6%91%C6%93%C5%A6%C6%96%C5%A7%C4%96%C4%98%C6%A2%C6%A4%C5%99%C6%83%C5%88%24%C5%B0%C6%AF%C6%94%C5%A4%C5%A2%3C%2F%C4%BC%C4%BEo%C6%94%22%7D">2. Inverted Gain</option>
+          <option value="?data=%7B%22title%22%3A%222.%20Filter%20Cutoff%22%2C%22nam%C4%86%C4%88Hans%20Linde%C4%96rp%C4%9A%22url%C4%87%22%C4%AFxm%C4%B3%C4%88%3C%3F%C4%B7l%20v%C4%91sion%3D%5C%221.0%C5%87%20encod%C4%A8g%C5%86%22UTF-8%C5%87%3F%3E%5Cn%3CAu%C5%92o%C4%BF%C5%81%C5%83%C5%85%C5%87%C5%89%C5%8B%22%20%C4%82%C4%9FUn%C4%83%C5%95ms%C5%8Cga%C4%A8%C5%95-20dB%C5%87%C5%9En%20%C6%84%20%3Cva%C4%92%C4%9D%C4%9F%C5%95f%C5%8C%C6%88lue%C5%95%24h%C4%A3d_r8y%C5%8Cmap%C5%BA%C5%870%2C1%C6%9D%C6%9Fo%C4%95%C5%9550%C6%AC%2C%20%C5%BD%C6%81%3C%2F%C6%88r%C6%82%C5%9F%5Ct%3COsc%C4%8Ela%C4%ACN%C5%91e%C5%AEyp%C6%93%C5%87saw%C4%96oth%C5%8C%C6%A8tp%C6%A9%C5%87next%C6%B1%2F%C6%BB%C6%BDl%C6%BF%C7%81%C7%83%C6%82%C6%85%C6%86Biquad%C4%8D%C4%8F%C4%91%C7%82%C4%AA%20fre%C7%A8%C5%8Ecy%C6%94%C6%8E%22%3E%C6%B2%C7%A6%C7%A8%C7%AA%C7%AC%C4%90r%C7%AFe%C6%82%C6%B2%C5%A2%C5%A4%3E%22%7D">3. Filter Cutoff</option>
+          <option value="?data=%7B%22title%22%3A%224.%20Musical%20S%C4%91%C4%85%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%98%22url%C4%87%22%C4%AExm%C4%B2%C4%88%3C%3F%C4%B6%C4%93ver%C4%8Fon%3D%5C%221.0%C5%85%20encod%C4%A6g%C5%84%22UTF-8%C5%85%3F%3E%5Cn%3CAu%C5%90o%20%C4%BE%C5%80i%C5%82%C5%93%C5%87%C5%89%22%20%C4%82%C4%9DUn%C4%83%C5%93ms%C5%8Aga%C4%A6%C5%93-3dB%C5%85%C5%9Cn%20%C6%82%20%3Cvar%20%C4%9B%C4%9D%C5%93p%C5%8A%C6%86lue%C5%93%24h%C4%A1d_r8x%C5%8Amap%C5%B9%C5%850%2C1%C6%9C%C6%9Eout%C5%936%C6%A262%2C64%C6%AF5%C6%AF7%C6%AF9%2C71%C6%B82%C5%8Ac%C4%B0%C4%BE%C5%93ste%C6%8D%C5%AC%C5%8En%C5%A5%C6%A9%C5%85MIDI-%3Efreq%C6%91%C5%8Dy%C5%BF%3C%2F%C6%86r%C6%80%C5%9D%5Ct%3COscilla%C4%AArN%C5%8Fe%20%C7%92%C7%94%C7%96cy%C6%93%C7%85%3E%C7%9A%C7%A3%C7%A5%C7%A7%C7%A9%C4%AB%C7%AC%C4%A8%C6%80%C7%9A%C5%A0%C5%A2%3E%22%7D">4. Musical scale</option>
+          <option value="?data=%7B%22title%22%3A%225.%20Distanc%C4%86%2C%22nam%C4%86%C4%88H%C4%91s%20Lindetorp%22%C4%95url%C4%87%22%C4%A9%22xm%C4%AD%C4%88%3C%3F%C4%B2l%20version%3D%5C%221.0%C5%83%20e%C4%92od%C4%A1g%C5%82%22UTF-8%C5%83%3F%3E%5Cn%3CAu%C5%8Do%C4%BA%C4%BC%C4%BE%C5%80%C5%90%C5%85%C5%87%22%20%C4%82%C4%99Un%C4%83%C5%90ms%C5%88ga%C4%A1%C5%90-3dB%C5%88tr%C4%9D%C4%83%C4%BFnTi%C4%99%C5%A5%C5%A7%C5%99n%20%C6%89%20%3Cvar%20%C4%97%C6%84%C5%83p%C5%88%C6%8Dlue%C5%90%24h%C4%91d_r8x%C5%88map%C5%B5%C5%830%2C1%C6%A3%C6%A5out%C5%906%C6%A962%2C64%C6%B65%C6%B67%C6%B69%2C71%C6%BF2%C5%88c%C4%AB%C4%BB%C5%90%C4%8Fe%C6%94%C5%A8c%C5%80%C4%BBr%C6%B0%C5%83MIDI-%3Efreq%C6%98%C4%92y%C5%83%3E%3C%2F%C6%8Dr%C6%87%C6%8A%C6%8B%C7%A4%C6%90%C4%98%C6%99%C5%83g%C6%95a%C6%97%C7%AC%22%C6%9B%C6%9D%C6%9F4%C4%A5%C6%A0%C6%AC%C6%A6%C5%81%C6%A8.%C7%810.%C7%83%C5%A8%C6%A4p%C6%AE%C7%91%C5%84%2C%C6%86%C7%A2%C7%A4%C6%87%5Ct%C5%9A%C7%A7%3COscilla%C7%B8N%C5%8Ce%20%C7%99%C7%9B%C7%9Dcy%C6%9A%C7%8B%20%C8%86p%C6%AF%C5%90nex%C8%8F%22%C7%A1%2F%C8%93%C8%95%C8%97%C8%99%C4%A6%C8%9B%C4%A3%C7%A6%C6%8A%3CG%C5%B4n%C8%B7%C8%9D%C5%B3%C6%A7%C7%B3%C7%AE%C8%AF%C7%A2%C8%BC%C4%A1%C8%BF%C6%87%C7%A2%C5%9D%C5%9F%3E%22%7D">5. Distance</option>
+          <option value="?data=%7B%22title%22%3A%226.%20Trig%20Audio%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%97%22url%C4%87%22%C4%ADxm%C4%B1%C4%88%3C%3F%C4%B5l%20vers%C4%95n%3D%5C%221.0%C5%85%20enco%C4%94ng%C5%84%22UTF-8%C5%85%3F%3E%5Cn%3C%C4%92%C4%94o%C4%BD%C4%BF%C5%81o%C5%83%C5%85%C5%87%C5%89%22%20%C4%82%C4%9CUn%C4%83%C5%93ms%C5%8Aga%C4%A5%C5%93-6dB%C5%85%C5%9Cn%C5%9D%5Ct%3CObjectBased%C5%A0%C4%95%20src%C5%93a%C4%93%C4%95%2Fbd.mp3%C5%8Astart%C5%93h%C4%A0d_r4%C4%A9r%C5%99%22%3E%3C%2F%C6%85%C6%87%C6%89%C6%8B%C6%8D%C6%8F%C6%98o%C5%BF%C6%82%C6%84%C6%86%C6%88%C6%8A%C6%8C%C6%8E%C6%90%C5%A2%C6%93%C6%95%C5%85%C6%97%C5%A1%2Fsn%C6%9D%C6%9F%C6%A1%C6%A3%C6%A5%C6%A7%C6%A9%C6%AB%C6%AD%C4%AA12%C5%BE%C6%B3%C6%B5%C7%81%C6%B8%C7%84%C6%BB%C6%BD%C6%83%C7%9D%C6%B7%C7%83%C6%BA%C5%A1%C6%92%C6%94%C6%96%C6%BB%2Fhh%C7%8F%C6%A0%C5%AB%C6%A2%C6%A4%C6%A6%C5%85%C6%A8%C4%A6_l%C7%97l%C6%B0%C6%B2%C6%B4%C7%80%C7%A5%C6%B9%C7%85%C6%BD%C5%9E%2F%C8%83%22%7D">6. Trig Audio</option>
+          <option value="?data=%7B%22title%22%3A%227.%20Trig%20Envelop%C4%86%2C%22nam%C4%86%C4%88Hans%20Lindetorp%22%C4%9Aurl%C4%87%22%C4%AF%22xm%C4%B3%C4%88%3C%3F%C4%B8l%20%C4%94rsion%3D%5C%221.0%C5%88%20encod%C4%A7g%C5%87%22UTF-8%C5%88%3F%3E%5Cn%3CAu%C5%93o%C5%80e%C5%82%C5%84%C5%86%C5%88%C5%8A%C5%8C%22%20%C4%82%C4%9EUn%C4%83%C5%96ms%C5%8Dga%C4%A7%C5%96-6dB%C5%8Dtr%C4%A2%C5%83%C4%82%C5%85Ti%C4%9E%C5%961%C5%AE%C5%9Fn%C5%A0%20%C6%92%20%3Cvar%20%C4%9C%C6%8B%C5%88frequ%C5%8Fcy%C5%8D%C6%96l%C6%A1%C5%96%24h%C4%A2d_r8x%C5%8Dmap%C5%BC%C5%880.1%2C%C6%B89%C6%B2%C6%B4out%C5%9628%2C29%2C3%C6%BA33%C7%896%C5%8Dc%C4%B1%C4%94%C5%96step%C7%90%C5%85%C5%81%C7%82%C5%88MIDI-%3E%C6%9D%C6%9F%C6%A1%C5%90%C6%A4%22%3E%3C%2F%C6%96r%C6%8F%C6%93%20%C5%A0%C6%91%C6%93%3COscilla%C4%ABrN%C5%92e%C5%B0y%C4%98%C7%94aw%C4%ABoth%C5%8D%C7%A4%C6%A0%C6%A2y%C6%A9%C8%8D%C7%A6%C6%A3%C5%8D%C7%80tp%C7%81%C5%96next%C5%88%C7%AA%2F%C7%B6%C7%B8%C7%BA%C7%BC%C4%AC%C7%BF%C4%A9%C7%AF%C7%B4G%C5%BBn%C8%A7%C8%81%C8%96%C8%98%C7%9C%C4%9B%C8%9C%C8%9E%C7%A9%C7%B3%C7%B0%C6%92%3C%C5%BA%C4%A7%C8%A9%C8%B8%C8%B8%3C%C4%92%C4%94%C4%96%C4%98%20%C7%95%C6%97%C8%B2%C6%AB%C4%A8%C6%AE4%C7%BD%C5%9C%C5%AF%C7%95%C4%97%C5%96%C9%89%C6%ADr%C9%8C%C4%AC%C9%8E%20ADSR%C5%965%2C%C6%8D0%2C5%C9%A2%C9%A4%C8%9F%C7%AB%C9%81%C4%95%C4%97e%C8%BD%C8%BF%2F%C8%BBn%C9%AD%C7%AB%C8%AB%C4%A7%C8%AE%C9%B2Bi%C6%A0adF%C7%B9%C7%96%C7%BE%C8%80%C9%AD%C7%B0%3C%C8%92%C8%8F%CA%82%C8%BE%C6%94%C9%A9%C9%83%C8%81%C9%86r%C9%88%C6%AC%C9%8B%C9%8D%C5%8D%C9%90p%C9%92%CA%90%C9%95%CA%92%C5%AF%C9%9A%C9%9C%C6%8C%C9%A00%C9%A5%C9%A3%C5%AE%20%C6%B3x%C5%964%CA%9F%C6%8E%C9%A8%C4%93%C9%AA%C4%98%CA%87%C8%B9%2F%CA%85%C7%A7%C9%B2%2F%C9%B8%C9%BA%C9%BC%C9%BE%C5%A8%C9%B6%C7%B2%C5%A1%2F%C5%A3%C5%A5%3E%22%7D">7. Trig Envelope</option>
+          <option value="?data=%7B%22title%22%3A%228.%20Finger%20Coun%C4%82%C4%8F%22%2C%22nam%C4%86%C4%88Hans%20L%C4%8Edetorp%C4%9A%22url%C4%87%22%C4%AFxm%C4%B3%C4%88%3C%3F%C4%B7l%20v%C4%91sion%3D%5C%221.0%C5%87%20encod%C4%8Eg%C5%86%22UTF-8%C5%87%3F%3E%5Cn%3CAu%C5%92o%C4%BF%C5%81%C5%83%C5%85%C5%87%C5%89%C5%8B%22%20%C4%82%C4%9FUn%C4%83%C5%95ms%C5%8Cga%C4%8E%C5%95-6dB%C5%8Ctr%C4%A3%C5%82%C4%82%C5%84Ti%C4%9F%C5%952%C5%AC%C5%9En%5Ct%3Cva%C4%92%C4%9D%C6%89%C5%87frequ%C5%8Ecy%C5%8C%C6%92l%C6%9C%C5%95%24h%C4%A3d_f%C5%93%C5%81Up%20-%201%C5%8Cmap%C5%BA%C5%870%2C1%C5%AC%20%C6%B4p%C4%95t%C5%956%C6%B962%2C64%C7%875%C7%877%C7%879%2C71%C7%90%C7%867%C7%8976%C7%907%C5%8Cc%C4%B1%C5%80%C5%95step%C7%9B%C5%84%C5%80r%C7%81%C5%87MIDI-%3E%C6%98%C6%9A%C6%9C%C5%8F%C6%9F%22%3E%3C%2F%C6%92r%C6%8D%C6%8F%C6%91%C6%93%20%C6%95e%C5%95%C5%B8%C4%8E%C6%A0a%C6%A2%C8%81%C5%87%C6%A5%C6%A7%C6%A9%C6%ABrs%C6%AD%C6%B3%C6%B5%C6%B7%22%C6%B9%C6%B2%C5%AD%C6%BE%C7%80%C5%95%C8%95%C5%87%C7%B6%C7%B8%C6%93%C7%BBt%C5%9F%C7%BCOscilla%C4%ABrN%C5%91e%C5%AEyp%C8%88%22%C5%82ne%C5%8C%C7%B0%C6%9B%C6%9Dy%C6%A4%C8%B9%C7%B2%C6%9E%C5%8C%C7%80pu%C7%A8%C4%9Cex%C8%A1%C7%B5%C7%B7%C8%A4%C8%A6%C8%A8%C8%AA%C4%AC%C8%AD%C4%A9%C8%A0%3CG%C5%B9n%C9%91%C8%AF%C8%83%C5%A9%22%24%C9%9A%C8%9C%C7%B7%C9%95%C4%8E%C9%98%C6%8D%C7%B7%C5%A2%C5%A4%3E%22%7D">8. Finger Counting</option>
+          <option value="?data=%7B%22title%22%3A%229.%20Nois%C4%86%2C%22nam%C4%86%C4%88Hans%20Lindetorp%22%C4%92url%C4%87%22%C4%A7%22xm%C4%AB%C4%88%3C%3F%C4%B0l%20version%3D%5C%221.0%C5%81%20encod%C4%9Fg%C5%80%22UTF-8%C5%81%3F%3E%5Cn%3CAu%C5%8Co%C4%B8%C4%BA%C4%BC%C4%BE%C5%8F%C5%83%C5%85%22%20%C4%82%C4%96Un%C4%83%C5%8Fms%C5%86ga%C4%9F%C5%8F%2B3dB%C5%86tr%C4%9A%C4%BC%C4%82%C4%BETi%C4%96%C5%A4%C5%A6%C5%98n%C5%99%20%C6%89%20%3Cvar%20%C4%94%C6%83%C5%81frequ%C5%88cy1%C5%86%C6%8Dl%C6%98%C5%8F%24h%C4%9Ad_r4y%C5%86map%C5%B4%C5%810.1%2C%C6%B09%C6%AA%C6%ACout%C5%8F84%2C4%C5%95%C5%A7steps%C5%8F0%2C2%C5%86%C5%8An%C4%B9r%C6%BA%C5%81MIDI-%3E%C6%94%C6%96%C6%98%C5%89%C6%A9%22%3E%3C%2F%C6%8Dr%C6%86%C6%8A%C6%8B%C7%A1%C6%90%C4%95e%C5%8Flowpas%C5%B0%C5%A7%C6%9E%C6%A0%C5%81%C6%A2%C6%A4_l8%C4%A3l4%C6%B6%C6%AD%C4%BF%C6%AF%C6%B3.%C7%8A%C5%A7%C6%ABp%C6%B8%C7%90%225%C7%8812%C5%A6%20%C7%8C%C7%8E%C8%89%C7%92%C7%94%C7%96%C7%98%C6%97%C6%99%C7%9C%C7%9E%C7%A0%C6%8E%C7%A3%C6%8A%C6%8C%C6%8E%C7%A7%C6%92%22high%C7%AE%C7%B0%C6%9Da%C6%9F%C7%A9%C7%B5%C6%A3%C4%A0%C7%B8%C7%BAo%C7%BC%C7%BE%C6%AE%22%C7%88%C6%B0%C8%84%20%C8%86%C8%88%C6%84%2C%20%C8%8D%C8%8F%C8%91%C4%BA%C8%93%C7%93%C7%95%C7%97%C6%95%C8%98%C7%9B%C5%81%C8%9B%C7%A1%C8%9E%C6%89%C6%88%C8%9F%C7%A6%C6%91%C8%AE%22%C5%B2%C4%9F%C8%AB%C8%AD%C6%A1%C8%B0%C6%A5r%C8%B3%C6%A7%C8%B6%C8%80%C8%B8%C8%8205%C7%BE%C8%BE%C5%81%C6%B2%C9%83%C4%A9%C4%B9%C5%8F%C7%BD%C7%9D%C7%9F%C9%8F%C9%92%C6%89%C8%A0%C6%8F%C9%95%C5%8FQ%C9%9A%C7%B4%22%C7%B6%C8%B1%C7%BC%C7%9C%C8%BC%C6%AC%C8%B7%C8%8C%C9%A8%C6%B9%C5%8F%C8%8B%2C%C9%A7%C5%A7c%C9%AD%C9%96%C9%B0%C9%8E%C8%9D%C9%B4%C7%A5%C8%A1%C9%B8%C5%81%C7%AE%C6%87%C7%B2%C8%AC%C9%BC%C9%BE%C9%9E4x%C9%A2%C7%87%2C%C6%9C%C8%85%C6%B7%CA%87%C5%81-%C6%BD%CA%90%C9%B2%CA%92n%C7%A4%CA%93%3CC%C6%A3%C4%9F%C9%90%C7%A4%C6%8B%C4%8D%C4%8Fe%C8%9B%CA%B8%C4%90%CA%B5%C7%A4%3CBi%C6%97adFil%C7%83r%C4%8D%C4%A1%C5%A8yp%C9%96b%C6%A4%C8%A9%C7%B1%20%C8%97%C7%9A%C6%9A%C6%A1%CB%96%C8%99%CA%A4%20Q%C6%A1%C9%BA%C5%A7%C5%BB%C5%BD%C4%83%C4%BDn%C6%81%C8%A3%C8%8E%C6%85%C7%9F%CB%81%CB%83%CB%85%CB%87%CB%89%CB%8B%CA%BA%CA%93%CA%BF%CB%ACu%CB%84%CB%86%CB%88%C4%BA%CB%B1%CB%8D%CB%8F%C7%AA%C7%AC%CB%93%C5%86%CB%9A%C7%9B%C6%A1%C7%AB%C7%AD%C7%AF%C7%B1%C8%9B%CB%B5%CB%B7%CB%AF%CB%BA%C5%8B%CB%B2%CA%AE%CA%B6%C9%B5%CC%8A%CB%AE%CB%B9%CB%8A%CC%8E%CB%BC%C9%96%C8%A5%C8%A7%CC%80%C5%A7%CC%82%CB%98%C8%AF%C8%A6%C8%A8%CC%87%C9%8D%CB%AB%CB%82%CB%B6%CC%94%CB%B0%CC%8E%CA%BE%C6%8A%CB%B3%C8%9FG%C5%B3n%CB%BB%C9%98%C9%A3-6%C5%B8%CC%A4%2F%CC%AF%C4%9F%CB%B1%CC%AB%C9%B5%CC%BA%CC%B1%CC%97%CC%B3%C6%A1%CC%B3%CC%B8%CC%BF%CC%BC%CC%AD%C9%B5Dy%C6%91icsComp%C6%95%C7%B0%C4%A4%CB%BB%C5%BC%C5%BF%C5%8F%C8%8E%C5%BAh%CD%94h%C8%B4d%C5%8F-3%CA%8B%C8%9B%CD%8A%CD%8C%CD%8E%CD%90%CD%92%CD%94s%CD%96%CC%AA%CD%88%20%CD%B0%3CS%C5%88d%20bu%C7%86%C5%81%23%C4%A1la%CA%81%CD%82%CA%A8%CC%B6%C5%B9%C9%B1%2F%CD%B4%C4%A0%C6%86%CD%B2P%C4%9An%CC%8D%CB%8C%CA%98%C5%ACngM%CC%8El%C5%8FHR%C5%92%C5%86%C8%87%C5%BE%CB%A5X%C6%A1%CA%98%CE%9Bo%CE%9D%C4%BEZ%CD%A23%CC%B8%CE%8Bn%CE%8D%CC%96%C4%A1%CC%BD%CD%B1%CC%90%CC%91%CD%B3%CD%B5%CD%B7%CD%B9%C5%8F%CD%90%C7%8D%C8%B4%C7%8E%CB%B1%C5%B1%CC%B0%C5%B5%C5%B7%CE%84%C8%9B%CE%87d%CA%B5%C7%9F%CA%B2%CC%B0%CE%89%CE%B1%C6%8B%CF%87%CA%B4%CD%B2De%CD%BEy%CB%BBi%CD%A1%C5%81%CD%BD%CD%BF%C5%86%CF%97y%CB%A7%C9%96%C8%8B%C8%8F%C6%ABx%CF%8F%CF%91%CF%9C%CA%880%CB%AA%2F%CF%A2%CD%BF%CD%87%CF%8A%CA%BF%CF%83%CE%B5%CD%BA%22%CD%BC%CF%90%CF%98%C5%A7%CE%81%22%CC%B5%CC%B7%CE%85%CF%83%CF%85%2F%CF%8Cn%CF%89%CA%BF%CE%B8v%CE%BA%CE%8Ee%20src%C5%8Fa%C5%9D%C4%BD%2F%C8%91%C8%B4%C6%B9%CB%A5%C5%83wav%CC%B8%D0%82%D0%84%CE%AD%CC%8F%C5%99%C7%9F%C5%9C%C5%9E%3E%22%7D">9. Noise</option>
+          <option value="?data=%7B%22title%22%3A%2210.%20Two%20Parts%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%97%22url%C4%87%22%C4%ADxm%C4%B1%C4%88%3C%3F%C4%B5l%20version%3D%5C%C4%89.0%C5%86%20encod%C4%A5g%C5%85%22UTF-8%C5%86%3F%3E%5Cn%3CAu%C5%90%C4%90%C4%BE%C5%80%C5%82%C5%84%C5%861%C5%88%C5%8A%C4%82%C4%9CUn%C4%83%C5%93ms%C5%8Aga%C4%A5%C5%93-12dB%C5%ABr%C4%A0%C5%81%C4%82%C5%83Ti%C4%9C%C5%932%C5%89%22%C5%9Cn%20%C6%8D%20%C5%9D%5Ct%3Cv%C4%93%20%C4%9A%C6%86%C5%86p%C4%83ch1%C5%8A%C6%94lue%C5%93%24h%C4%A0d_r4y%C5%8Ama%C6%9A%C5%A7%22%C4%8B1%2C%C4%8B%C5%99%22%20%C6%AEpout%C5%9377%2C65%C5%8Asteps%C5%930%2C2%2C4%2C5%2C%C7%819%2C1%C6%B4%C5%BA%C5%8A%C5%8En%C5%A4%C6%BE%C5%86MIDI-%3Efreq%C6%A2%C5%8D%C6%AC%C6%8A%3C%2F%C6%94r%C6%8B%C6%91%C6%93%C6%95%C6%97%C6%A3%C5%86c%C6%BDoff%C6%9E%C6%B8%C6%A0%C6%A2%C6%A4%C6%A6%C4%A6%C6%A98%C4%A9%C6%AA%C6%AD%C6%AF%C5%B7%C5%86%C4%8B0%C6%B4%C6%B3%C8%89%C6%BB%C6%BD%C5%93%C4%8A0%C7%8C%C6%89%20%C7%B9r%C4%BE%C5%933%C5%86%3E%C7%AE%C7%B0%C7%B2n%C7%B3Oscilla%C8%87N%C5%8Fe%20typ%C7%B7%22saw%C4%A9oth%C5%8A%C7%A6%C7%A8%C7%AAcy%C6%A4%C6%9At%C6%9C%C7%BE%20%C6%BCtp%C8%93%C5%86next%C8%9F%C7%AE%C8%A6%C8%A8%C8%AA%C8%AC%C4%AA%C8%AE%C4%A7%C7%B2%C6%92Bi%C7%A9adF%C8%A9%C7%87r%C9%9A%C8%B0%C8%B2%C8%B4%C5%93lowpas%C5%B3%C6%B8%C8%BF%C7%A9%C5%8C%C9%82%C6%A4%C7%B9%C4%A9%C7%BC%C9%88%C9%8A%C9%8C%C7%9E%C4%99%C9%90%C9%92%C7%AD%2F%C9%9E%C9%A0%C9%A2%C9%A4%C4%BF%C9%A7%C9%9C%3C%C4%92n%C9%8F%C9%A6%C8%AF%20%C9%AF%CA%8E%C5%91M%C8%AFl%C5%93HR%C5%96%C5%8A%C6%BB%C6%81%C5%A6X%C5%934%C5%8A%C9%BD%C9%8D%CA%80%C9%91%C9%93%2F%CA%8D%CA%8F%CA%8A%C6%90%C6%92S%C5%8Cd%20bu%C7%8A%C5%86C%C5%83vol%C5%A4%C9%A7%C5%B4%C5%B6%C6%B1-6%C5%BC%CA%A9%CA%B0%C4%A6%C6%8B%C6%8F%C6%8C%C6%8E%CA%AE%C7%B4r%C6%96%C4%9B%C8%B5%C9%85%C6%9C2%C6%9Fa%C6%A1%C8%B5%C6%A5%C6%A7_l%C6%AB%C8%91%C8%8B%C6%B2.%C8%8F.%C6%B7%C6%B9%C6%AF%C9%8A%C5%9353%C7%8F%C9%88%C7%86%C7%88%CA%B6%C6%B2%C7%8D%C7%8F%C7%91%C7%93%2C%C7%95%C7%97%C7%96%CB%94%C6%B8%C7%9B%C7%9D%C5%93%C7%A0%C7%A2%C7%A4%C9%B4%C9%81%C7%AC%C8%A0%C7%AF%C4%93%CA%8B%C7%B0%CB%8F%C6%98%22%C9%B9%C7%BBf%CB%B9%C4%BD%CB%96%C8%81%C5%86%CB%99%C8%84l%C8%86%CA%BB%CA%A3%C6%B8%C6%BA%CB%9F%C8%8D%CB%A2%C9%88%C6%BA%CB%A7%C5%864%C8%96%C6%B5%C7%9A%C4%AF%C8%9C%C5%86%C8%9E%CA%83%C8%A2%C6%90%C8%A4%C6%92%C9%95%C8%A9%C8%AB%C8%AD%CA%91%C9%A9%C8%B5%C8%B7%C8%B9o%C8%BB%C8%BD%C9%B3%C7%A7%C9%B5%C7%AB%C9%84%C6%9Bh%CC%8F%CA%A5%C9%BF%C9%8F%CA%A8%CA%83%CC%B0%C9%97%CC%B3%C9%9B%CB%8C%CA%85u%C9%A1%C9%A3l%C9%A5%C9%A7%C8%B1%C8%B3%C8%B5%C9%AC%C9%AE%C9%B0%C9%B2%20%CC%81%C9%B6%C9%83%CC%93%CC%8C%C7%BC%CD%83%C6%BD%C9%BE%C5%93%CD%86%CA%82%CC%84%CD%8E%CD%90%CA%88%CA%90%CD%8C%CC%AE%CA%8C%C4%A0%CA%AC%CA%91%CA%93%C5%AFng%CA%96%C4%A7%CA%98%C5%86%CA%9A%CA%9C%C6%B8%CA%9E%C4%83%CA%A0%C5%B8%CC%99%C9%89%CD%A4%CA%A6%CD%A7%CA%A9%CA%AB%CA%89%C8%AF%CA%8B%CB%86%CA%B2%CA%B4%CB%AF%CA%B8%C7%9C%CA%BB%CA%BD%C8%AF%CA%BF%CB%9F%CB%82%CB%84%CA%83%CE%8D%CB%88%CB%89%C6%8D%3C%CE%91%CA%BA%CA%BC%CE%8A%C4%A7%20src%C5%93a%C5%A1%C5%82%2F%CB%BB%CA%BB%C6%BD%C5%A6%C5%A9wav%CA%A9%CE%A0%CE%93%CE%A3e%CE%9C%C5%9D%C7%AE%C5%A0%C5%A2%3E%22%7D">10. Two parts</option>
+          <option value="?data=%7B%22title%22%3A%2211.%20Speed%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%93%22url%C4%87%22%C4%A9xm%C4%AD%C4%88%3C%3F%C4%B1l%20version%3D%5C%C4%89.0%C5%82%20encod%C4%A1g%C5%81%22UTF-8%C5%82%3F%3E%5Cn%3CAu%C5%8Co%C4%B9%C4%BB%C4%BD%C4%BF%C5%8F%C4%8B%C5%85%22%20%C4%82%C4%98Un%C4%83%C5%8Fms%C5%86ga%C4%A1%C5%8F-9dB%C5%86tr%C4%9C%C4%BD%C4%82%C4%BFTi%C4%98%C5%8F3%C5%A6%C5%98n%C5%99%5Ct%3Cvar%20%C4%96%C6%83%C5%82p%C4%83ch%C5%86%C6%8Dlue%C5%8F%24h%C4%9Cd_l8y%C5%86ma%C6%94%C5%80%C5%820.2%2C%C6%AC%C5%95%C5%A7%C6%A7pout%C6%846%2C4%C6%B1%20steps%C5%8F0%2C%C6%AE4%2C5%2C7%2C9%2C%C4%8A%C7%8E2%C5%86%C5%8An%C4%BAr%C6%B7%C5%82MIDI-%3Efreq%C6%9B%C5%89%C6%A5%22%3E%3C%2F%C6%8Dr%C6%87%C6%8A%C6%8C%C6%8E%C6%90%C4%97%C6%9C%C5%82%C5%B2%C4%A1%C6%98a%C6%9A%C7%B2%22%C6%9E%C6%A0_r8x.s%C4%8F%C4%91%C6%A6%C6%A8%C5%B4%C6%AB%C5%8401%C6%AF%C5%84%C7%91%C6%B2%C6%A8%C6%B5%C7%97%22%C7%841%C5%82%C7%A7%C7%A9%C6%8E%C7%AC%C6%88%C6%8BOscilla%C4%A5rN%C5%8Be%C5%A8y%C4%8F%C5%8Fsaw%C4%A5ot%C6%97%C5%A7%C7%9F%C7%A1%C7%A3cy%C6%9D%C6%94t%C6%96%C5%86%C8%91p%C6%B6%C5%8Fnext%C8%96%C7%A8%C8%9D%C8%9F%C8%A1%C8%A3%C4%A6%C8%A6%C4%A3%C7%AC%C6%8BBi%C7%A2adF%C8%A0%C6%BF%C8%A5%C8%A7%C8%A9%C8%AB%C5%82lowpas%C5%B0%C8%B4%C7%A0%C7%A2%C5%88%C8%B8%C5%8F40%C5%A6%20%C8%BF%C9%81%C5%82%C9%83%C9%85%C9%87%2F%C9%92%C9%94%C9%96%C9%98%C4%BB%C9%8Ee%C9%90%3CG%C5%B3n%C9%BC%20%C7%B4%C6%AA%C7%BA%CA%85%C9%B5%CA%80%C4%A1%C9%BC%C8%9A%C7%A8%C5%9C%C5%9E%3E%22%7D">11. Speed</option>
+          <option value="?data=%7B%22title%22%3A%22%22%2C%22nam%C4%86%C4%88%C4%8A%22url%C4%87%C4%89%C4%8Bct%C4%95%C4%970%C4%92xm%C4%96%C4%88%3CAudio%20vers%C4%A8n%3D%5C%221.0%C4%B2%20%C4%82%C4%8FUn%C4%83%C4%B1%22ms%C4%B7gai%C4%B0%C4%B2%2B3dB%C4%B7localpath%C4%BE%C4%B2%3E%5Cn%5Ct%3Cvar%20%C4%8D%C4%8F%C4%BEslid%C4%AC1%C4%B7%C5%9Elue%C4%BE0.2%C4%B7map%C5%85%C5%B0%2C%C5%AA%22%20%C5%B5pout%C5%B9-3%C4%B6%C5%BCcon%C4%ABr%C6%82%C4%B2%C5%8A-%3E%C5%BFw%C4%AC%C4%B7%2F%C5%98%C5%9A%C5%9C%C5%9E%C5%A0%C5%A2%C5%AF%C4%B2%C5%A5%C5%A7%C4%AC%C5%B3%C5%BC%C5%AC%C5%AE%C5%B0%C5%B2%C5%B4%C5%B6%C5%B8%C4%B20%C5%BA%C6%A8%C5%BF%C6%81%C6%83%C6%85%C4%B7%C6%88%C6%8A%C4%AC%C6%8D%22%C6%8F%C6%91o%C6%93r%C6%95%C6%97%C5%9B%C5%9D%C5%9F%C5%A1%C4%8E%C6%9D%22%C6%9F%C5%A8r3%C5%AB%C5%90%C6%A5%C6%AB%C6%A7%C5%BC%C5%BE%C6%AA%22%C6%AC%C5%BB%C5%BD%C5%B6%C6%80%C6%B7%C6%AC%C6%84%C6%86%20%C6%B4%C6%8B%C6%B7%C6%B9%C6%92%C6%94%C5%BC%C6%96%C5%99%C7%80%C6%9A%C7%83%C5%A3%C6%9E%C5%A6%C7%884%C7%8B%C5%AD%C7%85%C5%B1%C6%A2%C7%96%C5%B7%C5%86%C7%93%C6%AD%C7%90%C7%97%C6%B0%C6%AB%2C%C7%9B%C6%B3%C6%89%C7%9F%C4%BE%C7%A1%C6%BB%C7%A3%20%C7%A5%C6%98%C7%81%C6%9B%C7%84%C4%BEx%C7%95%C7%91%C7%B6%C7%94%C6%AE%C7%98%C4%BE-5%2C5%C6%BE%C7%A6%C6%99%C7%82%C6%9C%C8%8C%C7%B3%C8%8F%C5%B9%C8%8E%C7%BA%C6%B7%C8%95%C8%97%C8%99%C8%88%C7%A8%C8%9D%C4%B2x%C7%8A%C7%B9%C7%B5%C8%A1%C8%92%C7%BB%22%C8%A5%C8%98%C7%A4%C6%BF%C8%9B%C8%8A%C7%AA%22x%C7%AE%C8%AE%C7%92%C8%91%C8%AE%C8%93%C4%B2%C8%B4%C8%A7%C7%A7%C8%9C%C8%8B%C4%B2y%C8%A2%C8%AF%C7%BC%C9%8B%C9%82%C8%B38%C7%BD%C7%B3%C8%87%C9%86%C8%B9%C7%85y%C8%9F%C6%A9%C8%90%C7%B8%C7%B4%C9%8F-%C9%91-%C9%93%C8%B7%C8%89%C7%A9%C9%97%C8%AD%C7%B4%C8%BF%C9%9C%C5%BE%C9%9E%C9%A0%C9%A2%C8%9A%C9%A4%C8%AA%22y%C8%BD%C9%A8%C9%9B%C9%8E%C8%B2%C9%9F%C9%92%C9%85%C5%9CCh%C5%84n%C8%B7%C7%80Mix%C4%AC%CA%81t%C7%80Obje%C4%9ABased%C4%A5%C4%A7%C4%A9cl%CA%90s%C4%BE%C5%92d%20%C5%B7ano%C5%82%C9%BF%C4%BE%24%C7%87%C5%A9%C4%B7%C5%BF%C4%AE%C4%82%C6%89X%CA%A5%C8%8D%CA%A9o%CA%AB%C4%AFZ%CA%A5%C9%8A%C9%BB%C5%9B%CA%89%CA%8B%CA%8Dt%CA%8F%CA%91%CA%93%C4%A6%C4%A8%C7%9D%CA%98s%CA%9A%C4%B2rho%C5%A8s%CB%83av%20or%C5%83%C5%9A%C5%BC%C5%83%C7%92%CA%A6%C7%AC%C6%A1%CA%B1%CA%B3%CA%AD%CA%AF%C7%B3%CA%AA%C4%83%CA%B4%CA%B6%C9%AE%C6%98%CA%B9%C5%9C%CA%8A%CA%8C%CA%8E%CA%90%CA%92%CA%94%CB%82%CA%97%CA%99%C4%BEb%CA%992%20dru%C5%80%C7%B3%CB%96%C7%B6%CB%98%C6%A0%C7%89%CB%9B%CB%A1%CB%9D%C4%B2%24%C8%AC%CC%80%CA%ACn%CA%B5%CC%83y%C9%A7%C9%94%CA%88%CC%8E%3C%CB%A8%CA%BC%CA%BE%CB%AC%CB%81%CA%96%CB%84%CB%86%C7%86%C9%BEk%C8%85%CB%BB%CA%A5%CA%A7r%C9%B4%CB%A0%CC%87%CA%AE%CC%83%C8%BC%CC%86%CB%A2%CC%8A%C9%B4%CC%8D%C7%80%2F%CA%83%CA%85r%C9%A3%2F%C9%BD%C9%BF%C6%97%3C%2F%CB%ADo%C6%97%22%7D">12. Mixing and panning</option>
+        </select>
+        <h1>Gesture Controlled Musical Instrument</h1>
+      </navigation>
+      
+    </main>
+
+    <script src="script/WebAudioXML.js" data-source="audio-config.xml"></script>
+    <script src="script/imusic_091.js" data-music-structure="imusic.xml"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+    <script type="text/javascript" src="script/HolisticController.js"></script>
+    <script type="text/javascript" src="script/holistic.js"></script>
+  </body>
+</html>
