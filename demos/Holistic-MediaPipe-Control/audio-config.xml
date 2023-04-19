@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Audio version="1.0" timeUnit="ms" gain="0dB" controls="true">
+<Audio version="1.0" timeUnit="ms" gain="0dB" controls="false">
 
 	<var name="gain" default="0" mapin="0,1" />
 	<var name="intensity" value="$pose0x" default="0" mapin="0.2,0.9" mapout="0,100" />

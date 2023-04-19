@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AudioPipe - Gesture Controlled Musical Instrument</title>
+    <title>Gesture Controlled Music - By Hans Lindetorp</title>
     <link rel="stylesheet" type="text/css" href="style/style.css">
     <link rel="stylesheet" type="text/css" href="style/codemirror.css">
 
@@ -22,6 +22,7 @@
       <section id="play">
         <video class="input_video" width="1000" height="567.5"></video>
         <canvas class="output_canvas" width="1000" height="567.5"></canvas>
+        <img class="qr" src="images/qr.png" />
       </section>
       
       <section id="edit">
@@ -56,71 +57,24 @@
       <section id="help">
         <iframe width="560" height="315" src="https://www.youtube.com/embed/QVAACgCzOII" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         
-        <p>AudioPipe is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
+        <p>This gesture-driven, musical instrument, is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
         <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. I was inspired by the great idea from 
         <a href="https://github.com/monlim/Handmate-MIDI">Handmate-MIDI</a> to control
         audio data with the fantastic MediaPipe library. AudioPipe is an online, fully programmable,
       gesture controlled musical instrument. You can play with the presets or edit the code and make your own sound
       synthesis and mappings. Please read the documentation for WebAudioXML to take advantage of all the possibilities.
       </p>
-      <p>The image below indicates the 21 available points for each hand. In WebAudioXML all those variables can be 
-        mapped to any audio parameter using the &lt;var&gt;-element. Please not that all variable names shall be prefixed 
-        with a dollar sign. The naming convention for the variables follow the 
-        following scheme:
-      </p>
-      <div>
-        <h3>Position on the axis (0 - 1) for each point on each hand:</h3>
-        <ul>
-          <li>hand_l0x</li>
-          <li>hand_l0y</li>
-          <li>hand_l1x</li>
-          <li>etc...to hand_l21y</li>
-          <li>hand_r0x</li>
-          <li>hand_r0y</li>
-          <li>hand_r1x</li>
-          <li>etc...to hand_r21y</li>
-        </ul>
-        <code>
-          Example:<br />
-          &lt;var name="f" value="$hand_r8y" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
-          &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
-        </code>
 
-        <h3>Distance (0 - 1) between each point and all other points</h3>
-        <ul>
-          <li>hand_r4tor8 (distance between the pointing finger and the thumb on the right hand)</li>
-          <li>hand_l8tor8 (distance between the two pointing fingers)</li>
-        </ul>
-        <code>
-          Example:<br />
-          &lt;var name="f" value="$hand_r8tor4" mapin="0,1" mapout="100,1000"&gt;&lt;/var&gt;<br />
-          &lt;OscillatorNode frequency="$f"&gt;&lt;/OscillatorNode&gt;<br />
-        </code>
-
-        <h3>Events</h3>
-        <p>Events can trigger Envelopes and AudioFiles using trig="&#91eventName&#93" and/or 
-          release="&#91eventName&#93". Please note event names are NOT prefixed with dollar sign.</p>
-        <ul>
-          <li>trig=&quot;hand_r4tor8&quot; (right hand pointing finger and thumb are touching each other)</li>
-          <li>release=&quot;hand_r4tor8&quot; (right hand pointing finger and thumb are releasing each other)</li>
-        </ul>
-        <code>
-          Example:<br />
-          &lt;OscillatorNode frequency="440"&gt;&lt;/OscillatorNode&gt;<br />
-          &lt;GainNode&gt;&lt;gain&gt;</br>
-            &lt;Envelope start=&quot;hand_r4tor4&quot; max=&quot;1&quot; ADSR=&quot;10,100,20,50&quot;&gt&lt;/Envelope&gt;</br>
-          &lt;/gain&gt;&lt;/GainNode&gt;<br />
-        </code><br />
-        <img src="images/hand.png" />
-      </div>
-
-      <p>AudioPipe is part of a reasearch project at the <a href="https://www.kmh.se/">Royal College 
+      <p>This application is part of a reasearch project at the <a href="https://www.kmh.se/">Royal College 
         of Music</a> and <a href="https://www.kth.se/">Royal Institute of Technology</a> in Stockholm by 
         Hans Lindetorp. Please follow my blog at <a href="https://hans.arapoviclindetorp.se/">hans.arapoviclindetorp.se/</a></p>
       </section>
 
       <navigation>
-        <input id="playMusicBtn" type="checkbox" data-waxml-change-set="gain=this.checked">Play</a>
+        
+        <div id="musicControl">
+          Music<input id="playMusicBtn" type="checkbox" data-waxml-change-set="gain=this.checked" />
+        </div>
         <a id="playBtn" href="#play">Run</a>
         <a id="editBtn" href="#edit">Edit</a>
         <a id="shareBtn" href="#share">Share</a>
@@ -141,7 +95,7 @@
           <option value="?data=%7B%22title%22%3A%2211.%20Speed%22%2C%22nam%C4%86%C4%88Hans%20Lindetorp%C4%93%22url%C4%87%22%C4%A9xm%C4%AD%C4%88%3C%3F%C4%B1l%20version%3D%5C%C4%89.0%C5%82%20encod%C4%A1g%C5%81%22UTF-8%C5%82%3F%3E%5Cn%3CAu%C5%8Co%C4%B9%C4%BB%C4%BD%C4%BF%C5%8F%C4%8B%C5%85%22%20%C4%82%C4%98Un%C4%83%C5%8Fms%C5%86ga%C4%A1%C5%8F-9dB%C5%86tr%C4%9C%C4%BD%C4%82%C4%BFTi%C4%98%C5%8F3%C5%A6%C5%98n%C5%99%5Ct%3Cvar%20%C4%96%C6%83%C5%82p%C4%83ch%C5%86%C6%8Dlue%C5%8F%24h%C4%9Cd_l8y%C5%86ma%C6%94%C5%80%C5%820.2%2C%C6%AC%C5%95%C5%A7%C6%A7pout%C6%846%2C4%C6%B1%20steps%C5%8F0%2C%C6%AE4%2C5%2C7%2C9%2C%C4%8A%C7%8E2%C5%86%C5%8An%C4%BAr%C6%B7%C5%82MIDI-%3Efreq%C6%9B%C5%89%C6%A5%22%3E%3C%2F%C6%8Dr%C6%87%C6%8A%C6%8C%C6%8E%C6%90%C4%97%C6%9C%C5%82%C5%B2%C4%A1%C6%98a%C6%9A%C7%B2%22%C6%9E%C6%A0_r8x.s%C4%8F%C4%91%C6%A6%C6%A8%C5%B4%C6%AB%C5%8401%C6%AF%C5%84%C7%91%C6%B2%C6%A8%C6%B5%C7%97%22%C7%841%C5%82%C7%A7%C7%A9%C6%8E%C7%AC%C6%88%C6%8BOscilla%C4%A5rN%C5%8Be%C5%A8y%C4%8F%C5%8Fsaw%C4%A5ot%C6%97%C5%A7%C7%9F%C7%A1%C7%A3cy%C6%9D%C6%94t%C6%96%C5%86%C8%91p%C6%B6%C5%8Fnext%C8%96%C7%A8%C8%9D%C8%9F%C8%A1%C8%A3%C4%A6%C8%A6%C4%A3%C7%AC%C6%8BBi%C7%A2adF%C8%A0%C6%BF%C8%A5%C8%A7%C8%A9%C8%AB%C5%82lowpas%C5%B0%C8%B4%C7%A0%C7%A2%C5%88%C8%B8%C5%8F40%C5%A6%20%C8%BF%C9%81%C5%82%C9%83%C9%85%C9%87%2F%C9%92%C9%94%C9%96%C9%98%C4%BB%C9%8Ee%C9%90%3CG%C5%B3n%C9%BC%20%C7%B4%C6%AA%C7%BA%CA%85%C9%B5%CA%80%C4%A1%C9%BC%C8%9A%C7%A8%C5%9C%C5%9E%3E%22%7D">11. Speed</option>
           <option value="?data=%7B%22title%22%3A%22%22%2C%22nam%C4%86%C4%88%C4%8A%22url%C4%87%C4%89%C4%8Bct%C4%95%C4%970%C4%92xm%C4%96%C4%88%3CAudio%20vers%C4%A8n%3D%5C%221.0%C4%B2%20%C4%82%C4%8FUn%C4%83%C4%B1%22ms%C4%B7gai%C4%B0%C4%B2%2B3dB%C4%B7localpath%C4%BE%C4%B2%3E%5Cn%5Ct%3Cvar%20%C4%8D%C4%8F%C4%BEslid%C4%AC1%C4%B7%C5%9Elue%C4%BE0.2%C4%B7map%C5%85%C5%B0%2C%C5%AA%22%20%C5%B5pout%C5%B9-3%C4%B6%C5%BCcon%C4%ABr%C6%82%C4%B2%C5%8A-%3E%C5%BFw%C4%AC%C4%B7%2F%C5%98%C5%9A%C5%9C%C5%9E%C5%A0%C5%A2%C5%AF%C4%B2%C5%A5%C5%A7%C4%AC%C5%B3%C5%BC%C5%AC%C5%AE%C5%B0%C5%B2%C5%B4%C5%B6%C5%B8%C4%B20%C5%BA%C6%A8%C5%BF%C6%81%C6%83%C6%85%C4%B7%C6%88%C6%8A%C4%AC%C6%8D%22%C6%8F%C6%91o%C6%93r%C6%95%C6%97%C5%9B%C5%9D%C5%9F%C5%A1%C4%8E%C6%9D%22%C6%9F%C5%A8r3%C5%AB%C5%90%C6%A5%C6%AB%C6%A7%C5%BC%C5%BE%C6%AA%22%C6%AC%C5%BB%C5%BD%C5%B6%C6%80%C6%B7%C6%AC%C6%84%C6%86%20%C6%B4%C6%8B%C6%B7%C6%B9%C6%92%C6%94%C5%BC%C6%96%C5%99%C7%80%C6%9A%C7%83%C5%A3%C6%9E%C5%A6%C7%884%C7%8B%C5%AD%C7%85%C5%B1%C6%A2%C7%96%C5%B7%C5%86%C7%93%C6%AD%C7%90%C7%97%C6%B0%C6%AB%2C%C7%9B%C6%B3%C6%89%C7%9F%C4%BE%C7%A1%C6%BB%C7%A3%20%C7%A5%C6%98%C7%81%C6%9B%C7%84%C4%BEx%C7%95%C7%91%C7%B6%C7%94%C6%AE%C7%98%C4%BE-5%2C5%C6%BE%C7%A6%C6%99%C7%82%C6%9C%C8%8C%C7%B3%C8%8F%C5%B9%C8%8E%C7%BA%C6%B7%C8%95%C8%97%C8%99%C8%88%C7%A8%C8%9D%C4%B2x%C7%8A%C7%B9%C7%B5%C8%A1%C8%92%C7%BB%22%C8%A5%C8%98%C7%A4%C6%BF%C8%9B%C8%8A%C7%AA%22x%C7%AE%C8%AE%C7%92%C8%91%C8%AE%C8%93%C4%B2%C8%B4%C8%A7%C7%A7%C8%9C%C8%8B%C4%B2y%C8%A2%C8%AF%C7%BC%C9%8B%C9%82%C8%B38%C7%BD%C7%B3%C8%87%C9%86%C8%B9%C7%85y%C8%9F%C6%A9%C8%90%C7%B8%C7%B4%C9%8F-%C9%91-%C9%93%C8%B7%C8%89%C7%A9%C9%97%C8%AD%C7%B4%C8%BF%C9%9C%C5%BE%C9%9E%C9%A0%C9%A2%C8%9A%C9%A4%C8%AA%22y%C8%BD%C9%A8%C9%9B%C9%8E%C8%B2%C9%9F%C9%92%C9%85%C5%9CCh%C5%84n%C8%B7%C7%80Mix%C4%AC%CA%81t%C7%80Obje%C4%9ABased%C4%A5%C4%A7%C4%A9cl%CA%90s%C4%BE%C5%92d%20%C5%B7ano%C5%82%C9%BF%C4%BE%24%C7%87%C5%A9%C4%B7%C5%BF%C4%AE%C4%82%C6%89X%CA%A5%C8%8D%CA%A9o%CA%AB%C4%AFZ%CA%A5%C9%8A%C9%BB%C5%9B%CA%89%CA%8B%CA%8Dt%CA%8F%CA%91%CA%93%C4%A6%C4%A8%C7%9D%CA%98s%CA%9A%C4%B2rho%C5%A8s%CB%83av%20or%C5%83%C5%9A%C5%BC%C5%83%C7%92%CA%A6%C7%AC%C6%A1%CA%B1%CA%B3%CA%AD%CA%AF%C7%B3%CA%AA%C4%83%CA%B4%CA%B6%C9%AE%C6%98%CA%B9%C5%9C%CA%8A%CA%8C%CA%8E%CA%90%CA%92%CA%94%CB%82%CA%97%CA%99%C4%BEb%CA%992%20dru%C5%80%C7%B3%CB%96%C7%B6%CB%98%C6%A0%C7%89%CB%9B%CB%A1%CB%9D%C4%B2%24%C8%AC%CC%80%CA%ACn%CA%B5%CC%83y%C9%A7%C9%94%CA%88%CC%8E%3C%CB%A8%CA%BC%CA%BE%CB%AC%CB%81%CA%96%CB%84%CB%86%C7%86%C9%BEk%C8%85%CB%BB%CA%A5%CA%A7r%C9%B4%CB%A0%CC%87%CA%AE%CC%83%C8%BC%CC%86%CB%A2%CC%8A%C9%B4%CC%8D%C7%80%2F%CA%83%CA%85r%C9%A3%2F%C9%BD%C9%BF%C6%97%3C%2F%CB%ADo%C6%97%22%7D">12. Mixing and panning</option>
         </select>
-        <h1>Gesture Controlled Musical Instrument</h1>
+        <h1>Gesture Controlled Music - hans.lindetorp@kmh.se</h1>
       </navigation>
       
     </main>

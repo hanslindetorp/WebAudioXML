@@ -66,14 +66,14 @@ waxml.addEventListener("inited", () => {
     webAudioXML.mute();
   });
 
-  document.querySelector("navigation > #playMusicBtn").addEventListener("click", e => {
+  document.querySelector("navigation #playMusicBtn").addEventListener("click", e => {
     if(!iMusic.isPlaying()){
       iMusic.play();
     }
   });
 
 
-  document.querySelector("navigation > #playBtn").addEventListener("click", e => {
+  document.querySelector("navigation #playBtn").addEventListener("click", e => {
     if(webAudioXML.muted){
       webAudioXML.init();
       webAudioXML.updateFromString(myCodeMirror.getValue());

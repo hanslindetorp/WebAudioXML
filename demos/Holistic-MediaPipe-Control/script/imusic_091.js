@@ -15,189 +15,850 @@
 	var LENGTH = "l";
 
 
+	class Selection{
+         
+		constructor(selector, container){
+
+            this.objects = [];
+            this.sections = [];
+            this.tracks = [];
+            this.motifs = [];
+			this.leadIns = [];
+			this.string = "";
+
+			if(selector){
+				this.searchAll(selector, container);
+			}
+		}
+
+		selectForPlayback(selector){
+			// find motifs and leadins in current section
+			selector = this.stringToArray(selector);
+			defaultInstance.motifs.forEach(obj => {
+				if(obj.section == defaultInstance.currentSection && inArray(selector, obj.parameters.classList)){
+					this.motifs.push(obj);
+					this.objects.push(obj);
+				}
+			});
+			
+			// find next section
+			defaultInstance.sections.forEach(obj => {
+				if(inArray(selector, obj.parameters.classList)){
+					this.sections.push(obj);
+					this.objects.push(obj);
+					this.string = selector[0];
+				}
+			});
+			return this;
+		}
+
+		stringToArray(str){
+			let arr;
+			switch(typeof str){
+
+				case "string":
+				arr = str.split(" ");
+				break;
+
+				case "object":
+				arr = str;
+				break;
+
+			} 
+			return arr;
+		}
+
+
+        searchAll(selector, container){
+
+
+            var allObjects = [];
+
+			// this is the old original selector
+
+            switch(typeof selector){
+
+                case "string":
+                break;
+
+                case "object":
+                selector = selector.join(" ");
+                break;
+
+                default:
+                return this;
+                break;
+            }
+
+            if(!selector.length){return}
+
+            var type;
+            switch(typeof selector){
+
+                case "string":
+                this.selector = selector;
+                selector = selector.split(" ").shift();
+                var firstChar = selector.substr(0, 1);
+
+                switch(firstChar){
+
+                    case "#":
+                    type = "id";
+                    selector = selector.substr(1);
+                    break;
+
+                    case ".":
+                    type = "class";
+                    selector = selector.substr(1);
+                    break;
+
+                    default:
+                    type = "class";
+                    selector = this.selector;
+                    break;
+
+                }
+
+                break;
+
+                default:
+                return;
+                break;
+
+            }
+
+
+            this.string = selector;
+            this.type = type;
+
+            // limit search range to container
+            var targetInstances;
+            if(container instanceof iMus) {
+
+                targetInstances = [container];
+
+            } else {
+                targetInstances = iMus.instances;
+            }
+
+
+
+            if(container instanceof Selection){
+
+                // sub selection of selection
+                allObjects = container.objects;
+
+            } else if(container instanceof Array){
+
+                // sub selection of tracks in a section
+                allObjects = container;
+
+            } else {
+
+
+                // selection in all or one instance
+
+                targetInstances.forEach(function(instance){
+
+
+                    instance.motifs.forEach(function(motif){
+
+                        allObjects.push(motif);
+                    });
+
+                    instance.sections.forEach(function(section){
+
+                        allObjects.push(section);
+                        section.tracks.forEach(function(track){
+
+                            allObjects.push(track);
+                        });
+                    });
+
+                    instance.actions.forEach(function(action){
+
+                        allObjects.push(action);
+                    });
+
+                });
+
+            }
+
+
+
+
+            var objects = [];
+            var targetSection;
+
+
+            allObjects.some(obj => {
+
+                switch(type){
+
+                    case "id":
+                    if(obj.idName == selector){
+                        objects.push(obj);
+                    }
+
+                    break;
+
+                    case "class":
+                    var matchedClass = inArray(selector, obj.tags);
+
+                    // check if this is a section. If so just add this section to objects
+                    // Why? I think it is better to also select motifs, leadins and tracks
+                    // if matching
+                    if(matchedClass){
+
+                        switch(obj.type){
+                            case "section":
+                            objects = [obj];
+                            this.sections = [obj];
+                            targetSection = obj;
+                            break;
+
+                            case "track":
+                            objects.push(obj);
+                            this.motifs.push(obj);
+                            break;
+
+                            case "motif":
+                            objects.push(obj);
+                            this.motifs.push(obj);
+                            break;
+
+                            case "leadIn":
+                            objects.push(obj);
+                            this.leadIns.push(obj);
+                            break;
+
+                        }
+                    }
+                    break;
+
+                    case "objectType":
+                    //change to make it possible to select different types of objects !!!
+                    switch(selector){
+
+                        case "track":
+                        case "stem":
+                        if(obj instanceof Track){objects.push(obj)}
+                        break;
+
+                        case "motif":
+                        if(obj instanceof Motif){objects.push(obj)}
+                        break;
+                    }
+
+
+                    break;
+
+                }
+
+
+            });
+
+
+            this.objects = objects;
+		}
+
+
+        createDefaultSectionIfNeeded(){
+
+            // generate section if no matches
+            if(!this.objects.length){
+                var newSection = defaultInstance.addSection({tags: this.selector});
+                if(!defaultInstance.currentSection){
+                    defaultInstance.currentSection = newSection;
+                }
+                this.objects.push(newSection);    
+            }
+        }
+
+        addLoopTrack(urls){
+
+            var newObj;
+            this.createDefaultSectionIfNeeded();
+            if(!urls){urls = [];}
+            this.objects.forEach(obj => {
+                if(!obj.addLoopTrack){return}
+                newObj = obj.addLoopTrack(urls);
+            });
+            this.objects = [newObj];
+            return this;
+        }
+
+        addLFO(prop, frequency, range, offset, object){
+
+            this.objects.forEach(obj => {
+                if(!obj.addLFO){return}
+                obj.addLFO(prop, frequency, range, offset, object);
+            });
+            return this;
+        }
+
+        addDelay(params){
+
+            this.objects.forEach(obj => {
+                if(!obj.bus){return}
+                obj.bus.addSerialDelay(params);
+            });
+            return this;
+        }
+
+        addReverb(params){
+
+            this.objects.forEach(obj => {
+                if(!obj.bus){return}
+                obj.bus.addReverb(params);
+            });
+            return this;
+        }
+
+        addMotif(urls, q, upbeat){
+
+            if(typeof urls === "string"){
+                urls = [urls];
+            }
+            this.createDefaultSectionIfNeeded();
+            var tags = urlsToTags(urls);
+            if(this.objects.length){
+                // add sections tags to motif
+                tags = mergeArrays(tags, this.objects[0].tags);
+            }
+            var targetObj = this.objects.find(obj => {
+                // connect Motif to Section
+                return typeof obj.addMotif === "function";
+            }) || defaultInstance;
+            var params = typeof q == "object" ? q : {};
+            params.tags =  params.tags || tags;
+            params.quantize =  params.quantize || q;
+            params.upbeat =  params.upbeat || upbeat;
+            var newObj = targetObj.addMotif(params, urls);
+            this.objects = [newObj];
+            return this;
+        }
+
+        addLeadIn(urls, params){
+            params = typeof params == "object" ? params : {quantize: "bar", type: "leadIn", upbeat: "bar"}
+            this.addMotif(urls, params);
+            return this;
+        }
+
+        loadFile(urls){
+            this.addMotif(urls, "off");
+            return this;
+        }
+
+        setSoloGroup(grp, val){
+
+            this.objects.forEach(obj => {
+                if(!obj.setSoloGroup){return}
+                obj.setSoloGroup(grp, val);
+            });
+        }
+
+	    // funkar den här och i sånt fall, hur?
+        solo(selector){
+
+            this.stop();
+            this.find(selector).play();
+            return this;
+
+        }
+		
+		togglePlay(){
+
+            this.objects.forEach(obj => {
+                if(!obj.togglePlay){return}
+                obj.togglePlay();
+            });
+            return this;
+        }
+
+        play(arg1, arg2, arg3){
+
+
+            var returnVal = {};
+            this.objects.forEach(obj => {
+                if(!obj.play){return}
+                returnVal.delay = obj.play(arg1, arg2, arg3);
+            });
+            this.returnVal = returnVal;
+            return this;
+        }
+
+        trig(arg1, arg2, arg3){
+            return this.play(arg1, arg2, arg3);
+        }
+
+        replay(){
+
+            this.objects.forEach(obj => {
+                if(!obj.replay){return}
+                return obj.replay();
+            });
+            return this;
+        }
+
+        stop(params){
+            params = params || {};
+            this.objects.forEach(obj => {
+                if(!obj.stop){return}
+                // to mute other tracks in a group
+                if(obj == params.omit){return}
+                return obj.stop();
+            });
+            return this;
+        }
+
+        stopAllSounds(){
+            this.objects.forEach(obj => {
+                if(!obj.stopAllSounds){return}
+                obj.stopAllSounds();
+            });
+            return this;
+        }
+
+        isPlaying(){
+
+            var isPlaying = false;
+            this.objects.forEach(obj => {
+                var curObjIsPlaying = obj.isPlaying ? obj.isPlaying() : obj.playing;
+                isPlaying = isPlaying || curObjIsPlaying;
+            });
+            return isPlaying;
+        }
+
+        setActive(active){
+
+            this.objects.forEach(obj => {
+                if(!obj.setActive){return}
+                return obj.setActive(active);
+            });
+            return this;
+        }
+
+        setActive(active){
+
+            this.objects.forEach(obj => {
+                if(!obj.setActive){return}
+                return obj.setActive(active);
+            });
+            return this;
+        }
+
+        setVolume(arg1, arg2){
+
+
+            this.objects.forEach(obj => {
+                if(!obj.setVolume){return}
+                return obj.setVolume(arg1, arg2);
+            });
+            return this;
+        }
+
+        getVolume(){
+
+            var vol = -1;
+            this.objects.forEach(obj => {
+                if(!obj.getVolume){return -1}
+                vol = Math.max(vol, obj.getVolume());
+            });
+            return vol;
+        }
+
+        fade(val, delay, duration){
+
+            delay = delay || 0;
+            duration = duration || 250;
+            duration /= 1000;
+            this.objects.forEach(obj => {
+                if(!obj.fade){return}
+                return obj.fade(val, delay, duration);
+            });
+            return this;
+        }
+
+        fadeIn(){
+            this.objects.forEach(obj => {
+                if(!obj.fadeIn){return}
+                return obj.fadeIn();
+            });
+            return this;
+        }
+
+        fadeOut(duration, delay){
+
+            if(duration){duration = duration / 1000}
+            if(delay){delay = delay / 1000}
+            this.objects.forEach(obj => {
+                if(!obj.fadeOut){return}
+                return obj.fadeOut(delay, duration);
+            });
+            return this;
+        }
+
+        setVariation(val, val2){
+
+            this.objects.forEach(obj => {
+                if(typeof obj.setVariation === "function"){
+                    obj.setVariation(val, val2);
+                } else {
+                    obj.variation = val;
+                }
+            });
+            return this;
+        }
+
+        setActiveVariations(activeVariations){
+
+            this.objects.forEach(obj => {
+                if(!obj.setActiveVariations){return}
+                return obj.setActiveVariations(activeVariations);
+            });
+            return this;
+        }
+        get(param1, param2){
+            var value;
+            this.objects.forEach(obj => {
+                if(!obj.get){return}
+                value = obj.get(param1, param2);
+            });
+            return value;
+        }
+
+        setParams(params){
+
+            this.objects.forEach(obj => {
+                if(!obj.setParams){return}
+                return obj.setParams(params);
+            });
+            return this;
+        }
+
+        set(param, value, value2){
+
+            this.createDefaultSectionIfNeeded();
+            this.objects.forEach(obj => {
+                if(!obj.set){return}
+                return obj.set(param, value, value2);
+            });
+            return this;
+        }
+
+        map(param, valIn, minIn, maxIn, minOut, maxOut, exp){
+
+            this.objects.forEach(obj => {
+                if(!obj.map){return}
+                return obj.map(param, valIn, minIn, maxIn, minOut, maxOut, exp);
+            });
+            return this;
+        }
+
+        group(){
+
+            var thisSelection = this;
+            this.objects.forEach(obj => {
+                if(obj.groups){
+                    obj.groups.push(thisSelection);
+                }
+            });
+            return this;
+        }
+
+        addTrackGroup(selection){
+            this.objects.forEach(obj => {
+                if(obj.addTrackGroup){
+                    obj.addTrackGroup(selection);
+                }
+            });
+            return this;
+        }
+
+        getPosition(pos, flags){
+
+            var positionObj;
+            if(!this.objects.length){
+                this.objects = [defaultInstance];
+            }
+            this.objects.forEach(obj => {
+                if(obj.getPosition){
+                    positionObj = obj.getPosition(pos, flags);
+                }
+            });
+            return positionObj;
+        }
+
+        on(event, fn, delay){
+
+            this.objects.forEach(obj => {
+                if(obj.eventHandler){
+                    obj.eventHandler.addEvent(event, fn, delay);
+                }
+            });
+        }
+
+        update(arg1){
+
+            this.objects.forEach(obj => {
+                if(obj.update){
+                    obj.update(arg1);
+                }
+            });
+            return this;
+        }
+
+        find(selector){
+            return new Selection(selector, this);
+        }
+
+	}
+
+
+	class VoiceController {
+
+		constructor(){
+			this.counter = 0;
+			this.voices = [];
+			this.fadeTime = 0.001;
+		}
+
+		addVoiceObject(name, priority, gainObject, fadeTime = this.fadeTime){
+			let voiceNames = name.split(" ").map(str => str.trim());
+			this.voices.push(new VoiceObject(this.counter, voiceNames, priority, gainObject, fadeTime));
+			return this.counter++;
+		}
+
+		removeVoiceObject(id){
+			this.voices = this.voices.filter(voice.id !== id);
+		}
+
+		getVoiceObject(id){
+			return this.voices.find(voice => voice.id == id);
+		}
+
+		getVoiceGroup(targetGroups, id){
+			return this.voices.filter(voice => {
+				// let include = voice.name == name;
+				let include = voice.groups.find(group => targetGroups.includes(group)) ? true : false;
+				if(typeof id !== "undefined"){
+					// omit one voiceObject if specified
+					include = include && voice.id != id;
+				}
+				return include;
+			});
+		}
+
+		getVoicePriorityGroup(name, priority){
+			return this.voices.filter(voice => voice.groups.find(str => str == name) && voice.priority == priority);
+		}
+
+		getLowerVoicePriorityGroups(priority){
+			return this.voices.filter(voice => voice.groups.find(str => str == name) && voice.priority < priority);
+		}
+
+		playVoiceObject(id, startTime, endTime, voiceGroups){
+			let voiceObject = this.getVoiceObject(id);
+			if(voiceObject){
+				voiceObject.play(startTime, endTime);
+				this.getVoiceGroup(voiceGroups || voiceObject.groups, id).forEach(obj => {
+					obj.mute(startTime, endTime, voiceObject.priority);
+				}); 
+			}
+		}
+
+	}
+
+
+	class VoiceObject {
+		constructor(id, groups, priority, gainObject, fadeTime){
+			this.id = id;
+			this.groups = groups;
+			this.priority = priority;
+			this.gainObject = gainObject;
+			this.fadeTime = fadeTime;
+
+			this.startMuteTime = 0;
+			this.endMuteTime = 0;
+		}
+		play(startTime, endTime){
+			this.gainObject.gain.cancelScheduledValues(startTime);
+			this.gainObject.gain.setTargetAtTime(1, startTime-this.fadeTime, this.fadeTime);
+			this.startTime = startTime;
+			this.endTime = endTime;
+		}
+
+		mute(startTime, endTime, priority){
+			let currentTime = this.gainObject.context.currentTime;
+
+			if(this.endTime && this.endTime > currentTime || priority > this.priority){
+				// endTime is only set for motifs and leadins
+				// Don't touch them if the stored endTime has already passed.
+				// This preserves the audio tail in recently pleayed objects.
+
+				this.gainObject.gain.cancelScheduledValues(0);
+				
+				// find earliest startTime (if several triggers interfers) 
+				this.startMuteTime = this.startMuteTime < currentTime ? startTime : Math.min(startTime, this.startMuteTime);
+				this.endMuteTime = this.endMuteTime < currentTime ? endTime : Math.max(endTime, this.endMuteTime);
+
+				this.gainObject.gain.setTargetAtTime(0, this.startMuteTime-this.fadeTime, this.fadeTime);
+				this.gainObject.gain.setTargetAtTime(1, this.endMuteTime-this.fadeTime, this.fadeTime);
+			}
+
+		}
+	}
+
+
+
 	// ******************************************************
 	// GUI
 
 
-class GUI {
+	class GUI {
 
-	constructor(target = document.body){
-
-		let style = document.createElement("style");
-		style.innerHTML = `
-
-			* {
-				font-family: sans-serif;
-			}
-			#iMusic-GUI {
-				top: 0px;
-				left: 0px;
-				width: 100%;
-				height: 100%;
-				position: absolute;
-				overflow: auto;
-				padding: 1em;
-				transition: 0.5s;
-				background-color: #eef;
-				color: black;
-			}
-
-			#iMusic-GUI > button {
-				border-radius: 5px;
-				padding: 5px;
-				margin-top: 0px;
-				margin-left: 0px;
-			}
-
-			#iMusic-GUI > button.close {
-				min-width: 40px;
-				font-weight: bold;
-				background-color: red;
-			}
+		constructor(target = document.body){
 
 
-			#iMusic-GUI > button.control {
-				font-weight: bold;
-			}
+			let style = document.createElement("style");
+			style.innerHTML = `
 
-			#iMusic-GUI > p {
-				width: 80%;
-			}
-
-			#iMusic-GUI div > span.arrangement {
-				margin-right: 20px;
-			}
-			#iMusic-GUI button.tag {
-				border-radius: 5px;
-				padding: 5px;
-				min-width: 100px;
-			}
-			#iMusic-GUI span.label {
-				display: inline-block;
-				width: 150px;
-				overflow: hidden;
-			}
-			#iMusic-GUI span.numOutput {
-				font-size: 80%;
-				display: inline-block;
-				text-align: right;
-				padding: 2px;
-				border: 1px solid grey;
-				border-radius: 5px;
-				min-width: 40px;
-			}
-			#iMusic-GUI input[type='range'] {
-				width: 200px;
-				margin: 0px 20px;
-				vertical-align: middle;
-			}
-		`;
-
-
-		var instID = 1;
-
-		iMus.instances.forEach(inst => {
-
-			let sectionTags = [];
-			let motifTags = [];
-			let selectGroups = {};
-			let el, row, span;
-
-			inst.sections.forEach(section => {
-
-				section.tags.forEach(tag => {
-						if(!inArray(tag, sectionTags) && tag.length){sectionTags.push(tag)}
-				});
-
-				let selectGroup = section.parameters["select-group"] || section.parameters["select-variable"];
-				let selectValues = section.parameters["select-value"];
-				let values;
-				if(selectGroup){
-					if(!selectGroups[selectGroup]){
-						selectGroups[selectGroup] = [];
-					}
-					values = selectGroups[selectGroup];
-					selectValues.forEach(val => {
-						if(!inArray(val, values)){
-							values.push(val);
-						}
-					});
+				* {
+					font-family: sans-serif;
+				}
+				#iMusic-GUI {
+					top: 0px;
+					left: 0px;
+					width: 100%;
+					height: 100%;
+					position: absolute;
+					overflow: auto;
+					padding: 1em;
+					transition: 0.5s;
+					background-color: #eef;
+					color: black;
 				}
 
-				section.tracks.forEach(track => {
-					track.soloGroups.forEach(group => {
-						if(!selectGroups[group.name]){
-							selectGroups[group.name] = [];
-						}
-						values = selectGroups[group.name];
-						group.value.forEach(val => {
-							if(!inArray(val, values)){
-								values.push(val);
-							}
-						});
-					});
-				});
+				#iMusic-GUI > button {
+					border-radius: 5px;
+					padding: 5px;
+					margin-top: 0px;
+					margin-left: 0px;
+				}
+
+				#iMusic-GUI > button.close {
+					min-width: 40px;
+					font-weight: bold;
+					background-color: red;
+				}
 
 
-				section.motifs.forEach(motif => {
-					motif.tags.forEach(tag => {
-							if(!inArray(tag, motifTags) && tag.length){motifTags.push(tag)}
-					});
-				});
+				#iMusic-GUI > button.control {
+					font-weight: bold;
+				}
 
-			});
+				#iMusic-GUI > p {
+					width: 80%;
+				}
 
-			inst.motifs.forEach(motif => {
-				motif.tags.forEach(function(tag){
-					if(!inArray(tag, motifTags) && !inArray(tag, sectionTags)&& tag.length){
-						if(!tag.includes(".")){
-							// avoid file names
-							motifTags.push(tag);
-						}
-					}
-				});
-			});
+				#iMusic-GUI div > span.arrangement {
+					margin-right: 20px;
+				}
+				#iMusic-GUI button.tag {
+					border-radius: 5px;
+					padding: 5px;
+					min-width: 100px;
+					margin-right: 5px;
+				}
+				#iMusic-GUI span.label {
+					display: inline-block;
+					width: 150px;
+					overflow: hidden;
+				}
+				#iMusic-GUI span.numOutput {
+					font-size: 80%;
+					display: inline-block;
+					text-align: right;
+					padding: 2px;
+					border: 1px solid grey;
+					border-radius: 5px;
+					min-width: 40px;
+				}
+				#iMusic-GUI input[type='range'] {
+					width: 200px;
+					margin: 0px 20px;
+					vertical-align: middle;
+				}
+
+				#iMusic-GUI .errorBox {
+					color: #900;
+					border: 1px solid black;
+					margin-top: 1em;
+					padding: 1em;
+					width: 80%;
+				}
+			`;
 
 
+			var instID = 1;
 
-			let shadowContainer = document.createElement("div");
-			shadowContainer.style.width = "0%";
-			shadowContainer.style.height = "0%";
-			shadowContainer.style.display = "none";
-			shadowContainer.style.overflow = "visible";
-			target.appendChild(shadowContainer);
-
-			let shadowElement = shadowContainer.attachShadow({mode: 'open'});
-	    	shadowElement.appendChild(style);
-
+			let shadowElement, el;
 			let container = document.createElement("div");
-			shadowElement.appendChild(container);
-
 			container.id = "iMusic-GUI";
-			var iMusBtn;
-			if(iMus.getDefaultInstance().parameters.showGUI == "true"){
-				iMusBtn = document.createElement("button");
-				iMusBtn.innerHTML = "iMusic";
-				iMusBtn.style.position = "absolute";
-				target.appendChild(iMusBtn);
-				iMusBtn.addEventListener("click", e => {
-					e.target.style.display = "none";
-					shadowContainer.style.width = "100%";
-					shadowContainer.style.height = "100%";
-					shadowContainer.style.display = "block";
-				});
-			}
 
-			el = document.createElement("button");
-			el.innerHTML = "X";
-			el.classList.add("close");
-			container.appendChild(el);
-			el.addEventListener("click", e => {
-				iMusBtn.style.display = "block";
+
+			if(window.webAudioXML){
+				shadowElement = window.webAudioXML.GUI.HTML;
+			} else {
+				let shadowContainer = document.createElement("div");
 				shadowContainer.style.width = "0%";
 				shadowContainer.style.height = "0%";
 				shadowContainer.style.display = "none";
-			});
+				shadowContainer.style.overflow = "visible";
+				target.appendChild(shadowContainer);
+
+
+				shadowElement = shadowContainer.attachShadow({mode: 'open'});
+				shadowElement.appendChild(style);
+
+				
+				var iMusBtn;
+				if(iMus.getDefaultInstance().parameters.showGUI == "true"){
+					iMusBtn = document.createElement("button");
+					iMusBtn.innerHTML = "iMusic";
+					iMusBtn.style.position = "absolute";
+					target.appendChild(iMusBtn);
+					iMusBtn.addEventListener("click", e => {
+						e.target.style.display = "none";
+						shadowContainer.style.width = "100%";
+						shadowContainer.style.height = "100%";
+						shadowContainer.style.display = "block";
+					});
+				}
+
+				el = document.createElement("button");
+				el.innerHTML = "X";
+				el.classList.add("close");
+				container.appendChild(el);
+				el.addEventListener("click", e => {
+					iMusBtn.style.display = "block";
+					shadowContainer.style.width = "0%";
+					shadowContainer.style.height = "0%";
+					shadowContainer.style.display = "none";
+				});
+			}
+			shadowElement.prepend(container);
+
+
+			el = document.createElement("h1");
+			el.innerHTML = "iMusic";
+			if(container.childNodes.length){
+				container.insertBefore(el, container.lastElementChild);
+			} else {
+				container.appendChild(el);
+			}
+			
 
 			el = document.createElement("button");
 			el.innerHTML = "PLAY";
@@ -212,164 +873,264 @@ class GUI {
 			el.addEventListener("click", e => iMusic.stop());
 
 
-			el = document.createElement("h1");
-			el.innerHTML = "iMusic";
-			container.appendChild(el);
+			iMus.instances.forEach(inst => {
+				instID++;
+				let sectionTags = [];
+				let motifTags = [];
+				let selectGroups = {};
+				let el, row, span;
 
-			// PLAY BUTTONS
-			el = document.createElement("h3");
-			el.innerHTML = "class (arrangements + leadins):";
-			container.appendChild(el);
+				inst.sections.forEach(section => {
 
-			// el = document.createElement("p");
-			// el.innerHTML = `Give arrangements and motifs a class name in the file <a target="_blank" href='music.xml'>music.xml</a>.
-			// This generates one button for each class name. Use the buttons to play the corresponding
-			// arrangements/motifs/leadins.`;
-			// container.appendChild(el);
+					section.tags.forEach(tag => {
+							if(!inArray(tag, sectionTags) && tag.length){sectionTags.push(tag)}
+					});
 
-			row = document.createElement("div");
-			container.appendChild(row);
-			//
-			// span = document.createElement("span");
-			// span.classList.add("arrangement");
-			// row.appendChild(span);
+					let selectGroup = section.parameters["select-group"] || section.parameters["select-variable"];
+					let selectValues = section.parameters["select-value"];
+					let values;
+					if(selectGroup){
+						if(!selectGroups[selectGroup]){
+							selectGroups[selectGroup] = [];
+						}
+						values = selectGroups[selectGroup];
+						selectValues.forEach(val => {
+							if(!inArray(val, values)){
+								values.push(val);
+							}
+						});
+					}
 
-			sectionTags.forEach(tag => {
-				el = document.createElement("button");
-				el.innerHTML = tag;
-				el.classList.add("tag");
-				row.appendChild(el);
+					section.tracks.forEach(track => {
+						track.soloGroups.forEach(group => {
+							if(!selectGroups[group.name]){
+								selectGroups[group.name] = [];
+							}
+							let values = selectGroups[group.name];
+							group.value.forEach(val => {
+								if(!inArray(val, values)){
+									values.push(val);
+								}
+							});
+						});
+					});
 
-				el.addEventListener("click", e => {
-					iMusic.play(tag);
+
+					section.motifs.forEach(motif => {
+						if(motif.parameters.class){
+							motif.parameters.class.split(" ").forEach(className => {
+								className = className.trim();
+								if(className.length && !inArray(className, motifTags) && !inArray(className, sectionTags)){
+									motifTags.push(className);
+								}
+							});
+						}
+						motif.soloGroups.forEach(group => {
+							if(!selectGroups[group.name]){
+								selectGroups[group.name] = [];
+							}
+							let values = selectGroups[group.name];
+							group.value.forEach(val => {
+								if(!inArray(val, values)){
+									values.push(val);
+								}
+							});
+						});
+					
+					});
+
 				});
-			});
 
-			el = document.createElement("h3");
-			el.innerHTML = "class (separate motifs):";
-			container.appendChild(el);
-
-			row = document.createElement("div");
-			container.appendChild(row);
-
-			// span = document.createElement("span");
-			// span.classList.add("motifs");
-			// row.appendChild(span);
-
-			motifTags.forEach(tag => {
-				el = document.createElement("button");
-				el.innerHTML = tag;
-				el.classList.add("tag");
-				row.appendChild(el);
-
-				el.addEventListener("click", e => {
-					iMusic.play(tag);
+				inst.motifs.forEach(motif => {
+					if(motif.parameters.class){
+						motif.parameters.class.split(" ").forEach(className => {
+							className = className.trim();
+							if(className.length && !inArray(className, motifTags) && !inArray(className, sectionTags)){
+								motifTags.push(className);
+							}
+						});
+					}
+					motif.soloGroups.forEach(group => {
+						if(!selectGroups[group.name]){
+							selectGroups[group.name] = [];
+						}
+						let values = selectGroups[group.name];
+						group.value.forEach(val => {
+							if(!inArray(val, values)){
+								values.push(val);
+							}
+						});
+					});
 				});
-			});
 
 
-			el = document.createElement("h3");
-			el.innerHTML = "follow-variables: (e.g. intensity)";
-			container.appendChild(el);
+				// PLAY BUTTONS
 
-
-			// el = document.createElement("p");
-			// el.innerHTML = `Give the tracks different select-group and select-values to
-			// make a variable control the dynamics by muting and unmuting them.
-			// Use the slider (for numeric values) or menu (string values) to select
-			// different tracks depending on their select-group and select-value settings.`;
-			// container.appendChild(el);
-
-			// selection sliders and radio buttons
-			Object.keys(selectGroups).forEach(key => {
-
-				let value = selectGroups[key];
-				let range = new Range(value);
-				row = document.createElement("div");
-				container.appendChild(row);
-
-				el = document.createElement("span");
-				el.innerHTML = key;
-				el.classList.add("label");
-				row.appendChild(el);
-
-
-				switch (range.type) {
-					case "number":
-						// slider
-						//let minVal = Math.min(0, range.min);
-						let minVal = range.min;
-
-						el = document.createElement("input");
-						el.setAttribute("type", "range");
-						el.setAttribute("min", minVal);
-						el.setAttribute("max", range.max);
-						el.setAttribute("value", minVal);
-						el.setAttribute("class", "slider");
+				if(sectionTags.length){
+					el = document.createElement("h3");
+					el.innerHTML = "Arrangements + Leadins";
+					container.appendChild(el);
+	
+					row = document.createElement("div");
+					container.appendChild(row);
+	
+					sectionTags.forEach(tag => {
+						el = document.createElement("button");
+						el.innerHTML = tag;
+						el.classList.add("tag");
 						row.appendChild(el);
-						let numOutput = document.createElement("span");
-						numOutput.classList.add("numOutput");
-						row.appendChild(numOutput);
-
-						numOutput.innerHTML = minVal;
-						iMusic.select(key, minVal);
-
-						el.addEventListener("input", e => {
-							numOutput.innerHTML = e.target.value;
-							iMusic.select(key, parseFloat(e.target.value).toFixed(2));
+	
+						el.addEventListener("click", e => {
+							iMusic.play(tag);
 						});
-						break;
-					case "string":
-						// radio
-						let popMenu = document.createElement("select");
-						value.forEach(str => {
+					});
+				}
+				
 
-							//
-							// el = document.createElement("input");
-							// el.value = str;
-							//
-							// let id = key + "-" + str;
-							// el.id = id;
-							// el.name = key;
-							// el.type = "radio";
-							// row.appendChild(el);
-							//
-							// el.addEventListener("change", e => {
-							// 	iMusic.select(key, e.target.value);
-							// });
-							//
-							// el = document.createElement("label");
-							// el.innerHTML = str;
-							// el.for = id;
-
-							el = document.createElement("option");
-							el.value = str;
-							el.innerHTML = str;
-							popMenu.appendChild(el);
-
+				if(motifTags.length){
+					el = document.createElement("h3");
+					el.innerHTML = "Motifs";
+					container.appendChild(el);
+	
+					row = document.createElement("div");
+					container.appendChild(row);
+	
+					motifTags.forEach(tag => {
+						el = document.createElement("button");
+						el.innerHTML = tag;
+						el.classList.add("tag");
+						row.appendChild(el);
+	
+						el.addEventListener("click", e => {
+							iMusic.play(tag);
 						});
-						popMenu.addEventListener("change", e => {
-							iMusic.select(key, e.target.value);
-						});
-						iMusic.select(key, value[0]);
-						row.appendChild(popMenu);
-						break;
-					default:
+					});
+				}
+				
+				if(Object.keys(selectGroups).length){
+					el = document.createElement("h3");
+					el.innerHTML = "Variables";
+					container.appendChild(el);
 
+
+					// el = document.createElement("p");
+					// el.innerHTML = `Give the tracks different select-group and select-values to
+					// make a variable control the dynamics by muting and unmuting them.
+					// Use the slider (for numeric values) or menu (string values) to select
+					// different tracks depending on their select-group and select-value settings.`;
+					// container.appendChild(el);
+
+					// selection sliders and radio buttons
+					let filter = [];
+					Object.keys(selectGroups).forEach(key => {
+
+						let value = selectGroups[key];
+						let range = new Range(value);
+						row = document.createElement("div");
+						container.appendChild(row);
+
+						el = document.createElement("span");
+						el.innerHTML = key;
+						el.classList.add("label");
+						row.appendChild(el);
+
+
+						switch (range.type) {
+							case "number":
+								// slider
+								//let minVal = Math.min(0, range.min);
+								let minVal = range.min;
+
+								el = document.createElement("input");
+								el.setAttribute("type", "range");
+								el.setAttribute("min", minVal);
+								el.setAttribute("max", range.max);
+								el.setAttribute("value", minVal);
+								el.setAttribute("class", "slider");
+								row.appendChild(el);
+								let numOutput = document.createElement("span");
+								numOutput.classList.add("numOutput");
+								row.appendChild(numOutput);
+
+								numOutput.innerHTML = minVal;
+								filter.push({name: key, value: minVal});
+								
+
+								el.addEventListener("input", e => {
+									numOutput.innerHTML = e.target.value;
+									iMusic.select(key, parseFloat(e.target.value).toFixed(2));
+								});
+								break;
+							case "string":
+								// radio
+								let popMenu = document.createElement("select");
+								value.forEach(str => {
+
+									//
+									// el = document.createElement("input");
+									// el.value = str;
+									//
+									// let id = key + "-" + str;
+									// el.id = id;
+									// el.name = key;
+									// el.type = "radio";
+									// row.appendChild(el);
+									//
+									// el.addEventListener("change", e => {
+									// 	iMusic.select(key, e.target.value);
+									// });
+									//
+									// el = document.createElement("label");
+									// el.innerHTML = str;
+									// el.for = id;
+
+									el = document.createElement("option");
+									el.value = str;
+									el.innerHTML = str;
+									popMenu.appendChild(el);
+
+								});
+								popMenu.addEventListener("change", e => {
+									iMusic.select(key, e.target.value);
+								});
+								filter.push({name: key, value: value[0]});
+								row.appendChild(popMenu);
+								break;
+							default:
+
+						}
+
+					});
+					iMusic.initSelection(filter);
 				}
 
+				
+				instID++;
+
+				if(inst.missingFiles.length){
+					let errorBox = document.createElement("div");
+					container.appendChild(errorBox);
+					errorBox.innerHTML = "<h3>Missing files:</h3>";
+					errorBox.className = "errorBox";				
+					let ul = document.createElement("ul");
+					errorBox.appendChild(ul);
+					inst.missingFiles.forEach(file => {
+						let li = document.createElement("li");
+						li.innerHTML = file;
+						ul.appendChild(li);
+					});
+				}
+				
+
 			});
-			instID++;
+		}
 
-		});
+
+		setCurrentSection(currentSection){
+
+		}
+
 	}
-
-
-	setCurrentSection(currentSection){
-
-	}
-
-}
 
 
 
@@ -434,9 +1195,11 @@ class GUI {
 	function divisionToTime(div, ts, beatDuration){
 
 		if(!div){return 0;}
+		if(typeof div == "number"){return div}
 
 		if(div == "off"){
 			// One year ;-)
+			// good for non-looped tracks
 			return 60 * 60 * 24 * 365;
 		} else {
 			ts = ts || this.parameters.timeSign;
@@ -650,18 +1413,19 @@ class GUI {
 
 
 	var buffers = {};
-	var timeWindow = 0.1; // s
+	var timeWindow = 0.3; // s
 	var checkQueueTime = 20; // ms
 
 
 
 
-	function playSound(obj, time, callBackOnStart, callBackOnFinish, track) {
+	function playSound(obj, time, callBackOnStart, callBackOnFinish, track, crop = 0) {
 
 		// console.log(audioContext.currentTime);
 		// check if source is already played
 		// if so, disconnect
 		time = time || 0;
+		
 
 		if(track){
 	 		if(track.parameters.randomOffset){
@@ -767,9 +1531,12 @@ class GUI {
 
 			
 			if(iMus.debug){
-				console.log(obj.id, obj.playingSources);
+				//console.log(obj.id, obj.playingSources);
 			}
 			obj.playingSources = obj.playingSources || [];
+
+			// if not loaded. Error.
+			if(buffers[url] == -1){return}
 
 			// connect
 			source.buffer = buffers[url];
@@ -798,9 +1565,10 @@ class GUI {
 
 		 		// play
 				if (typeof source.start === 'undefined'){
-					source.noteOn(time);
+					// obsolete. Used in Safari ages ago.
+					source.noteOn(time, crop);
 				}else{
-					source.start(time);
+					source.start(time, crop);
 		 		}
 
 		 		obj.counter = ++obj.counter || 1;
@@ -837,7 +1605,7 @@ class GUI {
 			 	});
 
 
-				var e2 = new CustomEvent('playfile', {
+				var e2 = new CustomEvent('playFile', {
 					detail: {
 						url: url,
 						id: track ? track.idName : obj.idName,
@@ -932,7 +1700,7 @@ class GUI {
 
 
 
-	function loadFile(obj, callBack){
+	function loadFile(obj, callBack, errorCallback){
 
 		callBack = callBack || loadComplete;
 		var url = this.addSuffix(obj.url);
@@ -958,23 +1726,31 @@ class GUI {
 			returnObj.url = url;
 
 			request.onload = function() {
-		        // decode the buffer into an audio source
-		        audioContext.decodeAudioData(request.response, function(buffer) {
-		          if (buffer) {
-		          	// store all buffers in buffers
-		            buffers[obj.url] = buffer;
-		            returnObj.duration = buffer.duration;
-		            // store reference in this object
-		            // obj.buffer = buffer;
-		            //console.log(obj.url + " loaded. offset: " + obj.offset);
-		            callBack(returnObj);
 
-		          }
-		        }, function(){
-		        	console.error('File "' + url + '" could not be decoded');
-		        	buffers[obj.url] = -1;
-		        	callBack();
-		        });
+				if(request.status != 200) { // analyze HTTP status of the response
+					//alert(`Error ${request.status}: ${request.statusText}`); // e.g. 404: Not Found
+					defaultInstance.missingFiles.push(request.responseURL);
+					buffers[obj.url] = -1;
+					if(errorCallback){errorCallback()}
+				} else {
+					// decode the buffer into an audio source
+					audioContext.decodeAudioData(request.response, function(buffer) {
+						if (buffer) {
+							// store all buffers in buffers
+						  buffers[obj.url] = buffer;
+						  returnObj.duration = buffer.duration;
+						  // store reference in this object
+						  // obj.buffer = buffer;
+						  //console.log(obj.url + " loaded. offset: " + obj.offset);
+						  callBack(returnObj);
+	  
+						}
+					  }, function(){
+						  console.error('File "' + url + '" could not be decoded');
+						  buffers[obj.url] = -1;
+						  callBack();
+					});
+				}
 		     };
 		     request.onerror = function() {
 		          console.error('File "' + url + '" could not be loaded');
@@ -1001,6 +1777,7 @@ class GUI {
 
 			iMus.instances[obj].loadComplete();
 		}
+		
 		return true;
 	}
 
@@ -1012,47 +1789,16 @@ class GUI {
 
 		this.parameters = this.initParameters(o);
 
-		//this.splitter = audioContext.createChannelSplitter();
-
-		// these parameters are not settable
-
-		//this.splitter.channelCount = 1; Not allowed
-		//this.splitter.channelCountMode = "explicit";
-		//this.splitter.channelInterpretation = "discrete";
-
-
 		let webAudioDest;
-		// if(o.output && window.webAudioXML){
-		// 	let el = window.webAudioXML._xml.querySelector(o.output);
-		// 	if(el){webAudioDest = el.audioObject.input}
-		// }
 		var destination = webAudioDest || o.destination || audioContext.destination;
 
 		this.output = createGainNode();
 		this.output.gain.value = (typeof o.volume == "number") ? o.volume : 1;
-		this.output.connect(destination);
+		
 
-		// this.compressor = audioContext.createDynamicsCompressor();
-		// this.compressor.connect(this.output);
-		// this.compressor.ratio.value = 1;
-
-
-		// this.panner = audioContext.createPanner();
-		// this.panner.setPosition(0,0,0);
-		// this.panner.connect(this.output);
-
-		// this.filter = audioContext.createBiquadFilter();
-		// this.filter.frequency.value = 20000;
-		// this.filter.connect(this.output);
-
-		// this.inserts = [];
-		// this.inserts.push(this.filter);
-
-	  this.input = createGainNode();
-		this.input.connect(this.output);
-		// this.sends = {};
-
-		// this.channelMerger = o.channelMerger || self.channelMerger;
+	  	this.input = createGainNode();
+	  	this.voiceGain = createGainNode();
+		this.input.connect(this.voiceGain).connect(this.output).connect(destination);
 
 
 		return this;
@@ -1581,7 +2327,6 @@ class GUI {
 		let body = document.querySelector("body");
 		body.classList.add("imusic-loading");
 
-
 		if(typeof o === "string" || Array.isArray(o)){
 
 			// Selection
@@ -1594,6 +2339,7 @@ class GUI {
 
 		this._listeners = {};
 		this.triggerIntervals = [];
+		this.missingFiles = [];
 
 		// Music instance
 		this.loadFile = loadFile;
@@ -1713,8 +2459,9 @@ class GUI {
 		// a collection of Sections, Transitions, Motifs and SFXs
 
 		params = o || {};
+		// why "this"?
 		this.parameters = this.initParameters(o);
-
+		
 		self.volume = params.volume || 1;
 		self.parameters.tempo = params.tempo || 120;
 		self.parameters.timeSign = params.timeSign || "4/4";
@@ -1805,52 +2552,6 @@ class GUI {
 			if(!self.playing){return;}
 
 
-
-			// queue transition parts
-
-			/*
-			// transistion currently blocked
-			var tracks = self.transitionTracks;
-
-			if(tracks) {
-
-				var transitionPartsToQueue = 0;
-				for(trackID in tracks){
-					var track = tracks[trackID];
-					if(track.parts.length){
-						transitionPartsToQueue += track.parts.length;
-						var nt = queueNextPartOnTrack(track, 0);
-
-						if(typeof nt !== "undefined"){
-							track.parts.shift();
-							track.nextTime = nt;
-						}
-					}
-				}
-				// just queue transition parts as long as there are some to queue
-				if(!transitionPartsToQueue){
-					// transition done
-					self.transitionTracks = null;
-
-					// transfer nextTime values from track1 in transition
-					var track1 = tracks[0];
-					if(self.currentSection){
-						tracks = self.currentSection.tracks;
-						for(trackID in tracks){
-							var track = tracks[trackID];
-							track.nextTime = track1.nextTime;
-						}
-					}
-
-				}
-				return;
-
-
-			}
-			*/
-
-
-
 			var currentTime = audioContext.currentTime;
 			var musicTime = currentTime - self.sectionStart;
 			self.musicTime = musicTime; // store the current music position pointer
@@ -1887,7 +2588,8 @@ class GUI {
 						if(!track.active && track.parameters.fadeTime){
 							// set volume to 0 if not active but in fade mode
 							// to play silently until track recieves a play() command
-							//track.bus.setVolume(0, true); -- already controlled by newTrack.setVolume()
+							// track.bus.setVolume(0, true); -- already controlled by newTrack.setVolume()
+							track.fadeOut();
 						}
 
 						// control the likeness for this loop to play
@@ -2129,7 +2831,7 @@ class GUI {
 			if(typeof o.upbeat === "undefined"){
 				this.upbeat = self.upbeat;
 			}else{
-				this.upbeat = self.getTime(o.upbeat);
+				this.upbeat = this.divisionToTime(o.upbeat);
 			}
 
 			this.motifs  = [];
@@ -2149,9 +2851,19 @@ class GUI {
 
 			o.loopEnd = o.loopEnd || o.end || defaultParams.loopEnd;
 			this.parameters.loopEnd = this.getPosition(o.loopEnd).time;
+			this.parameters.length = this.divisionToTime(o.length);
+
+			if(this.parameters.length && !o.changeOnNexts){
+				// set this.parameters.changeOnNext by length if not specified separately 
+				this.parameters.changeOnNext = this.parameters.length;
+			}
 
 			this.type = "section";
 
+
+			this.getLength = function(){
+				return this.parameters.length || this.getBarDuration(); 
+			}
 
 			this.addStem = function(urls){
 
@@ -2430,7 +3142,6 @@ class GUI {
 		 			var timeToLegalBreak = legalBreak.timeLeft;
 
 
-
 		 			var maxUpbeatInCurrent = self.currentSection.getMaxUpbeatOffset();
 
 
@@ -2439,94 +3150,9 @@ class GUI {
 		 			var minLeadInOffset = this.getMinLeadInUpbeatOffset();
 		 			var maxOffset = Math.max(maxUpbeatInThis, maxUpbeatInCurrent, maxFadeTimeInThis, maxFadeTimeInCurrent);
 
-
-		 			// Lägg till funktioner för att plocka en viss leadIn beroende på
-		 			// förutsättningar som hoppa från takt, till takt etc
-
-		 			var timeToTrigLeadIns = Math.max(timeWindow+0.001, Math.min(timeToLegalBreak - maxLeadInOffset, timeToLegalBreak - minLeadInOffset));
-		 			setTimeout(function(){
-			 			if(minLeadInOffset < timeToLegalBreak && !trigAfterAWhile){
-				 			thisSection.leadIns.forEach(function(leadIn){
-					 			leadIn.play();
-				 			});
-				 			//console.log("trig leadin", minLeadInOffset, timeToLegalBreak);
-			 			}
-		 			}, Math.max(1, (timeToTrigLeadIns-timeWindow)*1000));
-
-
-
-		 			/* Det här är ett struligt sätt att fixa så att alla
-			 			tracks loopar klart innan man börjar spela nästa section
-			 			Gör om!
-
-		 			if(timeToLegalBreak > (timeWindow*2 + maxOffset)){
-			 			// trigga om sektionen efter en stund
-
-
-			 			setTimeout(function(){
-				 			thisSection.play(nrOfLoops, true);
-				 			console.log("Nu triggar sektionen efter " + round(timeToLegalBreak) + "s");
-			 			}, (timeToLegalBreak-timeWindow*2-maxOffset)*1000);
-
-
-			 			return;
-
-		 			}
-		 			*/
-
-
 		 			self.currentSection.finishPlaying(timeToLegalBreak);
 		 			self.sectionStart = nextTime;
 
-
-
-					//
-		 			// this.tracks.forEach(track => {
-					//
-			 		// 	// reset all volumes on faded tracks
-			 		// 	if(track.parameters.fadeTime){
-					//
-				 	// 		track.parts.forEach(function(part){
-					//  			//playSound(part, nextTime);
-				 	// 		});
-					//
-				 	// 		if(track.active > 0){
-					//  			track.fadeIn(0, 0);
-				 	// 		}
-			 		// 	}
-					//
-		 			// });
-
-
-
-
-		 			/*
-		 			// transitions currently blocked
-
-					var transitions = self.currentSection.transitions;
-					if(transitions){
-						// sanity check
-						if(transitions.length >= this.id){
-							// if there is a transition defined for this change
-							var transition = transitions[this.id];
-							if(transition){
-								self.transitionTracks = [];
-								for(var trackID in transition.tracks){
-									var track = transition.tracks[trackID];
-
-									// duplicate into iMus instance
-									var transitionTrack = Object.create(track);
-									transitionTrack.parts = Object.create(track.parts);
-									transitionTrack.nextTime = nextTime;
-
-									self.transitionTracks.push(transitionTrack);
-								}
-							}else{
-								self.transitionTracks = [];
-							}
-						}
-					}
-					*/
 
 				} else {
 
@@ -2583,7 +3209,7 @@ class GUI {
 						Object.keys(self._listeners).forEach(key => {
 
 							switch(key){
-								case "playfile":
+								case "playFile":
 									break;
 
 								default:
@@ -2625,11 +3251,16 @@ class GUI {
 				}
 
 
+				this.timeToLegalBreak = timeToLegalBreak;
 				triggedRecently = true;
 				setTimeout(function(){triggedRecently = false;},200);
+				return {timeToLegalBreak: timeToLegalBreak};
 			}
 
+		}
 
+		Section.prototype.getTimeToLegalBreak = function(){
+			return this.timeToLegalBreak|| 0;
 		}
 
 		Section.prototype.stopAllSounds = function(){
@@ -2642,8 +3273,9 @@ class GUI {
 		Section.prototype.addLoopTrack = function(urls){
 
 			if(typeof urls === "string"){urls = [urls];}
+			let tags = [];
 			if(!this.tags.length){
-				let tags = urlsToTags(urls);
+				tags = urlsToTags(urls);
 			}
 			// let tags = mergeArrays(urlsToTags(urls), this.tags);
 			//var tags = urlsToTags(urls).concat(this.tags);
@@ -2678,10 +3310,11 @@ class GUI {
 			this.tracks.forEach(track => {
 				let state;
 				if(track.soloGroups.length){
-					state = false;
-					defaultInstance.selectFilter.forEach(filter => {
-						state = state || getSoloState(track.soloGroups, filter.name, filter.value);
-					});
+					state = track.getFilterState(defaultInstance.selectFilter);
+					// state = false;
+					// defaultInstance.selectFilter.forEach(filter => {
+					// 	state = state || track.getFilterState() getSoloState(track.soloGroups, filter.name, filter.value);
+					// });
 				} else {
 					state = true;
 				}
@@ -2729,6 +3362,11 @@ class GUI {
 				}
 			}
 		}
+
+
+
+
+
 
 
 
@@ -2871,9 +3509,11 @@ class GUI {
 
 		Section.prototype.getMaxLeadInUpbeatOffset = function(){
 			var maxOffset = 0;
-			this.leadIns.forEach(function(leadIn){
-				maxOffset = Math.max(maxOffset, leadIn.getMaxUpbeatOffset());
-			});
+			if(this.leadIns){
+				this.leadIns.forEach(function(leadIn){
+					maxOffset = Math.max(maxOffset, leadIn.getMaxUpbeatOffset());
+				});
+			}
 			return maxOffset;
 		}
 
@@ -2945,6 +3585,7 @@ class GUI {
 
 			this.liveValues = {};
 			this.soloGroups = [];
+			this.envelopes = [];
 
 
 			this.bus = o.bus || self.getBus(this.id);
@@ -2954,6 +3595,7 @@ class GUI {
 			this.loopID;
 			this.loopActive = typeof o.loopActive === "number" ? o.loopActive : 1;
 			this.playing = false;
+
 
 
 			// active is a number value between 0 and 1 that controls the the random factor
@@ -2976,6 +3618,12 @@ class GUI {
 			}
 
 			this.parameters = this.initParameters(params, section.parameters);
+
+
+
+			if(this.parameters.voice){
+				this.parameters.voiceObjectID = iMus.voiceController.addVoiceObject(this.parameters.voice, 0, this.bus.voiceGain, this.parameters.fadeTime);
+			}
 
 			var beatDuration = self.getBeatDuration(); // !!
 			var barDuration = self.getBarDuration();
@@ -3023,12 +3671,21 @@ class GUI {
 
 		}
 
+		Track.prototype.togglePlay = function(){
+			if(this.active > 0){
+				this.stop();
+			} else {
+				this.play();
+			}
+		}
+
 
 		Track.prototype.play = function(nextLegalBreakTimeLeft){
 
 			// auto play the section of this track if iMusic is not playing
 			if(!self.playing){
-				//this.section.play(); this is confusing in the new structure
+				// I took this line back in nov 2022
+				this.section.play(); //this is confusing in the new structure
 			}
 
 			initAudioContextTimer(self);
@@ -3057,7 +3714,7 @@ class GUI {
 			// } else {
 			// 	this.active = -this.active;
 			// }
-			this.active = Math.abs(this.active);
+			this.active = Math.abs(this.active) || 1;
 
 			//console.log(this, "play");
 
@@ -3182,7 +3839,7 @@ class GUI {
 				// and not be disconnected
 				// BUT if timeToLegalBreak is shorter than the remaining part of the region
 				// (set by partLength) it will be faded and disconnected anyway
-
+				return;
 				let remainingTime = 0;
 				this.playingParts.forEach(part => {
 					let remainingPartTime = (part.lastTriggedTime + part.length) - (audioContext.currentTime + timeToLegalBreak);
@@ -3197,6 +3854,10 @@ class GUI {
 			}
 
 
+		}
+
+		Track.prototype.addEnvelopes = function(envelopes){
+			this.envelopes = envelopes;
 		}
 
 		Track.prototype.setVariation = function(val, val2){
@@ -3226,6 +3887,16 @@ class GUI {
 
 		Track.prototype.getSoloState = function(_param1, _param2){
 			return getSoloState(this.soloGroups, _param1, _param2);
+		}
+		Track.prototype.getFilterState = getFilterState;
+
+		Track.prototype.filter = function(globalFilter){
+			let state = this.getFilterState(globalFilter);
+			if(state){
+				this.play();
+			} else {
+				this.stop();
+			}
 		}
 
 
@@ -3339,7 +4010,7 @@ class GUI {
 			}
 			*/
 
-			upbeat = o.upbeat || defaultData.upbeat || self.parameters.upbeat || defaultData.upbeat;
+			let upbeat = o.upbeat || self.parameters.upbeat || 0;
 
 			if(typeof upbeat === "string"){
 				upbeat = getTimeSign(upbeat);
@@ -3410,6 +4081,9 @@ class GUI {
 							// double structure for future use
 							thisPart.files.push(fileData);
 							loadComplete();
+						}, function(){
+							// error 
+							loadComplete();
 						});
 
 						//console.log(this.url[urlID] + ": pos: " + this.pos + "; offset: " + this.offset + "; length: " + this.length);
@@ -3451,14 +4125,16 @@ class GUI {
 
 			this.id = self.motifs.length;
 			this.section = section;
+			this.envelopes = [];
+			this.soloGroups = [];
 
 			this.type = "motif";
 
 			var me = this;
-			var beatDuration = self.getBeatDuration();
 
-			var parentObj = section || defaultInstance;
-			o.quantize = getTimeSign(o.quantize || parentObj.parameters.quantize || self.parameters.quantize, parentObj.parameters.timeSign);
+			this.parentObj = section || defaultInstance;
+			var beatDuration = this.parentObj.getBeatDuration();
+			o.quantize = getTimeSign(o.quantize || this.parentObj.parameters.quantize || self.parameters.quantize, this.parentObj.parameters.timeSign);
 
 			this.volume = o.volume || 1;
 			this.parameters = this.initParameters(o, self.parameters);
@@ -3476,6 +4152,10 @@ class GUI {
 			this.parameters.channelMerger = self.channelMerger;
 			this.bus = new Bus(this.parameters);
 
+			if(this.parameters.voice){
+				this.parameters.voiceObjectID = iMus.voiceController.addVoiceObject(this.parameters.voice, 1, this.bus.voiceGain, this.parameters.fadeTime/1000);
+			}
+
 			if(this.parameters.output){
 				this.bus.connect(this.parameters.output);
 			}
@@ -3485,7 +4165,11 @@ class GUI {
 
 			this.active = typeof o.active === "number" ? o.active : 1;
 			this.sounds = [];
-			this.offset = -self.getTime(this.parameters.upbeat);
+			this.offset = -this.parentObj.divisionToTime(this.parameters.upbeat);
+			this.changeOnNext = this.parentObj.divisionToTime(this.parameters.changeOnNext);
+			this.parameters.length = this.parentObj.divisionToTime(this.parameters.length);
+
+			// this.parameters.length
 
 			var obj;
 			var url;
@@ -3513,13 +4197,22 @@ class GUI {
 
 					// length
 					if(obj.length){
-						var length = getTimeSign(obj.length);
-						obj.length = length.nominator * beatDuration * self.parameters.timeSign.denominator / length.denominator;
+						obj.length = this.parentObj.divisionToTime(obj.length);
+
+						// var length = getTimeSign(obj.length);
+						// obj.length = length.nominator * beatDuration * this.parentObj.parameters.timeSign.denominator / length.denominator;
+					} else {
+						// default one beat
+						// obj.length = beatDuration;
 					}
 
+					if(obj.voice){
+						obj.voice = obj.voice.split(" ").map(str => str.trim());
+					}
 
-					obj.offset = -self.getTime(obj.upbeat || this.parameters.upbeat);
-					obj.offset = obj.offset || 0;
+					obj.changeOnNext = this.parentObj.divisionToTime(this.parameters.changeOnNext);
+					obj.offset = -this.parentObj.divisionToTime(obj.upbeat) || this.offset || 0;
+
 				} else {
 
 					console.error("Motif url is not correct: " + url);
@@ -3537,18 +4230,26 @@ class GUI {
 
 				// only play if parent section is playing or if Motif is
 				// not connected to a section
-				if(this.section){
-					if(!(this.section.parameters.tags == defaultSectionName || this.section == self.currentSection)){
-						return;
-					}
-				}
 
-				if(!this.active){return}
+				// 2022-09-15
+				// This is now controlled in the global function iMus.play() instead. The old way of triggering
+				// all motifs and leadins and then check if they were a part of the currentSection caused problems
+				// when triggered after the currentSection had changed to the new one (i.e. if triggered after 
+				// timerWindow)
+				
+				// if(this.section){
+				// 	if(!(this.section.parameters.tags == defaultSectionName || this.section == self.currentSection)){
+				// 		return;
+				// 	}
+				// }
+
+				if(this.active <= 0){return}
 
 
-
-				if(this.parameters.release){
-					this.fadeOut(0, this.parameters.release);
+				// I'm not sure what this is for. It seems to case problems, making the motifs
+				// staying at zero volume
+				if(this.parameters.fadeTime){
+						//this.fadeOut(0, this.parameters.fadeTime);
 				}
 
 
@@ -3585,15 +4286,18 @@ class GUI {
 				}
 
 				me.playing = true;
+				//console.log("Play Motif: " + this.parameters.classList);
 
 				if(self.currentSection && this.parameters.quantize != "off"){
 
-
-					var beatDuration = self.currentSection.getBeatDuration();
-					var Q = this.parameters.quantize.nominator * beatDuration * self.currentSection.parameters.timeSign.denominator / this.parameters.quantize.denominator;
+					let controllingSection = this.section || self.currentSection;
 
 
-					var time = self.currentSection.getTime();
+					var beatDuration = controllingSection.getBeatDuration();
+					var Q = this.parameters.quantize.nominator * beatDuration * controllingSection.parameters.timeSign.denominator / this.parameters.quantize.denominator;
+
+
+					var time = controllingSection.getTime();
 					var Qtime = Math.ceil(time / Q) * Q + self.sectionStart;
 					var localTime = (time+Q) % Q;
 
@@ -3646,20 +4350,46 @@ class GUI {
 					this.url.push(targetSound);
 				}
 				//var targetSound = targetSounds[Math.floor(Math.random()*targetSounds.length)];
+				let crop = 0;
 
 				if(this.parameters.quantize != "off"){
 					// move to next legal Q if time is to early
-					var t = Qtime + targetSound.offset;
+					var t = Qtime + (targetSound ? targetSound.offset : 0);
 
 					if(this.parameters.type != "leadIn"){
+
+						// Motifs are always played at the next Q-time.
+						// Leadins are only played if they fit BEFORE the 
+						// next Q-time
 						while(t < audioContext.currentTime) {
 							t+=Q;
 						}
 					} else {
+						// Qtime += Q; // detta blev fel
 						if(t < audioContext.currentTime){
-							// don't play a leadin if it's too late
-							console.log(`Too late: ${t, audioContext.currentTime, targetSound.offset}`);
-							return;
+							
+
+							// If a leadin has changeOnNext set, then make a cut-in
+							let ChOn = targetSound.changeOnNext || this.changeOnNext;
+							let offset = targetSound.offset || this.offset;
+							if(ChOn){
+								t += Q; // next Q-point i.e. bar
+								let nrOfChOn = parseInt(timeToQ / ChOn);
+								if(!nrOfChOn){
+									// don't play a leadin if it's way too late (less than one changeOnNext-unit)
+									return;
+								}
+								crop = Math.abs(offset) - nrOfChOn * ChOn;
+								t -= nrOfChOn * ChOn;
+
+								if(iMus.debug){
+									console.log({time: t, Q: Q, nrOfChOn: nrOfChOn, crop: crop})	
+								}
+							} else {
+								// don't play a leadin if it's too late
+								console.log(`Too late: ${t, audioContext.currentTime, targetSound.offset}`);
+								return;
+							}
 						}
 					}
 				} else {
@@ -3699,7 +4429,45 @@ class GUI {
 					if(that.callBackOnFinish){that.callBackOnFinish();}
 				}
 
-				var chosenURL = playSound(this, t, this.callBackOnStart, doOnFinishPlaying);
+
+				// This is problematic for various reasons. This.url is set to (potentially) multiple 
+				// sound objects and the random selection is done in the playSound() method. This means 
+				// that the Motif object needs to retrieve which one was set to do clever things depending on it. 
+				var chosenURL = playSound(this, t, this.callBackOnStart, doOnFinishPlaying, undefined, crop);
+
+				let barDuration = this.getBarDuration();
+
+				// ENVELOPES
+				this.envelopes.forEach(env => {
+					let origTimes = env.getParameter("orig-times");
+					let times = origTimes.split(",").map(time => {
+						time = parseFloat(time);
+						if(time <= 100){
+							time = time * timeToQ / 100;
+						} else {
+							time -= 100;
+							time = timeToQ + time * barDuration / 100;
+						}
+						//time += beatDuration;
+						return time;
+					});
+
+					
+					console.log(times);
+					env.setTimes(times);
+					env.start();
+				});
+
+				if(this.parameters.voiceObjectID){
+					let endTime;
+					if(this.parameters.type == "leadIn"){
+						endTime = Qtime;
+					} else {
+						let length = chosenURL.length || this.parameters.length || this.parentObj.getBeatDuration();
+						endTime = t + length;
+					}
+					iMus.voiceController.playVoiceObject(this.parameters.voiceObjectID, t, endTime, chosenURL.voice);
+				}
 
 				switch(this.parameters.retrig){
 
@@ -3805,9 +4573,13 @@ class GUI {
 		Motif.prototype.getMaxUpbeatOffset = function(){
 
 			var maxOffset = 0;
-			this.sounds.forEach(function(sound){
-				maxOffset = Math.min(maxOffset, sound.offset);
-			});
+			if(this.sounds){
+				this.sounds.forEach(function(sound){
+					if(sound){
+						maxOffset = Math.min(maxOffset, sound.offset);
+					}
+				});
+			}
 
 			return -maxOffset;
 		}
@@ -3816,7 +4588,9 @@ class GUI {
 
 			var minOffset = -this.getBarDuration();
 			this.sounds.forEach(function(sound){
-				minOffset = Math.max(minOffset, sound.offset);
+				if(sound){
+					minOffset = Math.max(minOffset, sound.offset);
+				}
 			});
 
 			return -minOffset;
@@ -3827,6 +4601,13 @@ class GUI {
 
 			var state = getSoloState(this.soloGroups, _param1, _param2);
 			if(state === true || state === false){this.active = state}
+		}
+
+		Motif.prototype.getFilterState = getFilterState;
+		Motif.prototype.filter = function(globalFilter){
+			let state = this.getFilterState(globalFilter);
+			let activeFactor = Math.abs(this.active);
+			this.active = state ? activeFactor: -activeFactor;
 		}
 
 
@@ -3854,8 +4635,13 @@ class GUI {
 
 		Motif.prototype.urlToUpbeat = urlToUpbeat;
 		Motif.prototype.setSoloGroup = setSoloGroup;
+		Motif.prototype.musicalPositionToTime = musicalPositionToTime;
 
 
+
+		Motif.prototype.addEnvelopes = function(envelopes){
+			this.envelopes = envelopes;
+		}
 
 
 
@@ -3957,6 +4743,7 @@ class GUI {
 
 				case "string":
 				if(pos == "off"){
+					// this is to give non-looped track a VERY long loop length
 					 time = 60 * 60 * 24 * 365;
 				} else {
 					var obj = posStringToObject(pos);
@@ -4070,6 +4857,37 @@ class GUI {
 		return group;
 	}
 
+	function getFilterState(globalFilter = []){
+		
+		if(!this.soloGroups){return} // super safe
+
+		let state = true;
+		globalFilter.forEach(filter => {
+			let group = this.soloGroups.find(group => group.name == filter.name);
+			if(group){
+				let val = filter.value;
+				let groupState = false;
+				// if there are specified groups and ALL of them are matching
+				// then the filter state is true and the track/motif shall play
+				group.value.forEach(curVal => {
+					if(val == curVal){
+						groupState = true;
+					} else {
+						if(curVal instanceof MinMax){
+							if(typeof curVal.min == "number"){
+								if(val >= curVal.min && val <= curVal.max){
+									groupState = true;
+								}
+							}
+						}
+					}
+				});
+				state = state && groupState;
+			}
+		});
+		return state;
+	}
+
 
 	function getSoloState(_soloGroups, _param1, _param2){
 
@@ -4104,9 +4922,6 @@ class GUI {
 				}
 			}
 		});
-
-
-
 		return state;
 	}
 
@@ -4193,6 +5008,9 @@ class GUI {
 				targetSFX.normalize = true;
 				targetSFX.connect(params.output || self.master.output);
 
+			}, function(){
+				// error
+				buffers[url] = -1;
 			});
 
 
@@ -4387,670 +5205,8 @@ class GUI {
 
 	}
 
-	var Selection = function(selector, container){
 
-		var allObjects = [];
-		this.objects = [];
-
-
-		switch(typeof selector){
-
-			case "string":
-			break;
-
-			case "object":
-			selector = selector.join(" ");
-			break;
-
-			default:
-			return this;
-			break;
-		}
-
-		if(!selector.length){return this}
-
-		var type;
-		switch(typeof selector){
-
-			case "string":
-			this.selector = selector;
-			selector = selector.split(" ").shift();
-			var firstChar = selector.substr(0, 1);
-
-			switch(firstChar){
-
-				case "#":
-				type = "id";
-				selector = selector.substr(1);
-				break;
-
-				case ".":
-				type = "class";
-				selector = selector.substr(1);
-				break;
-
-				default:
-				type = "class";
-				selector = this.selector;
-				break;
-
-			}
-
-			break;
-
-			default:
-			return this;
-			break;
-
-		}
-
-		// limit search range to container
-		var targetInstances;
-		if(container instanceof iMus) {
-
-			targetInstances = [container];
-
-		} else {
-			targetInstances = iMus.instances;
-		}
-
-
-
-		if(container instanceof Selection){
-
-			// sub selection of selection
-			allObjects = container.objects;
-
-		} else if(container instanceof Array){
-
-			// sub selection of tracks in a section
-			allObjects = container;
-
-		} else {
-
-
-			// selection in all or one instance
-
-			targetInstances.forEach(function(instance){
-
-				instance.sections.forEach(function(section){
-
-					allObjects.push(section);
-					section.tracks.forEach(function(track){
-
-						allObjects.push(track);
-					});
-				});
-
-				instance.motifs.forEach(function(motif){
-
-					allObjects.push(motif);
-				});
-
-				instance.actions.forEach(function(action){
-
-					allObjects.push(action);
-				});
-
-				/* instance.SFXs not implemented yet
-				instance.SFXs.forEach(function(sfx){
-
-					allObjects.push(sfx);
-				});
-				*/
-
-			});
-
-		}
-
-
-
-
-		var objects = [];
-		var targetSection;
-
-
-		allObjects.some(function(obj){
-
-			switch(type){
-
-				case "id":
-				if(obj.idName == selector){
-					objects.push(obj);
-				}
-
-				break;
-
-				case "class":
-				var matchedClass = inArray(selector, obj.tags);
-
-				// check if this is a section. If so just add this section to objects
-				// Why? I think it is better to also select motifs, leadins and tracks
-				// if matching
-				if(matchedClass){
-					if(obj.type == "section"){
-						objects = [obj];
-						targetSection = obj;
-						//return true;
-					} else {
-						objects.push(obj);
-					}
-
-				}
-				break;
-
-				case "objectType":
-				//change to make it possible to select different types of objects !!!
-				switch(selector){
-
-					case "track":
-					case "stem":
-					if(obj instanceof Track){objects.push(obj)}
-					break;
-
-					case "motif":
-					if(obj instanceof Motif){objects.push(obj)}
-					break;
-				}
-
-
-				break;
-
-			}
-
-
-		});
-
-
-		this.objects = objects;
-
-		return this;
-	}
-
-
-	Selection.prototype.createDefaultSectionIfNeeded = function(){
-
-		// generate section if no matches
-		if(!this.objects.length){
-
-			var newSection = defaultInstance.addSection({tags: this.selector});
-
-			if(!defaultInstance.currentSection){
-				defaultInstance.currentSection = newSection;
-			}
-			this.objects.push(newSection);
-
-
-		}
-	}
-
-
-
-	Selection.prototype.addLoopTrack = function(urls){
-
-		var newObj;
-		this.createDefaultSectionIfNeeded();
-		if(!urls){urls = [];}
-		this.objects.forEach(function(obj){
-
-			if(!obj.addLoopTrack){return}
-			newObj = obj.addLoopTrack(urls);
-
-
-		});
-
-		this.objects = [newObj];
-		return this;
-
-	}
-
-
-
-	Selection.prototype.addLFO = function(prop, frequency, range, offset, object){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.addLFO){return}
-
-			obj.addLFO(prop, frequency, range, offset, object);
-
-		});
-		return this;
-
-	}
-
-	Selection.prototype.addDelay = function(params){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.bus){return}
-
-			obj.bus.addSerialDelay(params);
-
-		});
-		return this;
-
-	}
-
-
-	Selection.prototype.addReverb = function(params){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.bus){return}
-
-			obj.bus.addReverb(params);
-
-
-		});
-		return this;
-
-	}
-
-
-
-	Selection.prototype.addMotif = function(urls, q, upbeat){
-
-		if(typeof urls === "string"){
-			urls = [urls];
-		}
-		this.createDefaultSectionIfNeeded();
-		var tags = urlsToTags(urls);
-		if(this.objects.length){
-			// add sections tags to motif
-			tags = mergeArrays(tags, this.objects[0].tags);
-		}
-
-
-		var targetObj = this.objects.find(function(obj){
-			// connect Motif to Section
-			return typeof obj.addMotif === "function";
-		}) || defaultInstance;
-
-		var params = typeof q == "object" ? q : {};
-		params.tags =  params.tags || tags;
-		params.quantize =  params.quantize || q;
-		params.upbeat =  params.upbeat || upbeat;
-
-		var newObj = targetObj.addMotif(params, urls);
-		this.objects = [newObj];
-		return this;
-
-	}
-	Selection.prototype.addLeadIn = function(urls, params){
-		params = typeof params == "object" ? params : {quantize: "bar", type: "leadIn"}
-		this.addMotif(urls, params);
-		return this;
-	}
-
-	Selection.prototype.loadFile = function(urls){
-		this.addMotif(urls, "off");
-		return this;
-	}
-
-
-
-	/*
-	Selection.prototype.addLeadIn = function(urls){
-
-		this.createDefaultSectionIfNeeded();
-		var tags = urlsToTags(urls);
-
-		var targetObj = this.objects.find(function(obj){
-			return typeof obj.addLeadIn === "function";
-		}) || defaultInstance;
-
-		var newObj = targetObj.addLeadIn({tags: tags}, urls);
-		this.objects = [newObj];
-		return this;
-
-	}
-	*/
-
-
-
-	Selection.prototype.setSoloGroup = function(grp, val){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.setSoloGroup){return}
-			obj.setSoloGroup(grp, val);
-
-		});
-
-	}
-
-
-
-	// funkar den här och i sånt fall, hur?
-
-	Selection.prototype.solo = function(selector){
-
-		this.stop();
-		this.find(selector).play();
-		return this;
-
-	}
-
-
-	Selection.prototype.play = function(arg1, arg2, arg3){
-
-
-		var returnVal = {};
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.play){return}
-			returnVal.delay = obj.play(arg1, arg2, arg3);
-
-		});
-		this.returnVal = returnVal;
-		return this;
-
-
-	}
-
-	Selection.prototype.trig = Selection.prototype.play;
-
-
-	Selection.prototype.replay = function(){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.replay){return}
-			return obj.replay();
-
-		});
-		return this;
-	}
-
-
-	Selection.prototype.stop = function(params){
-		params = params || {};
-		this.objects.forEach(function(obj){
-
-			if(!obj.stop){return}
-
-			// to mute other tracks in a group
-			if(obj == params.omit){return}
-
-			return obj.stop();
-
-		});
-		return this;
-
-
-	}
-
-
-	Selection.prototype.stopAllSounds = function(){
-		this.objects.forEach(function(obj){
-
-			if(!obj.stopAllSounds){return}
-
-			obj.stopAllSounds();
-
-		});
-		return this;
-
-
-	}
-
-
-	Selection.prototype.isPlaying = function(){
-
-		var isPlaying = false;
-		this.objects.forEach(function(obj){
-			var curObjIsPlaying = obj.isPlaying ? obj.isPlaying() : obj.playing;
-			isPlaying = isPlaying || curObjIsPlaying;
-		});
-		return isPlaying;
-	}
-
-	Selection.prototype.setActive = function(active){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.setActive){return}
-			return obj.setActive(active);
-
-		});
-		return this;
-
-	}
-	Selection.prototype.setOutput = function(output, source){
-
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.bus){return}
-			return obj.bus.setOutput(output, source);
-
-		});
-		return this;
-
-	}
-
-
-	Selection.prototype.setVolume = function(arg1, arg2){
-
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.setVolume){return}
-			return obj.setVolume(arg1, arg2);
-
-		});
-		return this;
-
-
-	}
-
-	Selection.prototype.getVolume = function(){
-
-		var vol = -1;
-		this.objects.forEach(function(obj){
-
-			if(!obj.getVolume){return -1}
-			vol = Math.max(vol, obj.getVolume());
-
-		});
-		return vol;
-
-	}
-
-
-	Selection.prototype.fade = function(val, delay, duration){
-
-		delay = delay || 0;
-		duration = duration || 250;
-		duration /= 1000;
-		this.objects.forEach(function(obj){
-
-			if(!obj.fade){return}
-			return obj.fade(val, delay, duration);
-
-		});
-		return this;
-
-	}
-
-
-	Selection.prototype.fadeIn = function(){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.fadeIn){return}
-			return obj.fadeIn();
-
-		});
-		return this;
-
-	}
-
-
-	Selection.prototype.fadeOut = function(duration, delay){
-
-		if(duration){duration = duration / 1000}
-		if(delay){delay = delay / 1000}
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.fadeOut){return}
-			return obj.fadeOut(delay, duration);
-
-		});
-		return this;
-
-	}
-	Selection.prototype.setVariation = function(val, val2){
-
-		this.objects.forEach(function(obj){
-
-			if(typeof obj.setVariation === "function"){
-				obj.setVariation(val, val2);
-			} else {
-				obj.variation = val;
-			}
-
-
-
-		});
-		return this;
-
-	}
-	Selection.prototype.setActiveVariations = function(activeVariations){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.setActiveVariations){return}
-			return obj.setActiveVariations(activeVariations);
-
-		});
-		return this;
-
-	}
-
-	Selection.prototype.get = function(param1, param2){
-
-		var value;
-		this.objects.forEach(function(obj){
-
-			if(!obj.get){return}
-			value = obj.get(param1, param2);
-
-		});
-		return value;
-
-	}
-
-	Selection.prototype.setParams = function(params){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.setParams){return}
-			return obj.setParams(params);
-
-		});
-		return this;
-	}
-
-
-	Selection.prototype.set = function(param, value, value2){
-
-		this.createDefaultSectionIfNeeded();
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.set){return}
-			return obj.set(param, value, value2);
-
-		});
-		return this;
-
-	}
-
-
-
-	Selection.prototype.map = function(param, valIn, minIn, maxIn, minOut, maxOut, exp){
-
-		this.objects.forEach(function(obj){
-
-			if(!obj.map){return}
-			return obj.map(param, valIn, minIn, maxIn, minOut, maxOut, exp);
-
-		});
-		return this;
-	}
-
-	Selection.prototype.find = find;
-
-
-	Selection.prototype.group = function(){
-
-		var thisSelection = this;
-		this.objects.forEach(function(obj){
-
-			if(obj.groups){
-				obj.groups.push(thisSelection);
-			}
-		});
-		return this;
-
-	}
-
-
-	Selection.prototype.addTrackGroup = function(selection){
-		this.objects.forEach(function(obj){
-
-			if(obj.addTrackGroup){
-				obj.addTrackGroup(selection);
-			}
-		});
-		return this;
-
-	}
-
-
-	Selection.prototype.getPosition = function(pos, flags){
-
-		var positionObj;
-
-		if(!this.objects.length){
-			this.objects = [defaultInstance];
-		}
-		this.objects.forEach(function(obj){
-
-			if(obj.getPosition){
-				positionObj = obj.getPosition(pos, flags);
-			}
-		});
-
-		return positionObj;
-	}
-
-	Selection.prototype.on = function(event, fn, delay){
-
-		this.objects.forEach(function(obj){
-
-			if(obj.eventHandler){
-				obj.eventHandler.addEvent(event, fn, delay);
-			}
-		});
-	}
-
-	Selection.prototype.update = function(arg1){
-
-		this.objects.forEach(function(obj){
-
-			if(obj.update){
-				obj.update(arg1);
-			}
-		});
-		return this;
-	}
-
-
+	
 
 
 	// EVENT HANDLER
@@ -5378,6 +5534,8 @@ class GUI {
 
 		} else if(activeVal >= ar.min && activeVal <= ar.max) {
 
+			// this is a predecessor to the filter attribute.
+			// sort it out and choose sollution. This is confusing.
 			var range = ar.max - ar.min;
 			var valInRange = activeVal - ar.min;
 
@@ -5443,7 +5601,8 @@ class GUI {
 
 	function inArray(needle, haystack){
 
-		if(!(haystack instanceof Array)){return}
+		if(!(haystack instanceof Array)){return false}
+		if(!haystack.length){return false}
 
 		let needles = [];
 		if(typeof needle == "string"){
@@ -5452,7 +5611,9 @@ class GUI {
 			needles.push(needle);
 		} else if(needle instanceof Array){
 			// all is well with my soul
+			needles = needle;
 		}
+		if(!needles.length){return false}
 
 		var matches = 0;
 
@@ -5534,6 +5695,14 @@ class GUI {
 			}
 		}
 
+		// add classList
+		if(values.class && values.class.length){
+			inheritedValues.classList = values.class.split(" ");
+		} else {
+			inheritedValues.classList = [];
+		}
+		
+
 
 		this.addDefaultParameters(inheritedValues);
 
@@ -5605,9 +5774,7 @@ class GUI {
 
 	function fade(val, delay, duration, callBack){
 
-		//console.log("delay", delay);
 		var gainNode = this.bus.output;
-		gainNode.gain.cancelScheduledValues(audioContext.currentTime);
 		if(this.fadeCallbackID){clearTimeout(this.fadeCallbackID);}
 
 		var myObj = this;
@@ -5618,14 +5785,13 @@ class GUI {
 		duration = duration || 0.001;
 
 		// make sure fade is finished at delay time
-		delay -= duration;
+		// delay -= duration;
 		delay = delay > 0 ? delay : 0;
 
 
 		var fadeEndTime = audioContext.currentTime+delay+duration/2;
 		var fadeStartTime = Math.max(audioContext.currentTime, fadeEndTime-duration);
-
-		var oldVolume = gainNode.gain.value;
+		gainNode.gain.cancelScheduledValues(fadeStartTime);
 
 		if(this.parameters){
 			var defaultVal = this.parameters.volume;
@@ -5637,7 +5803,7 @@ class GUI {
 		gainNode.gain.setTargetAtTime(val, fadeStartTime, duration);
 
 		if(typeof callBack === "function"){
-			this.fadeCallbackID = setTimeout(callBack, (delay+duration)*1000);
+			this.fadeCallbackID = setTimeout(callBack, (delay+duration*3)*1000);
 		}
 
 	}
@@ -5658,7 +5824,6 @@ class GUI {
 	}
 
 	function fadeOut(delay, duration){
-
 		this.fade(0, delay, duration);
 	}
 
@@ -5711,14 +5876,20 @@ class GUI {
 
 
 
-		for (let i in attributes){
-			if(attributes.hasOwnProperty(i)){
-				let param = attributes[i].name;
-				let value = typeFixParam(param, attributes[i].value);
-				obj[param] = value;
+		// for (let i in attributes){
+		// 	if(attributes.hasOwnProperty(i)){
+		// 		let param = attributes[i].name;
+		// 		let value = typeFixParam(param, attributes[i].value);
+		// 		obj[param] = value;
+		// 	}
+		// }
+		[...attributes].forEach(attr => {
+			if(attr.name){
+				let value = typeFixParam(attr.name, attr.value);
+				obj[attr.name] = value;
 			}
+		});
 
-		}
 		return obj;
 	}
 
@@ -5732,6 +5903,27 @@ class GUI {
 				selectAttributes.push({key: key, value: attribute.value});
 			}
 		});
+		return selectAttributes;
+	}
+
+	function getFollowRules(str){
+
+		let selectAttributes = [];
+		if(str){
+			if(str.includes("=")){
+				// logical expression i.e. "intensity=1;mood=happy"
+				selectAttributes = str.split(";").map(expression => {
+					let arr = expression.split("=").map(s => s.trim());
+					let rule;
+					if(arr[0]){
+						rule = {key: arr[0], value: arr[1]};
+					} else {
+						rule = -1; // syntax error
+					}
+					return rule;
+				}).filter(rule => rule != -1);
+			} 
+		}
 		return selectAttributes;
 	}
 
@@ -6055,6 +6247,9 @@ class GUI {
 
 							case "play":
 							if(msg.args[0])iMus.play(address[3]);
+							if(window.waxml){
+								window.waxml.start(address[3]);
+							}
 							break;
 
 							case "stop":
@@ -6063,6 +6258,10 @@ class GUI {
 
 							case "set":
 							iMus.select(address[3], msg.args[0]);
+							if(window.waxml){
+								// det här är ju ett dumt upplägg men det blir bra när waxml och imusic gifter sig ;-)
+								window.waxml.setVariable(address[3], msg.args[0]);
+							}
 							break;
 						}
 
@@ -6070,6 +6269,10 @@ class GUI {
 
 				});
 			}
+			break;
+
+			default:
+			iMus.select(param, val);
 			break;
 		}
 	}
@@ -6079,72 +6282,30 @@ class GUI {
 		return defaultParams[param];
 	}
 
+	iMus.initSelection = function(filter){
+		defaultInstance.selectFilter = filter;
+		iMus.select();
 
-	// what is the difference between iMus.solo and iMus.select??
+	}
+
 	iMus.select = function(key, value){
 
-		var targetFilter = defaultInstance.selectFilter.find(curFilter => curFilter.name == key);
-
-		if(targetFilter){
-			targetFilter.value = value;
-		} else {
-			defaultInstance.selectFilter.push({name: key, value: value});
-
+		
+		if(key){
+			// set new value
+			var targetFilter = defaultInstance.selectFilter.find(curFilter => curFilter.name == key);
+			if(targetFilter){
+				targetFilter.value = value;
+			} else {
+				defaultInstance.selectFilter.push({name: key, value: value});
+			}
 		}
-
-		this.instances.forEach(instance => {
-			instance.sections.forEach(section => {
-
-				let groupMatch = section.parameters["select-group"] == key || section.parameters["select-variable"] == key;
-				let valueMatch = section.parameters["select-value"] ? section.parameters["select-value"].find(_val => _val == value) : false;
-
-				if(groupMatch && valueMatch) {
-					if(instance.playing){
-
-						section.play();
-					} else {
-						instance.currentSection = section;
-					}
-
-				}
-
-
-				let nlbtl = 0;
-				// find furtherst nextLegalBreak for affected tracks
-
-				let affectedTracks = [];
-				section.tracks.forEach(track => {
-					let curState = track.active > 0;
-					let newState = track.getSoloState(key, value);
-					if(newState != curState){
-						let nlb = track.getNextLegalBreak();
-						if(nlb){
-							nlbtl = Math.max(nlbtl, nlb.timeLeft);
-						}
-						affectedTracks.push({
-							track: track,
-							state: newState,
-							timeToLegalBreak: nlb.timeLeft
-						});
-						//console.log(track.id, nlb.timeLeft);
-					}
-				});
-
-				//console.log("nlbtl: " + nlbtl);
-
-				affectedTracks.forEach(trackObj => {
-					if(trackObj.state){
-						trackObj.track.play(nlbtl);
-					} else {
-						trackObj.track.stop(nlbtl);
-					}
-				});
-
-			});
-
-			instance.motifs.forEach(motif => motif.setSoloState(key, value));
-
+		
+		// update filter for all tracks and motifs
+		defaultInstance.sections.forEach(section => {
+			section.tracks.forEach(track => track.filter(defaultInstance.selectFilter));
 		});
+		defaultInstance.motifs.forEach(motif => motif.filter(defaultInstance.selectFilter));
 
 
 	}
@@ -6154,12 +6315,66 @@ class GUI {
 	iMus.play = function(selector, options, arg2, arg3){
 		// play objects matched by selector or play defaultInstance
 		if(selector){
-			var selection = new Selection(selector, defaultInstance);
-			return selection.play(options, arg2, arg3);
+
+			if(iMus.playAfterInterlude){
+				clearTimeout(iMus.playAfterInterlude);
+			}
+			
+			// get new selection
+			var selection = new Selection().selectForPlayback(selector);
+
+			// check if the selection includes a section
+			if(selection.sections.length){
+				let newSection = selection.sections[0];
+				// Note: sections can have multiple classes. Find the one that matches this selector.
+				
+				let interludeSection, interludeSelection, interludeSelector;
+				if(selection.string && iMus.lastSelectedSectionString){
+					// make interlude selection (i.e. A-B)
+					console.log(iMus.lastSelectedSectionString, "->", selection.string);
+					interludeSelector = `${iMus.lastSelectedSectionString}-${selection.string}`;
+					
+					interludeSelection = new Selection().selectForPlayback(interludeSelector);
+					interludeSection = interludeSelection.sections.pop();
+				}
+				if(interludeSection){
+					// if there is a match, first trig leadIns and Motifs now
+					[...interludeSelection.motifs,...interludeSelection.leadIns].forEach(obj => obj.play(options, arg2, arg3));
+
+					// then play interlude and store time until it changes
+					interludeSection.play(options, arg2, arg3);
+					let timeToLegalBreak = interludeSection.getTimeToLegalBreak();
+					let interludeLength = interludeSection.getLength();
+
+					// delay call to play target selection until interlude is done
+					let delay = timeToLegalBreak + interludeLength -timeWindow;
+					iMus.playAfterInterlude = setTimeout(() => {
+						iMus.lastSelectedSectionString = selection.string;
+						selection.play(options, arg2, arg3);
+					}, delay * 1000);
+					
+				} else {
+					// If no interlude is found, then play all matches now
+					iMus.lastSelectedSectionString = selection.string;
+					return selection.play(options, arg2, arg3);
+				}
+			} else {
+				// play only motifs in current section
+				return selection.play(options, arg2, arg3);
+			}
+
+
+
+			
+
+			
 		} else {
+			// No selector (i.e. iMus.play())
 			if(defaultInstance.currentSection){
+				iMus.lastSelectedSectionString = defaultInstance.currentSection.parameters.classList[0];
 				defaultInstance.currentSection.play();
 			} else {
+				defaultInstance.currentSection = "default";
 				var selection = new Selection("default", defaultInstance);
 				return selection.play(options, arg2, arg3);
 			}
@@ -6168,8 +6383,27 @@ class GUI {
 
 	}
 
+	iMus.start = iMus.play;
+
+	iMus.next = function(){
+		console.log("next");
+		if(!defaultInstance.currentSection){
+			iMus.play();
+		} else {
+			let i = defaultInstance.sections.indexOf(defaultInstance.currentSection);
+			i = ++i % defaultInstance.sections.length;
+			defaultInstance.sections[i].play();
+		}
+
+	}
+
 	iMus.stop = function(selector){
 		// stop objects matched by selector or play defaultInstance
+		if(!defaultInstance.currentSection){return}
+
+		if(iMus.playAfterInterlude){
+			clearTimeout(iMus.playAfterInterlude);
+		}
 
 		if(selector){
 			var selection = new Selection(selector, defaultInstance);
@@ -6554,12 +6788,16 @@ class GUI {
 
 	var defaultInstance = new iMus();
 	//defaultInstance.addSection({tags: defaultSectionName});
+	// Ta bort denna tomma instans. Men det kräver också att kod
+	// som beror på den måste fixas som t.ex. iMus.set()
 	defaultInstance.addSection();
 	iMus.addSection = defaultInstance.addSection;
 
 
 
 	iMus.variations = {};
+
+	iMus.voiceController = new VoiceController();
 
 
 	iMus.setVariation = function(groupID, val){
@@ -6575,7 +6813,10 @@ class GUI {
 
 
 
-	iMus.onload = function(){};
+	iMus.onload = function(){
+		// better to make this a dispatch a custom event
+		iMus.GUI = new GUI();
+	};
 
 
 	document.addEventListener("click", function(){
@@ -6583,99 +6824,8 @@ class GUI {
 		initAudioContextTimer();
 	});
 
-	// window.addEventListener("load", function(event) {
 
 	iMus.connectToHTML = e => {
-
-
-    	// read through meta tags to set default values
-		// var meta = document.querySelectorAll("meta[name*='imusic-']");
-		// meta.forEach(function(el){
-		// 	var param = el.name.substr(7);
-		// 	var strVal = el.content;
-
-		// 	// try to convert val if possible
-		// 	val = eval(strVal);
-		// 	if(val != strVal){val = strVal}
-
-		// 	iMusic.set(param, val);
-		// });
-
-		// let elements;
-		// document.querySelectorAll("a[data-imusic-select-group]").forEach(el => {
-
-		// 	var deadLink = "javascript:void(0)";
-		// 	if(!el.attributes.href){
-		// 		el.setAttribute("href", deadLink);
-		// 	} else if(el.attributes.href.nodeValue == "#"){
-		// 		el.attributes.href.nodeValue = deadLink;
-		// 	}
-		// 	el.addEventListener("click", function(e){
-		// 		let dataset = e.target.dataset;
-		// 		iMus.select(dataset.imusicSelectGroup, dataset.imusicSelectValue);
-		// 		// if(el.attributes.href.nodeValue == "#"){
-		// 		// 	e.preventDefault ? e.preventDefault() : e.returnValue = false;
-		// 		// }
-		// 	});
-
-		// });
-
-
-		// read through all elements that should trigger iMusic
-
-
-		// elements = document.querySelectorAll("[data-imusic], [data-imusic-play]");
-		// let bgElements = [];
-		// elements.forEach(function(el){
-
-		// 	let musicData = el.dataset.imusic || el.dataset.imusicPlay;
-		// 	// split comma separated string into array!!
-
-		// 	if(!musicStructure){
-		// 		let selection = iMusic.loadFile(musicData);
-		// 	}
-
-		// 	switch(el.localName){
-
-		// 		case "body":
-		// 		// autoplay if set on <body>
-		// 		defaultInstance.parameters.onLoadComplete = selection.selector;
-		// 		break;
-
-		// 		case "a":
-		// 		var deadLink = "javascript:void(0)";
-		// 		if(!el.attributes.href){
-		// 			el.setAttribute("href", deadLink);
-		// 		} else if(el.attributes.href.nodeValue == "#"){
-		// 			el.attributes.href.nodeValue = deadLink;
-		// 		}
-		// 		default:
-		// 		el.addEventListener("click", function(e){
-		// 			switch (musicData) {
-		// 				case "play":
-		// 					iMus.play();
-		// 				break;
-		// 				case "stop":
-		// 					iMus.stop();
-		// 				break;
-		// 				default:
-		// 					iMus.play(musicData);
-		// 				break;
-		// 			}
-
-		// 			if(el.attributes.href && el.attributes.href.nodeValue == "#"){
-		// 				e.preventDefault ? e.preventDefault() : e.returnValue = false;
-		// 			}
-		// 		});
-		// 		break;
-
-		// 		//default:
-		// 		//bgElements.push(el);
-		// 		//break;
-		// 	}
-		// });
-
-
 		
 		[...document.querySelectorAll("*")].forEach( el => {
 
@@ -6685,14 +6835,15 @@ class GUI {
 					let fn;
 					let attrNameArr = attr.localName.split("-");
 
+					let sustain;
+					let animationData = attr.value.split(",");
 					switch(attrNameArr[2]){
 
 						// i.e. "beat, 0, 100, red, 0, 300"
 						case "style":
-							let animationData = attr.value.split(",");
 							let Q = (animationData[0] || "beat").trim();
 							let offset = (animationData[1] || "0").trim();
-							let sustain = (animationData[2] || "").trim();
+							sustain = (animationData[2] || "").trim();
 							let className = (animationData[3] || "imus-trigger").trim();
 							let attack = (animationData[4] || "").trim();
 							let decay = (animationData[5] || "").trim();
@@ -6717,6 +6868,19 @@ class GUI {
 									el.classList.remove(className);
 								}, delay + A + S);
 
+							});
+							break;
+
+						
+							case "trigger":
+							sustain = 200;
+							let url = animationData[0];
+							defaultInstance.addEventListener("playFile", musicEvent => {
+								if(musicEvent.detail.url == url){
+									if(el.timeout){clearTimeout(el.timeout)}
+									el.classList.add("imusic-trigger");
+									el.timeout = setTimeout(e => el.classList.remove("imusic-trigger"), sustain);
+								}
 							});
 							break;
 
@@ -6749,18 +6913,21 @@ class GUI {
 						val = floatVal;
 					}
 
-					let fn;
+					let fn = () => {}; // empty function
 					let attrNameArr = attr.localName.split("-");
 
 					if(attrNameArr.length == 2){
+						// insert default click event
 						attrNameArr.splice(2, 0, "click", val);
 					} else if(attrNameArr.length == 3){
-						// insert default click event
-						attrNameArr.splice(2, 0, "click");
+						// insert default click event and value as commandname
+						attrNameArr.splice(3, 0, val);
+						val = "";
 					}
 
 					let eventName = attrNameArr[2];
 					let commandName = attrNameArr[3];
+					let variableName = commandName; // duplet for clarity ;-) - it can be either or...
 
 					switch(commandName){
 						case "start":
@@ -6770,15 +6937,76 @@ class GUI {
 							fn = e => {
 								val.split(",").forEach(v => iMusic.play(v.trim()));
 							}
-							break;
+						break;
+
+						case "toggle":
+							fn = e => {
+								let state = el.classList.contains("active");
+								if(state){
+									el.classList.remove("active");
+								} else {
+									el.classList.add("active");
+								}
+								val.split(",").forEach(v => iMusic(v.trim()).togglePlay());
+							}
+						break;
 
 						case "stop":
 							fn = e => iMusic.stop();
+						break;
+
+
+						case "set":
+							// New syntax 2022-09-15. Target variable is now not be a part of 
+							// the attribute name, but as a part of the expression
+							// in the value
+							// i.e. data-imusic-click="intensity=5"
+							if(val.includes("=")){
+								let values = [];
+								// allow for multiple values
+								let rules = val.split(";").forEach(expression => {
+									let arr = expression.split("=").map(v => v.trim());
+									let key = arr[0];
+									let value = arr[1];
+									if(key){
+										if(value.includes("this.")){
+											// allow for dynamic values from slider, switches etc.
+											let targetProperty = value.replace("this", "el");
+											value = {
+												valueOf: () => {
+													return eval(targetProperty);
+												}
+											}
+										} 
+
+										values.push({key: key, value: value});
+									}
+								});
+								fn = e => {
+									values.forEach(entry => iMusic.select(entry.key, entry.value.valueOf()));
+								}
+								
+							} 
 							break;
 
+						case "trigger":
+						case "style":
+							// this is a bit weird
+							// just added to avoid doing something wrong for attributes
+							// that shall attach eventListeners to iMusic (above)
+						break;
+
 						default:
-							fn = e => {
-								iMusic.select(commandName, val);
+							if(variableName){
+								if(eventName == "input"){
+									fn = e => {
+										iMusic.select(variableName, e.target.value);
+									}
+								} else {
+									fn = e => {
+										iMusic.select(variableName, val);
+									}
+								}		
 							}
 							break;
 					}
@@ -6948,71 +7176,7 @@ class GUI {
 		  	var url, params, part;
 		  	var selectKeys = [];
 
-				this.tags = [];
-
-
-		  	let busses = root.querySelectorAll("bus");
-		  	var objCnt = 0;
-		  	let busObjects = [];
-		  	busses.forEach((busNode, id) => {
-
-			  	// create and connect all busses first
-			  	let busObject = new Bus2(audioContext, el);
-			  	busObjects[id] = busObject;
-			  	busNode.classList.forEach(tag => addReferenceObject(tag, busObject));
-
-			  	// default connect to ctx.destination
-			  	busObject.connect();
-
-		  	});
-
-		  	busses.forEach((busNode, id) => {
-			  	let busObject = busObjects[id];
-		  		Array.from(busNode.children).forEach(node => {
-				  	let params = attributesToObject(node.attributes);
-				  	let audioNode = busObject.addNode(node.nodeName.toLowerCase(), params);
-				  	node.classList.forEach(tag => addReferenceObject(tag, audioNode, busObject));
-
-					Array.from(node.children).forEach(paramNode => {
-
-						let value = paramNode.getAttribute("value");
-						let nodeName = paramNode.nodeName.toLowerCase();
-						if(value){audioNode.set(nodeName, value);}
-						let params = attributesToObject(paramNode.attributes);
-
-						if(params.controls){
-							if(!busObject.el){
-								busObject.el = document.createElement("div");
-								busObject.parentEl.appendChild(busObject.el);
-							}
-
-							if(!audioNode.el){
-								audioNode.el = document.createElement("div");
-								busObject.el.appendChild(audioNode.el);
-							}
-
-							audioNode.addController(params.controls, {parameter: nodeName});
-						}
-
-
-
-						let follow = paramNode.getAttribute("follow");
-						if(follow){
-							let map = paramNode.getAttribute("map")
-							let mapper = audioNode.addMapper(nodeName, follow, map);
-							variableWatcher.addVariable(follow, audioNode, mapper);
-
-
-							paramNode.classList.forEach(tag => addReferenceObject(tag, mapper, audioNode));
-							if(!paramNode.classList.length){
-								let tag = "obj" + objCnt++;
-								addReferenceObject(tag, mapper, audioNode);
-							}
-						}
-					});
-			  	});
-			});
-
+			this.tags = [];
 
 		  	var arrangements = root.querySelectorAll("arrangement");
 		  	arrangements.forEach((arr, _index) => {
@@ -7047,109 +7211,80 @@ class GUI {
 					if(url){urls.push(url)}
 
 					var regions = track.querySelectorAll("region");
+
 					params = attributesToObject(track.attributes);
 
+					regions.forEach((region) => {
+						part = attributesToObject(region.attributes);
+						url = region.getAttribute("src");
 
-					/*
-					if(params.loop == "off"){
-
-						// temporary sollution
-						// add non-looped tracks as leadIns
-						params.type = "leadIn";
-						urls = [];
-
-
-						regions.forEach((region) => {
-
-							var upbeat = region.getAttribute("upbeat");
-							var src = region.getAttribute("src");
-							if(src){urls.push({url: src, upbeat: upbeat})}
-
-							var sources = region.querySelectorAll("source");
+						if(!url){
+							url = [];
+							var sources = region.querySelectorAll("source, option");
 							sources.forEach((source) => {
-								var ub = source.getAttribute("upbeat") || upbeat;
 								var src = source.getAttribute("src");
-								if(src){urls.push({url: src, upbeat: ub})}
+								if(src){url.push(src)}
 							});
-						});
+						}
 
-						var leadInObj = section.addLeadIn(params, urls);
-						if(track.hasAttribute("select-group")){
-					  		var key = track.getAttribute("select-group");
-					  		var value = track.getAttribute("select-value");
-					  		// store solo values
-					  		leadInObj.setSoloGroup(key, value);
-					  	}
-						if(track.hasAttribute("select-variable")){
-					  		var key = track.getAttribute("select-variable");
-					  		var value = track.getAttribute("select-value");
+						part.url = url;
 
-					  		let win = "window.";
-						  	if(key.substr(0, 7) != win){key = win + key}
+						urls.push(part);
+					});
+					var stem = section.addStem(params, urls);
 
-					  		// store solo values
-					  		leadInObj.setSoloGroup(key, value);
-					  	}
-
-
-
-					} else {
-
-						*/
-
-						// add normal tracks
-						regions.forEach((region) => {
-							part = attributesToObject(region.attributes);
-							url = region.getAttribute("src");
-
-							if(!url){
-								url = [];
-								var sources = region.querySelectorAll("source, option");
-								sources.forEach((source) => {
-									var src = source.getAttribute("src");
-									if(src){url.push(src)}
-								});
-							}
-
-							part.url = url;
-
-							urls.push(part);
-						});
-				  		var stem = section.addStem(params, urls);
+					if(stem){
+						// WAXML nodes
+						if(window.webAudioXML){
+							let envelopeNodes = track.querySelectorAll("envelope");
+							let envelopes = [];
+							envelopeNodes.forEach(xmlNode => {
+								let env = window.webAudioXML.createObject(xmlNode);
+								envelopes.push(env);
+							});
+							stem.addEnvelopes(envelopes);
+						}
+					}
+					
 
 
-				  		// the solo-function needs to be reworked xxx
-				  		if(track.hasAttribute("select-group")){
-					  		var key = track.getAttribute("select-group");
-					  		var value = track.getAttribute("select-value");
-					  		// store solo values
-					  		stem.setSoloGroup(key, value);
-				  		}
-				  		if(track.hasAttribute("select-variable")){
-					  		var key = track.getAttribute("select-variable");
-					  		var value = track.getAttribute("select-value");
+					// the solo-function needs to be reworked xxx
+					if(track.hasAttribute("select-group")){
+						var key = track.getAttribute("select-group");
+						var value = track.getAttribute("select-value");
+						// store solo values
+						stem.setSoloGroup(key, value);
+					}
+					if(track.hasAttribute("select-variable")){
+						var key = track.getAttribute("select-variable");
+						var value = track.getAttribute("select-value");
 
-					  		let win = "window.";
-						  	if(key.substr(0, 7) != win){key = win + key}
+						let win = "window.";
+						if(key.substr(0, 7) != win){key = win + key}
 
-					  		// store solo values
-					  		stem.setSoloGroup(key, value);
-				  		}
-
-
-						// new XML syntax where group name is part of the attribute name
-						// and value is the value of the old select-value attribute.
-						// This allows for a system with multiple select-groups for one track
-						// i.e. select-intensity="0...25"
-
-						getFollowAttributes(track.attributes).forEach(entry => {
-							stem.setSoloGroup(entry.key, entry.value);
-						});
-
-					/* } */
+						// store solo values
+						stem.setSoloGroup(key, value);
+					}
 
 
+					// new XML syntax where group name is part of the attribute name
+					// and value is the value of the old select-value attribute.
+					// This allows for a system with multiple select-groups for one track
+					// i.e. select-intensity="0...25"
 
+					// getFollowAttributes(track.attributes).forEach(entry => {
+					// 	stem.setSoloGroup(entry.key, entry.value);
+					// });
+
+					// 2022-09-15 update
+					// It's NOT a good way of including variable-names as part of the attribute name
+					// We should instead allow for multiple variables to be specified in the attribute value
+					// separated with semicolon. And it should not be 'follow'. I'll try "filter"
+					// i.e. filter="intensity=1; mood=happy; place=1,2..4,8"
+
+					getFollowRules(track.getAttribute("filter")).forEach(entry => {
+						stem.setSoloGroup(entry.key, entry.value);
+					});
 
 				});
 
@@ -7173,6 +7308,11 @@ class GUI {
 					if(motif.nodeName == "motif"){
 						motifObj = section.addMotif(params, urls);
 					} else {
+
+						// leadin default values
+						params.upbeat = params.upbeat || "bar";
+						params.changeOnNext = params.changeOnNext || "beat";
+						params.quantize = params.quantize || "bar";
 						motifObj = section.addLeadIn(params, urls);
 					}
 
@@ -7196,14 +7336,22 @@ class GUI {
 			  		}
 
 
-			  		// new XML syntax where group name is part of the attribute name
-					// and value is the value of the old select-value attribute.
-					// This allows for a system with multiple select-groups for one track
-					// i.e. select-intensity="0...25"
-
-					getFollowAttributes(motif.attributes).forEach(entry => {
+					getFollowRules(motif.getAttribute("filter")).forEach(entry => {
 						motifObj.setSoloGroup(entry.key, entry.value);
 					});
+
+					// WAXML nodes
+					if(window.webAudioXML){
+						let envelopeNodes = motif.querySelectorAll("envelope");
+						let envelopes = [];
+						envelopeNodes.forEach(xmlNode => {
+							let musicalTimes = xmlNode.getAttribute("times");
+							xmlNode.setAttribute("orig-times", musicalTimes);
+							let env = window.webAudioXML.createObject(xmlNode);
+							envelopes.push(env);
+						});
+						motifObj.addEnvelopes(envelopes);
+					}
 				});
 			});
 
@@ -7226,7 +7374,6 @@ class GUI {
 				variableWatcher.addVariable(obj.getAttribute("select-variable"));
 			});
 
-			iMus.GUI = new GUI();
 			console.log("XML parse time: " + (Date.now() - XMLtimeStamp));
 
 			iMus.connectToHTML();
@@ -7269,7 +7416,9 @@ class GUI {
 		window.webAudioXML.registerPlugin({
 			name: "iMusic",
 			variables: {},
-			init:  parseImusicXML
+			init:  parseImusicXML,
+			setVariable: (key, val) => iMusic.select(key, val),
+			call: (fn, arg1, arg2, arg3) => iMusic[fn](arg1, arg2, arg3)
 		});
 	} else {
 		// else, just parse iMusic when window is loaded
@@ -7294,6 +7443,7 @@ class GUI {
 	  	}
   	}
 
+	
 
   	class Bus2 {
 
@@ -7750,24 +7900,27 @@ class GUI {
 				}
 				arr.forEach(val => {
 
-					let v = Number(val);
+					if(typeof val != "object"){
 
-					if(isNaN(v)){
+						let v = Number(val);
 
-						if(val.includes("...")){
-							var minMaxStrings = val.split("...");
-							var numValMin = eval(minMaxStrings[0]);
-							var numValMax = eval(minMaxStrings[1]);
-							this.values.push(numValMin);
-							this.values.push(numValMax);
-							val = new MinMax(numValMin, numValMax);
+						if(isNaN(v)){
+	
+							if(val.includes("...")){
+								var minMaxStrings = val.split("...");
+								var numValMin = eval(minMaxStrings[0]);
+								var numValMax = eval(minMaxStrings[1]);
+								this.values.push(numValMin);
+								this.values.push(numValMax);
+								val = new MinMax(numValMin, numValMax);
+							}
+	
+							this._valueType = "string";
+						} else {
+							val = v;
 						}
-
-						this._valueType = "string";
-					} else {
-						val = v;
+						this.values.push(val);
 					}
-					this.values.push(val);
 
 				});
 
@@ -7972,8 +8125,9 @@ Städa upp mellan musicalStart och sectionStart
 Jonas ideas:
 
 Add possibility to loop part for a certain number of times within a track
-
-
 gör partposition oberoende av beatDuration etc.
 
+2022-09-02
+
+changeOnNext="12/4" ger tre takter om globala taktarten är 3/4 men changeOnNext="4" funkar
 */
