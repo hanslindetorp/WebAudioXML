@@ -1,7 +1,7 @@
 
 html, body {
   font-family: sans-serif;
-  background-color: white;
+  background-color: rgb(0, 0, 0);
 }
 
 body {
@@ -11,6 +11,10 @@ body {
 section {
   padding-top: 40px;
   background-color: white;
+}
+
+a {
+  text-decoration: none;
 }
 
 h1 {
@@ -59,11 +63,14 @@ navigation {
 }
 
 navigation > h1 {
-  margin: 0.5em auto;
+  margin: 0.2em auto;
+  font-size: 1.6em;
+  display: inline-block;
   padding: 0;
 }
 
 navigation > a,
+navigation > #musicControl,
 navigation > select {
   position: relative;
   display: inline-block;
@@ -78,7 +85,7 @@ navigation > select {
   text-decoration: none;
 }
 
-navigation > #musicControl {
+navigation > #xmusicControl {
   position: absolute;
   height: 100%;
   left: 1em;
@@ -110,6 +117,7 @@ textarea {
 }
 
 #help {
+  padding-top: 75px;
   padding-left: 10px;
   padding-right: 10px;
   overflow-y: auto;
@@ -238,7 +246,6 @@ waxml-xy-handle.remoteControl {
 /* HIDE UNUSED ELEMENTS */
 
 navigation > select, 
-navigation > #helpBtn, 
 navigation > #shareBtn, 
 navigation > #playBtn, 
 navigation > #editBtn {

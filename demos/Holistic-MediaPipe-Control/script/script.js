@@ -74,16 +74,25 @@ waxml.addEventListener("inited", () => {
 
 
   document.querySelector("navigation #playBtn").addEventListener("click", e => {
-    if(webAudioXML.muted){
-      webAudioXML.init();
-      webAudioXML.updateFromString(myCodeMirror.getValue());
-      iMusic.play();
-      webAudioXML.unmute();
-      e.target.style.backgroundColor = "#ccf";
-    } else {
-      webAudioXML.mute();
-      e.target.style.backgroundColor = "#fff";
-    }
+    // if(webAudioXML.muted){
+    //   webAudioXML.init();
+    //   webAudioXML.updateFromString(myCodeMirror.getValue());
+    //   iMusic.play();
+    //   webAudioXML.unmute();
+    //   e.target.style.backgroundColor = "#ccf";
+    // } else {
+    //   webAudioXML.mute();
+    //   e.target.style.backgroundColor = "#fff";
+    // }
+
+    document.querySelector("#helpBtn").style.display = "inline-block";
+    document.querySelector("#playBtn").style.display = "none";
+  });
+
+
+  document.querySelector("navigation > #helpBtn").addEventListener("click", e => {
+    document.querySelector("#playBtn").style.display = "inline-block";
+    document.querySelector("#helpBtn").style.display = "none";
   });
 
   document.querySelector("navigation > #shareBtn").addEventListener("click", e => {

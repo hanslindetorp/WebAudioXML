@@ -55,19 +55,20 @@
       </section>
 
       <section id="help">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/QVAACgCzOII" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/oWN0h7OBxB8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         
-        <p>This gesture-driven, musical instrument, is an implementation of <a href="https://google.github.io/mediapipe/">MediaPipe</a> for 
-        <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a>. I was inspired by the great idea from 
-        <a href="https://github.com/monlim/Handmate-MIDI">Handmate-MIDI</a> to control
-        audio data with the fantastic MediaPipe library. AudioPipe is an online, fully programmable,
-      gesture controlled musical instrument. You can play with the presets or edit the code and make your own sound
-      synthesis and mappings. Please read the documentation for WebAudioXML to take advantage of all the possibilities.
+        <p>This DEMO shows how music (or any type of sound) can be controlled with gestures on a standard web page.
+          It is built with a library called MediaPipe - <a href="https://google.github.io/mediapipe/">https://google.github.io/mediapipe/</a> 
+          for tracking a body from a video signal.</p>
+          <p>The X, Y, and Z locations of all tracked points are then fed into 
+          an adaptive mixer built with WebAudioXML - <a href="https://github.com/hanslindetorp/WebAudioXML">https://github.com/hanslindetorp/WebAudioXML</a>
+          Both technologies are freely available for use on any web page. 
+          The inspiration for this DEMO comes from <a href="https://github.com/monlim/Handmate-MIDI">Handmate-MIDI</a>.
       </p>
 
-      <p>This application is part of a reasearch project at the <a href="https://www.kmh.se/">Royal College 
-        of Music</a> and <a href="https://www.kth.se/">Royal Institute of Technology</a> in Stockholm by 
-        Hans Lindetorp. Please follow my blog at <a href="https://hans.arapoviclindetorp.se/">hans.arapoviclindetorp.se/</a></p>
+      <p>This application is part of a research project at the <a href="https://www.kmh.se/">Royal College 
+        of Music</a> and the <a href="https://www.kth.se/">Royal Institute of Technology</a> in Stockholm by 
+        Hans Lindetorp. Please follow my blog at <a href="https://hans.arapoviclindetorp.se/">hans.arapoviclindetorp.se</a></p>
       </section>
 
       <navigation>
@@ -75,10 +76,10 @@
         <div id="musicControl">
           Music<input id="playMusicBtn" type="checkbox" data-waxml-change-set="gain=this.checked" />
         </div>
-        <a id="playBtn" href="#play">Run</a>
+        <a id="playBtn" href="#play">Close</a>
         <a id="editBtn" href="#edit">Edit</a>
         <a id="shareBtn" href="#share">Share</a>
-        <a id="helpBtn" href="#help">Help</a>
+        <a id="helpBtn" href="#help">Info</a>
        
         <select>
           <option>Preset...</option>
