@@ -63,6 +63,9 @@ Read more: https://github.com/hanslindetorp/WebAudioXML/wiki -->
         <GainNode id="bass-keys-6" />
     </Mixer>
 
+
+    
+
     <Mixer mix="$intensity" crossFadeRange="0.2">
         <GainNode id="lead-1" peak="0.15...0.2" />
         <GainNode id="lead-2" peak="0.35...0.4" />

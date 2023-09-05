@@ -1,0 +1,1 @@
+(arr) => arr.map(el => el ** 2)

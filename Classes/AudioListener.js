@@ -10,7 +10,7 @@ class AudioListener {
         
     }
 	
-	    
+
 }
 
 module.exports = AudioListener;

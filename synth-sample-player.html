@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>WebAudioXML - arpeggio demo</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+
+
+	<body>
+
+		<h1>WAXML Sample-Player</h1>
+		
+		<waxml-meter fftSize="8192" width="305" height="200" type="oscilloscope"></waxml-meter>
+		<waxml-meter width="305" height="200" type="FFT" maxFrequency="10000" colors="#00f, #44f, #99f" ></waxml-meter>
+		<waxml-meter width="620" height="20" type="loudness" timeframe="2s" maxDecibels="0" minDecibels="-40" colors="green, yellow, red" segments="60,20,20"></waxml-meter>
+		
+
+		<div class="synth sample-player">
+			<h3>WAXML-SAMPLE-PLAYER</h3>
+			<label>
+				Reverb:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:10:1=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="ZXCVBNM" channel="10"></waxml-midi-controller>
+		</div>
+		
+		<p>Built with <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a> - a part of a research  project by <a href="http://hans.arapoviclindetorp.com">Hans Lindetorp</a></p>
+
+		<script src="WebAudioXML.js" data-source="synth-sample-player.xml"></script>
+		
+	</body>
+</html>

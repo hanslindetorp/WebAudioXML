@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<imusic version="1.0" tempo="100" timeSign="4/4" loopLength="8" showGUI="false">
+  <arrangement>
+    <track src="pad.mp3"></track>
+    <track src="piano.mp3"></track>
+    <track src="rhodes.mp3"></track>
+    <track src="clav.mp3"></track>
+    <track src="organ.mp3"></track>
+    <track src="bass1.mp3"></track>
+    <track src="drums1.mp3"></track>
+    <track src="shaker.mp3"></track>
+  </arrangement>
+</imusic>

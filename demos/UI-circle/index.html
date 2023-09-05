@@ -17,49 +17,30 @@
 			how it can be used to map pointer movements in a circle to control pitch and filter cutoff frequency
 			from the angle and radius of the pointer. Touch the circle to start.</p>
 
-		<waxml-xy-area type="circle">
+		<waxml-xy-area 
+			width="300" 
+			height="300" 
+			type="circle" 
+			background-color="#ccf" 
+			border="3px solid #333">
+
 			<waxml-xy-handle
+				x="0.5"
+				y="0.5"
+				width="50px"
+				height="50px"
 				id="handle_1" 
-				catch="true"
+				catch="false"
 				direction="xy"
 				angleOffset="0"
-				sources="angle, radius, dragged"
-				targets="a1, r1, d1"
+				sources="x, y, angle, radius, dragged"
+				targets="x1, y1, angle1, radius1, dragged1"
 			></waxml-xy-handle>
+
 		</waxml-xy-area>
 
-		<waxml-xy-area type="circle">
-			<waxml-xy-handle
-				id="handle_2" 
-				catch="true"
-				direction="xy"
-				angleOffset="0"
-				sources="angle, radius, dragged"
-				targets="a2, r2, d2"
-			></waxml-xy-handle>
-		</waxml-xy-area>
-
-		<waxml-xy-area type="circle">
-			<waxml-xy-handle
-				id="handle_3" 
-				catch="true"
-				direction="xy"
-				angleOffset="0"
-				sources="angle, radius, dragged"
-				targets="a3, r3, d3"
-			></waxml-xy-handle>
-		</waxml-xy-area>
 
 		<div id="output"></div>
-		<button id="timeStamp">TimeStamp</button>
-		<button id="newSession">New Session</button>
-		<select id="selectSession"></select>
-
-		<h3>HTML:</h3>
-		<img src="img/html.png" />
-
-		<h3>WebAudioXML:</h3>
-		<img src="img/audio-config.png" />
 
 		<script src="WebAudioXML.js" data-source="audio-config.xml"></script>
 	</body>

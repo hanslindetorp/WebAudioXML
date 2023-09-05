@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>WebAudioXML - arpeggio demo</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+
+
+	<body>
+		<h1>WAXML FM Synth</h1>
+
+		<waxml-meter fftSize="8192" width="305" height="200" type="oscilloscope"></waxml-meter>
+		<waxml-meter width="305" height="200" type="FFT" maxFrequency="10000" colors="#00f, #44f, #99f" ></waxml-meter>
+		<waxml-meter width="620" height="20" type="loudness" timeframe="2s" maxDecibels="0" minDecibels="-40" colors="green, yellow, red" segments="60,20,20"></waxml-meter>
+		
+
+		<div class="synth FM">
+			<h3>WAXML-FM</h3>
+			<label>
+				LFO:
+				<input type="range" value="0" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:3:1=this.value"/>
+			</label>
+			<label>
+				FM Octave:
+				<input type="range" value="1" min="-2" max="4" data-waxml-input-set="switch=this.value"/>
+			</label>
+			<label>
+				FM Amount:
+				<input type="range" value="0.5" min="0" max="1" step="0.01" data-waxml-input-set="MIDI:ControlChange:3:11=this.value"/>
+			</label>
+			<waxml-midi-controller type="keyboard" width="600" height="100" keyCommands="asdfghjklöä" channel="3"></waxml-midi-controller>
+		</div>
+		<p>Built with <a href="https://github.com/hanslindetorp/WebAudioXML">WebAudioXML</a> - a part of a research  project by <a href="http://hans.arapoviclindetorp.com">Hans Lindetorp</a></p>
+
+		
+		<script src="WebAudioXML.js" data-source="synth-FM.xml"></script>
+		
+	</body>
+</html>

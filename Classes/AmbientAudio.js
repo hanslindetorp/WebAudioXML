@@ -123,7 +123,7 @@ class AmbientAudio {
     set loopStart(val){
         // it's SOOO confusing with timescale. Think it through carefully. Where
         // is it stored, when is it used. On setting or getting etc.
-        this._params.loopStart = val / this.getParameter("timescale");
+        this._params.loopStart = val; // / this.getParameter("timescale");
     }
 
     get loopStart(){
@@ -133,7 +133,7 @@ class AmbientAudio {
     set loopEnd(val){
         // it's SOOO confusing with timescale. Think it through carefully. Where
         // is it stored, when is it used. On setting or getting etc.
-        this._params.loopEnd = val / this.getParameter("timescale");
+        this._params.loopEnd = val; // / this.getParameter("timescale");
     }
 
     get loopEnd(){
@@ -143,7 +143,7 @@ class AmbientAudio {
     set loopLength(val){
         // it's SOOO confusing with timescale. Think it through carefully. Where
         // is it stored, when is it used. On setting or getting etc.
-        this._params.loopLength = val / this.getParameter("timescale");
+        this._params.loopLength = val; //  / this.getParameter("timescale");
     }
 
     get loopLength(){
@@ -162,8 +162,8 @@ class AmbientAudio {
 
     set playbackRate(val){
         this._params.playbackRate = val;
-        this.bufferSource1.playbackRate = val;
-        this.bufferSource2.playbackRate = val;
+        if(this.bufferSource1){this.bufferSource1.playbackRate = val}
+        if(this.bufferSource2){this.bufferSource2.playbackRate = val}
     }
 
     get playbackRate(){
@@ -308,14 +308,17 @@ class AmbientAudio {
         // Evaluate if setTargetAtTime is the best method. It might not give equal power.
         // fade in or out
         this.fade1.gain.setTargetAtTime((this.cnt+1) % 2, this.nextTime, fadeTime / 5);
-        //this.fade1.gain.linearRampToValueAtTime((this.cnt+1) % 2, this._ctx.currentTime + fadeTime);
+        // this.fade1.gain.linearRampToValueAtTime((this.cnt+1) % 2, this._ctx.currentTime + fadeTime / 2);
+        //this.fade1.gain.exponentialRampToValueAtTime((this.cnt+1) % 2 + (10 ** -10), fadeTime);
+        
         // fade in or out
         this.fade2.gain.setTargetAtTime(this.cnt % 2, this.nextTime, fadeTime / 5);
-        //this.fade2.gain.linearRampToValueAtTime(0, 0, this._ctx.currentTime + fadeTime);
+        //this.fade2.gain.linearRampToValueAtTime(this.cnt % 2, this._ctx.currentTime + fadeTime / 2);
+        //this.fade2.gain.exponentialRampToValueAtTime(this.cnt % 2 + (10 ** -10), fadeTime);
 
         this.nextTime += delay;
         this.cnt++;
-        let timeToNextTrig = this.nextTime - this._ctx.currentTime - 0.01;
+        let timeToNextTrig = this.nextTime - this._ctx.currentTime - 0;
         setTimeout(e => this.trigSample(), timeToNextTrig * 1000);
     }
     

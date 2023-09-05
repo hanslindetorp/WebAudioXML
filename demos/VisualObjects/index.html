@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>WebAudioXML - arpeggio demo</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+
+
+	<body>
+		<h1>WebAudioXML - arpeggio DEMO</h1>
+		<p>This DEMO illustrates how the variable $currentTime can be used as a source for mapping
+			time to pitches and filter cutoff frequencies using the WebAudioXML syntax. WebAudioXML
+			is both an XML syntax and a javascript parser. Please, read more at
+			 <a href="https://github.com/hanslindetorp/WebAudioXML">https://github.com/hanslindetorp/WebAudioXML</a>
+			 and follow my reasearch blog at 
+			 <a href="https://hans.arapoviclindetorp.se/">https://hans.arapoviclindetorp.se/</a>
+		</p>
+		<p><a href="https://www.kth.se/profile/lindet">Hans Lindetorp</a> - PhD student at <a href="https://www.kmh.se">Royal College of Music</a> and <a href="https://www.kth.se">Royal Institute of Technology</a> in Stockholm</p>
+		<button id="playBtn">PLAY</button>
+		<button id="stopBtn">STOP</button>
+		
+		
+		<waxml-display fftSize="8192" width="400" height="200" type="oscilloscope"></waxml-display>
+		<waxml-display width="400" height="200" type="FFT" maxFrequency="10000" colors="#00f, #44f, #99f" ></waxml-display>
+		<waxml-display width="400" height="20" type="VU" minDecibels="-40" colors="green, yellow, red" colorRegions="60,20,20"></waxml-display>
+		
+		<waxml-midi-controller width="400" height="100" min="34" max="60" labels="a,a#,b,c,c#,d,d#,e,f,f#,g,g#" keyCommands="zxcvbnmasdfghjklöäqwertyuiopå" midiIn="true"></waxml-midi-controller>
+		<waxml-midi-controller width="400" height="400" min="34" cols="8" rows="8" type="launchpad" scale="minor" labels="abcdefg" overlap="5" keyCommands="zxcvbnmasdfghjklöäqwertyuiopå" midiIn="true"></waxml-midi-controller>
+<!-- 
+		<textarea width="100%" height="80%">
+
+			<?xml version="1.0" encoding="UTF-8"?>
+			<Audio version="1.0" timeUnit="s" gain="-6dB" controls="true">
+					
+				<var name="p1" value="($currentTime * 8) % 4" mapin="0,3" mapout="60,63,65,67" curve="steps" convert="MIDI->frequency"></var>
+				<var name="p2" value="$currentTime % 4" mapin="0,3" mapout="36,39,41,43" curve="steps" convert="MIDI->frequency"></var>
+				
+				<var name="f1" value="($currentTime * 8) % 3" mapin="0,2" mapout="800,400,200" curve="steps"></var>
+				<var name="f2" value="($currentTime * 8) % 2" mapin="0,1" mapout="500,20" curve="steps"></var>    
+
+				<OscillatorNode type="sawtooth" frequency="$p1" output="next"></OscillatorNode>
+				<BiquadFilterNode frequency="$f1"></BiquadFilterNode>
+
+				<OscillatorNode type="sawtooth" frequency="$p2" output="next"></OscillatorNode>
+				<BiquadFilterNode frequency="$f2"></BiquadFilterNode>
+				
+			</Audio>
+
+		</textarea> -->
+
+
+		<script src="WebAudioXML.js" data-source="audio-config.xml"></script>
+		<script src="script.js"></script>
+		
+	</body>
+</html>

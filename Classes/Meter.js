@@ -1,6 +1,6 @@
 
 
-class Display extends HTMLElement {
+class Meter extends HTMLElement {
 
 	constructor(){
 		super();
@@ -8,18 +8,17 @@ class Display extends HTMLElement {
 	}
 
 	connectedCallback(){
-		this.type = this.getAttribute("type") ||"VU";
+		this.type = this.getAttribute("type") ||"loudness";
 		this.type = this.type.toLowerCase();
 
 		let w = parseFloat(this.getAttribute("width"));
 		let h = parseFloat(this.getAttribute("height"));
 
-		// sets a lower limit for visualized amplitude
 		this.inputSelector = this.getAttribute("input");
 
 		switch(this.type){
-			case "vu":
-			this.draw = this.drawVU;
+			case "loudness":
+			this.draw = this.drawLoudness;
 			w = w ||200;
 			h = h ||20;
 			break;
@@ -64,18 +63,48 @@ class Display extends HTMLElement {
 		this.inited = true;
 		this.analyser = audioContext.createAnalyser();
 		let fftSize = this.getAttribute("fftSize") || this.getAttribute("fftsize");
+		let colors = this.getAttribute("colors") || "";
+		this.colors = colors.split(",");
 		
 		switch(this.type){
-			case "vu":
+			case "loudness":
 			fftSize = fftSize || 2048;
+			this.colors = this.colors.length ? this.colors : ["green", "yellow", "red"]
+
+			this.input = new BiquadFilterNode(audioContext, {type: "highpass", frequency: 200});
+			this.input.connect(this.analyser);
+			let timeFrame = this.getAttribute("timeFrame") || this.getAttribute("timeframe") || "";
+			switch(timeFrame){
+					
+				case "short":
+				timeFrame = 2;
+				break;
+
+				case "true":
+				timeFrame = 0;
+				break;
+
+				case "momentary":
+				default:
+				let timeScale = timeFrame.includes("ms") ? 0.001 : 1;
+				timeFrame = parseFloat(timeFrame || 0.4) * timeScale;
+				break;
+
+			}
+			this.timeFrame = timeFrame;
+			this.peakArray = [];
 			break;
 
 			case "fft":
 			fftSize = fftSize || 2048;
+			this.input = this.analyser;
+			this.colors = this.colors.length ? this.colors : ["green", "yellow", "red"]
 			break;
 
 			case "oscilloscope":
 			fftSize = fftSize || 4096;
+			this.input = this.analyser;
+			this.colors = this.colors = this.colors.length ? this.colors :  ["#ccc", "yellow"];
 			break;
 		}
 		if(fftSize){
@@ -102,10 +131,8 @@ class Display extends HTMLElement {
 		maxFrequency = maxFrequency ? parseFloat(maxFrequency) : halfSampleRate;
 		this.lastIndex = Math.floor(maxFrequency / halfSampleRate * this.analyser.frequencyBinCount);
 
-		let colors = this.getAttribute("colors");
-		this.colors = colors ? colors.split(",") : ["green", "yellow", "red"];
 		
-		let colorRegions = this.getAttribute("colorRegions") || this.getAttribute("colorregions");
+		let colorRegions = this.getAttribute("segments") || this.getAttribute("colorregions");
 		if(colorRegions){
 			this.colorRanges = JSON.parse(`[${colorRegions}]`);
 			let sum = this.colorRanges.reduce((a,b) => a + b);
@@ -134,7 +161,7 @@ class Display extends HTMLElement {
 			this.init(source.context);
 		}
 		this.sources.push(source);
-		source.connect(this.analyser);
+		source.connect(this.input);
 	}
 
 	connect(target){
@@ -159,9 +186,16 @@ class Display extends HTMLElement {
 		requestAnimationFrame(e => this.update());
 	}
 
-	drawVU(){
+	drawLoudness(){
 		this.analyser.getByteTimeDomainData(this.dataArray);
 
+		let curTime = this.analyser.context.currentTime;
+
+		// remove old peaks
+		let startTime = Math.max(curTime, curTime - this.timeFrame);
+		this.peakArray = this.peakArray.filter(peak => peak.time > startTime);
+
+		// add new peak
 		let peakPower = 0;
 		for (let i = 0; i < this.dataArray.length; i++) {
 		  let power = ((this.dataArray[i]-128)/128) ** 2;
@@ -169,13 +203,25 @@ class Display extends HTMLElement {
 		}
 		let peakDecibels = 10 * Math.log10(peakPower);
 		peakDecibels = Math.max(peakDecibels, this.analyser.minDecibels);
+		this.peakArray.push({amplitude: peakDecibels, time: curTime});
+
+		// calculate average
+		let avg = this.peakArray.reduce((a,b) => {
+			return {amplitude: a.amplitude + b.amplitude};
+		}).amplitude / this.peakArray.length;
 
 		let range = this.analyser.maxDecibels - this.analyser.minDecibels;
-		let relPeak = 1 + peakDecibels / range;
+		// let relPeak = 1 + peakDecibels / range;
+		avg = Math.min(avg, this.analyser.maxDecibels);
+		avg = Math.max(avg, this.analyser.minDecibels);
+		avg -= this.analyser.minDecibels;
+		let relPeak = avg / range;
 		
-		if(relPeak > this.relPeak){
+		if(relPeak > this.relPeak){ //relPeak > this.relPeak){
+			// quick raise to new peak
 			this.relPeak = relPeak;
 		} else {
+			// slow fall-off to lower value
 			let diff = relPeak - this.relPeak;
 			this.relPeak += diff / 100;
 		}
@@ -290,4 +336,4 @@ class Display extends HTMLElement {
 
 }
 
-module.exports = Display;
+module.exports = Meter;

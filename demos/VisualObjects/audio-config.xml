@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="-2dB" controls="true">
+        
+    <!-- <var name="p1" value="($currentTime * 8) % 4" mapin="0,3" mapout="60,63,65,67" curve="steps" convert="MIDI->frequency"></var>
+    <var name="p2" value="$currentTime % 4" mapin="0,3" mapout="36,39,41,43" curve="steps" convert="MIDI->frequency"></var>
+    
+    <var name="f1" value="($currentTime * 8) % 3" mapin="0,2" mapout="800,400,200" curve="steps"></var>
+    <var name="f2" value="($currentTime * 8) % 2" mapin="0,1" mapout="500,20" curve="steps"></var>     -->
+
+    <var name="f" trig="MIDI:NoteOn" stop="MIDI:NoteOff" value="keyNum" convert="MIDI->frequency" />
+    
+    <Envelope name="env1" start="MIDI:NoteOn" stop="MIDI:NoteOff" ADSR="0,1000,20,200" max="1000" mode="mono"/>
+    
+    <OscillatorNode type="sawtooth" frequency="$f" output="next"></OscillatorNode>
+    
+    <!-- <Noise output="next"/>
+    <BiquadFilterNode type="bandpass" Q="100" frequency="$p3" output="next"></BiquadFilterNode> -->
+    <BiquadFilterNode frequency="€env1"></BiquadFilterNode>
+    <!-- <GainNode gain="0dB"/> -->
+
+    <!-- <OscillatorNode type="sawtooth" frequency="$p2" output="next"></OscillatorNode>
+    <BiquadFilterNode frequency="$f2"></BiquadFilterNode> -->
+    
+</Audio>

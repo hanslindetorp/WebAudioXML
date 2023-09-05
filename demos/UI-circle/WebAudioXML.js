@@ -242,8 +242,9 @@ class AmbientAudio {
                 this.trigSample();
                 this.inited = true;
             }
-            let transitionTime = this.getParameter("transitionTime") || 2;
-            this.fade.gain.setTargetAtTime(1, 0, transitionTime);
+            // let transitionTime = this.getParameter("transitionTime") || 2;
+            let fadeTime =  this.getParameter("fadeTime");
+            this.fade.gain.setTargetAtTime(1, 0, fadeTime);
         } else {
             let fn = () => this.start();
             if(!this.bufferSource1._buffer){
@@ -256,8 +257,9 @@ class AmbientAudio {
     }
 
     stop(){
-        let transitionTime = this.getParameter("transitionTime") || 2;
-        this.fade.gain.setTargetAtTime(0, 0, transitionTime);
+        // let transitionTime = this.getParameter("transitionTime") || 2;
+        let fadeTime =  this.getParameter("fadeTime");
+        this.fade.gain.setTargetAtTime(0, 0, fadeTime);
     }
 
     trigSample(){
@@ -323,7 +325,7 @@ class AmbientAudio {
 
 module.exports = AmbientAudio;
 
-},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":28}],2:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":30}],2:[function(require,module,exports){
 
 const WebAudioUtils = require('./WebAudioUtils.js');
 const Loader = require('./Loader.js');
@@ -438,8 +440,14 @@ class AudioObject{
 		  	break;
 
 		  	case "delaynode":
-        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime).valueOf();
-		  	maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+        let maxDelayTime = (this._params.maxDelayTime || this._params.delayTime);
+        if(maxDelayTime){
+          maxDelayTime = maxDelayTime.valueOf();
+          maxDelayTime = Math.max(1, maxDelayTime * this._params.timescale);
+        } else {
+          maxDelayTime = 1;
+        }
+		  	
 			  this._node = this._ctx.createDelay(maxDelayTime);
 		  	break;
 
@@ -559,10 +567,21 @@ class AudioObject{
 		  	case "xml":
 		  	break;
 
+        case "mixer":
+        this._node = this._ctx.createGain();
+        this.inputs = [];
+        while(this.inputs.length < xmlNode.children.length){
+          let input = this._ctx.createGain();
+          input.connect(this._node);
+          this.inputs.push(input);
+        }
+        break;
+
 		  	case "audio":
         case "gainnode":
         case "mixer":
         case "voice":
+        case "include":
         case "xi:include":
 		  	this._node = this._ctx.createGain();
 		  	break;
@@ -593,7 +612,7 @@ class AudioObject{
 		  	break;
 
         case "channelsplitternode":
-        this.input = new ChannelSpitterNode(this._ctx, {
+        this.input = new ChannelSplitterNode(this._ctx, {
           numberOfOutputs: this._ctx.destination.maxChannelCount,
           channelCount: this._ctx.destination.maxChannelCount,
           channelCountMode: "explicit",
@@ -623,7 +642,10 @@ class AudioObject{
 
 
 		  	case "envelope":
-		  	this._node = xmlNode.parentNode.audioObject._node;
+        if(xmlNode.parentNode.audioObject){
+          this._node = xmlNode.parentNode.audioObject._node;
+        }
+		  	
 		  	this._params.max = this._params.max || 1;
 		  	this._params.valuescale = this._params.max / 100;
 
@@ -644,7 +666,10 @@ class AudioObject{
 
 
         // init envelope to be "closed" on startup
-		  	this.setTargetAtTime(this._node, 0, 0, 0, true);
+        if(this._node){
+          this.setTargetAtTime(this._node, 0, 0, 0, true);
+        }
+		  	
 		  	break;
 
 
@@ -748,7 +773,7 @@ class AudioObject{
 
 	  	// set parameters
 	  	if(this._params){
-        let envName;
+        //let envName;
         Object.entries(this._params).forEach(entry => {
           const [key, value] = entry;
           if(typeof this[key] !== "function"){
@@ -788,15 +813,30 @@ class AudioObject{
                   this.setTargetAtTime(key, val, 0, time, true);
                  }
                });
-            } else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
+            //} else if(envName && envName == WebAudioUtils.getEnvelopeName(value)){
 
+              // old code
+              // // make connection to controlling Envelope
+              // let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+              // if(envNode){
+              //   envNode.obj.addListener(this._node[key], value);
+              // } else {
+              //   console.error(`No envelope matches the name '${envName}'`);
+              // }
+            } else {
+              
               // make connection to controlling Envelope
-              let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
-              if(envNode){
-                envNode.obj.addListener(this._node[key], value);
-              } else {
-                console.error(`No envelope matches the name '${envName}'`);
+              let envName = WebAudioUtils.getEnvelopeName(value);
+              if(envName){
+                let envNode = WebAudioUtils.findXMLnodes(xmlNode, "name", envName).pop();
+                if(envNode){
+                  envNode.obj.addListener(this._node[key], value);
+                } else {
+                  console.error(`No envelope matches the name '${envName}'`);
+                }
               }
+              
+
             }
 
             
@@ -804,6 +844,7 @@ class AudioObject{
             // so that attributes don't overwrite any class functions
             // typeof this[key] !== "function" was added to save from
             // a disaster
+   
             let v = this._params[key].valueOf();
             // if(typeof v !== "undefined")this[key] = v;
             if(typeof v == typeof this[key] || typeof this[key] == "undefined")this[key] = v;
@@ -832,9 +873,14 @@ class AudioObject{
     }
 
     getParameter(paramName){
-      let val;
 
-      if(typeof this._params[paramName] === "undefined"){
+      // stupid to separate parameters (from attributes) and variables (stored in var-elements)
+      let storedParameter = this._params[paramName];
+      let storedVariable = this.getVariable(paramName);
+
+      let val = storedVariable || storedParameter;
+
+      if(typeof val === "undefined"){
           
           if(this._parentAudioObj){
               return this._parentAudioObj.getParameter(paramName);
@@ -844,6 +890,19 @@ class AudioObject{
               switch(paramName){
                 case "transitionTime":
                   val = 0.001;
+                break;
+
+                case "frameRate":
+                  val = 30;
+                break;
+
+                case "fallOffRatio":
+                  val = 0.5;
+                break;
+
+
+                case "smoothDerivative":
+                  val = 5;
                 break;
 
                 case "loopEnd":
@@ -860,7 +919,7 @@ class AudioObject{
           }
 
       } else {
-          val = this._params[paramName];
+          val = val.valueOf();
 
           // adjust time
           switch(paramName){
@@ -986,6 +1045,7 @@ class AudioObject{
     }
 
   	start(data){
+      this._playing = true;
 	  	switch(this._nodeType){
 
 		  	case "oscillatornode":
@@ -1086,8 +1146,23 @@ class AudioObject{
 	  	}
   	}
 
+    continue(){
+      if(this._node.continue){
+        this._playing = true;
+        this._node.continue();
+      }
+    }
+
+    resume(){
+      if(this._node.resume){
+        this._playing = true;
+        this._node.resume();
+      }
+    }
+
   	stop(data){
 
+      this._playing = false;
 	  	switch(this._nodeType){
 
 		  	case "voice":
@@ -1125,9 +1200,16 @@ class AudioObject{
   	setTargetAtTime(param, value, delay, transitionTime, cancelPrevious, audioNode){
 
 	  	let startTime = this._ctx.currentTime + (delay || 0);
+      if(param == "delayTime"){
+        value *= this._params.timescale;
+      }
 	  	//transitionTime = transitionTime || 0.001;
 	  	//console.log(value, delay, transitionTime, cancelPrevious);
-      audioNode = audioNode || this._node;
+
+      // this is stupid. Send objects shall control their "_bus" node
+      // which is dealt with in the set gain() method, but it wasn't taken care of 
+      // here. Not good desig.
+      audioNode = audioNode || this._bus ||  this._node;
 
       if(typeof value == "undefined"){
         console.warn("Cannot set " + param + " value to undefined");
@@ -1199,7 +1281,7 @@ class AudioObject{
         }
 
   	  	if(transitionTime && param.setTargetAtTime){
-  		  	param.setTargetAtTime(value, startTime, transitionTime/3);
+  		  	param.setTargetAtTime(value, startTime, transitionTime);
   	  	} else if(param.setValueAtTime){
   		  	param.setValueAtTime(value, startTime);
   	  	}
@@ -1311,6 +1393,27 @@ class AudioObject{
 	  	}
   	}
 
+
+    get offset(){
+      return 0 || this._node.offset || this._offset || 0;
+    }
+
+    set offset(val){
+      if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._node), 'offset')){
+        this._node.offset = val;
+      }
+    }
+
+    get relOffset(){
+      return this._node.relOffset;
+    }
+
+    set relOffset(val){
+      if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._node), 'relOffset')){
+        this._node.relOffset = val;
+      }
+    }
+
     set loop(val){
       this._node.loop = val == true;
     }
@@ -1378,7 +1481,8 @@ class AudioObject{
       // get gain returnera ett objekt, men jag har ingen aning om var det kan gå fel...
       // Jag vågar nog ändå inte...
       // return this._node.gain;
-	  	return this._node.gain.value;
+      let gainParam = this._node.gain;
+	  	return gainParam ? this._node.gain.value : false;
   	}
 
   	set frequency(val){
@@ -1493,7 +1597,7 @@ class AudioObject{
   	}
 
   	set delayTime(val){
-	  	this.setTargetAtTime("delayTime", val * this._params.timescale);
+	  	this.setTargetAtTime("delayTime", val);
   	}
 
   	set value(val){
@@ -1504,6 +1608,9 @@ class AudioObject{
 	  	return this._node.value;
   	}
 
+    get playing(){
+      return this._node.playing;
+    }
 
 
     set mix(val){
@@ -1515,14 +1622,16 @@ class AudioObject{
       val *= targets.length; // 0 - nr of children or channelCount
 
       let crossFadeRange = this._params.crossfaderange;
-      crossFadeRange = typeof crossFadeRange == "undefined" ? 1 : crossFadeRange;
+      if(typeof crossFadeRange != "undefined"){
+        crossFadeRange = crossFadeRange.valueOf();
+      } else {
+        crossFadeRange = 1;
+      }
       crossFadeRange = crossFadeRange || 0.000001;
       let frameWidth = 1 - crossFadeRange;
 
-      // Det vore kanske bättre att lägga ut detta i Mapper-objektet
-      // Och att ha en extra GainNode mellan child-objekt och input
       targets.forEach((target, i) => {
-        let input = target.output ? target.output : target;
+        let input = this.inputs[i]; // target.output ? target.output : target;
         let fw;
         let peak = target.getParameter("peak");
         let peakRange = false;
@@ -1567,7 +1676,8 @@ class AudioObject{
         if(isNaN(gain)){
           console.log(gain);
         }
-        input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
+        let time = this.getParameter("transitionTime");
+        input.gain.setTargetAtTime(gain, input.context.currentTime, time);
       });
     }
 
@@ -1600,6 +1710,9 @@ class AudioObject{
           reduction = Math.pow(reduction, 2); // +3dB for equal power
           let gain = 1 - reduction;
           // panValues.push(Math.floor(gain * 100) / 100);
+          if(isNaN(gain)){
+            console.log("gain is NaN");
+          }
           input.gain.setTargetAtTime(gain, input.context.currentTime, 0.001);
         });
 
@@ -1927,7 +2040,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":14,"./Mapper.js":15,"./Noise.js":17,"./ObjectBasedAudio.js":18,"./Variable.js":24,"./VariableContainer.js":25,"./Watcher.js":26,"./WebAudioUtils.js":28}],3:[function(require,module,exports){
+},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":15,"./Mapper.js":17,"./Noise.js":19,"./ObjectBasedAudio.js":20,"./Variable.js":26,"./VariableContainer.js":27,"./Watcher.js":28,"./WebAudioUtils.js":30}],3:[function(require,module,exports){
 var Loader = require('./Loader.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 
@@ -1949,7 +2062,15 @@ class BufferSourceObject {
 	}
 	
 	start(time = this._ctx.currentTime, offset = 0, duration){
+		if(this._playing) {
+			return;
+		}
+		if(this.autoStopTimer){
+			clearTimeout(this.autoStopTimer);
+			this.autoStopTimer = 0;
+		}
 		let params = {}
+		if(typeof this._params.offset != "undefined"){params.offset = this._params.offset}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
 		if(typeof this._params.loopStart != "undefined"){params.loopStart = this._params.loopStart * this._params.timescale}
 		if(typeof this._params.loopEnd != "undefined"){params.loopEnd = this._params.loopEnd * this._params.timescale}
@@ -1959,30 +2080,109 @@ class BufferSourceObject {
 		this._node.disconnect();
 		this._node = new AudioBufferSourceNode(this._ctx, params);
 		this._node.buffer = this._buffer;
+		this._node.loopEnd = this._buffer.duration;
 
-		// this.loop = this._params.loop;
-		// if(this.loop){
-		// 	if(typeof this._params.loopEnd != "undefined"){
-		// 	this.loopEnd = this._params.loopEnd;
-		// 	}
-		// 	if(typeof this._params.loopStart != "undefined"){
-		// 	this.loopStart = this._params.loopStart;
-		// 	}
-		// }
-		// if(typeof this._params.playbackRate != "undefined"){
-		// 	this.playbackRate = this._params.playbackRate;
-		// }
+		offset = offset || this._params.offset * this._params.timescale || 0;
+
+		if(offset >= this._buffer.duration){
+			offset = 0;
+		}
+
 		let factor = Math.abs(this._params.playbackRate || 1);
 		duration = duration || this._buffer.duration;
 
-		this._node.connect(this.destination);	
-		this._node.start(time, offset * factor, duration * factor);
+		this._node.connect(this.destination);
+		this.lastStarted = time;
+		this.offset = offset;
+		// important to set this._playing to true AFTER setting this.offset (otherwise it will make an endless call stack via resume)
+		this._playing = true;
+
+		if(params.loop){
+			this._node.start(time, offset * factor);
+		} else {
+			this._node.start(time, offset * factor, duration * factor);
+
+			factor = factor || 0.0001;
+
+			this.autoStopTimer = setTimeout(() => {
+				this._offset = 0;
+				this._relOffset = 0;
+				this._playing = false;
+			}, (duration - offset) / Math.abs(factor) * 1000);
+		}
+		
+	}
+
+	resume(){
+		this.start(this._ctx.currentTime, this._offset);
+	}
+
+
+	continue(){
+		this.resume();
+	}
+
+	stop(p = {}){
+		clearTimeout(this.autoStopTimer);
+		this.autoStopTimer = 0;
+		if(this._playing){
+			if(!params.dontDisconnect){
+				// this._node.disconnect();
+				this._node.stop();
+			}
+			this._playing = false;
+			this.updateOffset();
+		}
+	}
+
+	disconnect(){
+		this._node.disconnect();
+	}
+
+	updateOffset(val=this.lastStarted ? (this._ctx.currentTime - this.lastStarted + this._offset) /  this._buffer.duration: 0){
+		this._relOffset = val;
+		let duration = this._buffer ? this._buffer.duration : 0;
+		this._offset = val * duration;
+	}
+
+	get playing(){
+		return this._playing;
+	}
+	set playing(state){
+		this._playing = state;
+	}
+
+	get relOffset(){
+		return this._playing ? (this._ctx.currentTime - this.lastStarted + this._offset) / this._buffer.duration : (this._relOffset || 0);
+	}
+
+	set relOffset(val){
+		this._relOffset = val;
+		let duration = this._buffer ? this._buffer.duration : 0;
+		this._offset = val * duration;
+
+		if(this._playing){
+			this._node.disconnect();
+			this._playing = false;
+			this.resume();
+		}
 
 	}
 
-	stop(){
+	get offset(){
+		return this._playing ? this._ctx.currentTime - this.lastStarted + this._offset : (this._offset || 0);
+	}
 
-		this._node.disconnect();
+	set offset(val){
+		this._offset = val;
+		let duration = this._buffer ? this._buffer.duration : 1;
+		this._relOffset = val / duration;
+		
+		if(this._playing){
+			this._node.disconnect();
+			this._playing = false;
+			this.resume();
+		}
 	}
 
 
@@ -2049,6 +2249,10 @@ class BufferSourceObject {
 		});
 	}
 
+	get loop(){
+		return this._params.loop;
+	}
+
 	get loopEnd(){
 		return this._params.loopEnd;
 	}
@@ -2093,7 +2297,7 @@ class BufferSourceObject {
 
 module.exports = BufferSourceObject;
 
-},{"./Loader.js":14,"./WebAudioUtils.js":28}],4:[function(require,module,exports){
+},{"./Loader.js":15,"./WebAudioUtils.js":30}],4:[function(require,module,exports){
 
 
 class Connector {
@@ -2121,6 +2325,30 @@ class Connector {
 
 		let nodeName = xmlNode.nodeName.toLowerCase();
 		let targetElements;
+
+		// connect AudioParameters if specified. I.e. for FM synthesis
+
+		if(xmlNode.obj && xmlNode.obj.parameters){
+			if(xmlNode.obj._node){
+				// to avoid trying to connect variables, envelopes etc.
+				Object.entries(xmlNode.obj.parameters).forEach(([key, value]) => {
+					if(typeof value == "string"){
+						if(xmlNode.obj._node[key] instanceof AudioParam){
+							let modulators = this.getTargetElements(xmlNode, value);
+							if(modulators){
+								modulators.forEach(modulatorNode => {
+									modulatorNode.obj.output.connect(xmlNode.obj._node[key]);
+								});
+							}
+						}
+					}
+				});
+			}
+			
+			
+		}
+		
+
 		switch(nodeName){
 			case "chain":
 			// connect chain input to first element in chain
@@ -2153,6 +2381,7 @@ class Connector {
 						case "oscillatornode":
 						case "audiobuffernode":
 						case "synth":
+						case "mixer":
 						break;
 
 						case "channelmergernode":
@@ -2171,6 +2400,10 @@ class Connector {
 						targetNode.audioObject.inputFrom(xmlNode.audioObject.input);
 						break;
 					}
+					// 2022-08-30 I try to set done=true always which means that
+					// chain element input are only connected to the first audio child element
+					// and only if they allow audio input.
+					done = true;
 
 				}
 
@@ -2181,7 +2414,7 @@ class Connector {
 			case "channelsplitternode":
 			// connect each channel to separate child nodes
 			let srcCh = 0;
-			xmlNode.children.forEach(node => {
+			[...xmlNode.children].forEach(node => {
 				xmlNode.obj.input.connect(node.obj.input, srcCh, 0);
 				srcCh++;
 			});
@@ -2277,10 +2510,16 @@ class Connector {
 				switch(parentNodeType){
 
 					case "mixer":
+					let i = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					//console.log(xmlNode, "connect to mixer", i);
+					xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[i]);
+					break;
+
 					case "audio":
 					case "voice":
 					case "synth":
 					case "xi:include":
+					case "include":
 					case "channelsplitternode":
 					xmlNode.obj.connect(xmlNode.parentNode.obj._node);
 					break;
@@ -2444,7 +2683,302 @@ class ConvolverNodeObject {
 
 module.exports = ConvolverNodeObject;
 
-},{"./Loader.js":14}],6:[function(require,module,exports){
+},{"./Loader.js":15}],6:[function(require,module,exports){
+
+
+class Display extends HTMLElement {
+
+	constructor(){
+		super();
+		this.sources = [];
+	}
+
+	connectedCallback(){
+		this.type = this.getAttribute("type") ||"VU";
+		this.type = this.type.toLowerCase();
+
+		let w = parseFloat(this.getAttribute("width"));
+		let h = parseFloat(this.getAttribute("height"));
+
+		// sets a lower limit for visualized amplitude
+		this.inputSelector = this.getAttribute("input");
+
+		switch(this.type){
+			case "vu":
+			this.draw = this.drawVU;
+			w = w ||200;
+			h = h ||20;
+			break;
+
+			case "fft":
+			this.draw = this.drawFFT;
+			w = w ||200;
+			h = h ||100;
+			break;
+
+			case "oscilloscope":
+			this.draw = this.drawOscilloscope;
+			w = w ||200;
+			h = h ||100;
+			break;
+
+			default:
+			this.draw = () => {};
+			break;
+
+		}
+		this.canvas = document.createElement("canvas");
+		this.appendChild(this.canvas);
+		this.canvasCtx = this.canvas.getContext("2d");
+		
+		this.canvasCtx.lineWidth = 2;
+		this.canvasCtx.strokeStyle = "rgb(0, 0, 0)";
+
+		this.width = w;
+		this.height = h;
+
+		this.canvas.width = w;
+		this.canvas.height = h;
+
+		this.style.display = "block";
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
+	}
+
+
+	init(audioContext){
+		this.inited = true;
+		this.analyser = audioContext.createAnalyser();
+		let fftSize = this.getAttribute("fftSize") || this.getAttribute("fftsize");
+		
+		switch(this.type){
+			case "vu":
+			fftSize = fftSize || 2048;
+			break;
+
+			case "fft":
+			fftSize = fftSize || 2048;
+			break;
+
+			case "oscilloscope":
+			fftSize = fftSize || 4096;
+			break;
+		}
+		if(fftSize){
+			fftSize = parseInt(fftSize);
+			let pow = Math.log2(fftSize)
+			pow = Math.round(pow);
+			this.analyser.fftSize = 2 ** pow;
+		}
+		this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+		let maxDecibels = this.getAttribute("maxDecibels") || this.getAttribute("maxdecibels");
+		if(maxDecibels){this.analyser.maxDecibels = parseFloat(maxDecibels)}
+
+		let minDecibels = this.getAttribute("minDecibels") || this.getAttribute("mindecibels");
+		if(minDecibels){this.analyser.minDecibels = parseFloat(minDecibels)}
+		this.relPeak = minDecibels;
+		
+		let halfSampleRate = audioContext.sampleRate / 2;
+		let minFrequency = this.getAttribute("minFrequency") || this.getAttribute("minfrequency");
+		minFrequency = minFrequency ? parseFloat(minFrequency) : 0;
+		this.firstIndex = Math.floor(minFrequency / halfSampleRate * this.analyser.frequencyBinCount);
+
+		let maxFrequency = this.getAttribute("maxFrequency") || this.getAttribute("maxfrequency");
+		maxFrequency = maxFrequency ? parseFloat(maxFrequency) : halfSampleRate;
+		this.lastIndex = Math.floor(maxFrequency / halfSampleRate * this.analyser.frequencyBinCount);
+
+		let colors = this.getAttribute("colors");
+		this.colors = colors ? colors.split(",") : ["green", "yellow", "red"];
+		
+		let colorRegions = this.getAttribute("colorRegions") || this.getAttribute("colorregions");
+		if(colorRegions){
+			this.colorRanges = JSON.parse(`[${colorRegions}]`);
+			let sum = this.colorRanges.reduce((a,b) => a + b);
+			this.colorRanges = this.colorRanges.map(el => el / sum).map((el, i, arr) => {
+				if(i){
+					return el + arr[i-1];
+				} else {
+					return el;
+				}
+			});
+			this.colorRanges.unshift(0);
+			this.colorRanges.pop();
+
+		} else {
+			this.colorRanges = [0,0.6,0.8];
+		}
+		this.colorBackwardsRanges = this.colorRanges.sort((a,b) => a > b)
+		
+
+		this.update();
+	}
+
+	inputFrom(source){
+		if(!source){return -1;}
+		if(!this.inited){
+			this.init(source.context);
+		}
+		this.sources.push(source);
+		source.connect(this.analyser);
+	}
+
+	connect(target){
+		this.analyser.connect(target);
+	}
+
+	disconnect(source){
+		if(source){
+			source.disconnect(0);
+			this.sources = this.sources.filter(src => src != source);
+		} else {
+			while(this.sources.length){
+				let src = this.sources.pop();
+				src.disconnect(0);
+			}
+		}
+	}
+
+	update(){
+		this.canvasCtx.clearRect(0, 0, this.width, this.height);
+		this.draw();
+		requestAnimationFrame(e => this.update());
+	}
+
+	drawVU(){
+		this.analyser.getByteTimeDomainData(this.dataArray);
+
+		let peakPower = 0;
+		for (let i = 0; i < this.dataArray.length; i++) {
+		  let power = ((this.dataArray[i]-128)/128) ** 2;
+		  peakPower = Math.max(power, peakPower);
+		}
+		let peakDecibels = 10 * Math.log10(peakPower);
+		peakDecibels = Math.max(peakDecibels, this.analyser.minDecibels);
+
+		let range = this.analyser.maxDecibels - this.analyser.minDecibels;
+		let relPeak = 1 + peakDecibels / range;
+		
+		if(relPeak > this.relPeak){
+			this.relPeak = relPeak;
+		} else {
+			let diff = relPeak - this.relPeak;
+			this.relPeak += diff / 100;
+		}
+
+	
+		this.colorRanges.forEach((range, i, arr) => {
+			if(this.relPeak > range){
+				let y = 0;
+				let x1 = range * this.width;
+				let x2 = Math.min(this.relPeak, arr[i+1] || 1) * this.width;
+				let w = x2 - x1;
+				this.canvasCtx.fillStyle = this.colors[i];
+				this.canvasCtx.fillRect(x1, y, w, this.height);
+			}
+		});
+
+		
+		
+	}
+
+	
+
+	drawFFT(){
+		this.analyser.getByteFrequencyData(this.dataArray);
+
+		const barWidth = (this.width / (this.lastIndex-this.firstIndex));
+		let barHeight;
+		this.canvasCtx.fillStyle = "red";
+	  
+		for (let i = this.firstIndex; i < this.lastIndex; i++) {
+			let relVal = this.dataArray[i] / 255;
+			barHeight = relVal * this.height;
+		//   this.canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
+			let colorIndex = this.colorRanges.reverse().findIndex(range => {
+				return relVal > range;
+			});
+
+			let color = this.colors.reverse()[colorIndex];
+			this.canvasCtx.fillStyle = color;
+			this.canvasCtx.fillRect(i * barWidth, this.height - barHeight, barWidth, barHeight);
+		}
+
+	}
+
+	drawOscilloscope() {
+		this.analyser.getByteTimeDomainData(this.dataArray);
+		let maxVal = 256;
+		let sampleCnt = this.dataArray.length / 2;
+		let sliceWidth = this.width / sampleCnt;
+
+		
+		let lastVal = this.dataArray[0];
+		let increasing = false;
+		let belowZero = false;
+		let firstCycle = true;
+		let offset = 0;
+
+		// zero crossing line
+		this.canvasCtx.beginPath();
+		this.canvasCtx.strokeStyle = "#ccc";
+		this.canvasCtx.lineWidth = 0.5;
+		this.canvasCtx.setLineDash([5,2]);
+		this.canvasCtx.moveTo(0, this.height / 2);
+		this.canvasCtx.lineTo(this.width, this.height / 2);
+		this.canvasCtx.stroke();
+
+
+
+		this.canvasCtx.beginPath();
+		this.canvasCtx.strokeStyle = "yellow";
+		this.canvasCtx.lineWidth = 1;
+		this.canvasCtx.setLineDash([]);
+
+
+		// find lowest val
+		let minVal = Math.min(...this.dataArray);
+		let minIndex = this.dataArray.indexOf(minVal);
+
+		for (let i = minIndex; i < (sampleCnt+offset); i++) {
+			let curVal = this.dataArray[i];
+
+
+			if(!offset){
+				belowZero = curVal < maxVal / 2;
+				if(!belowZero){
+					// found zero crossing
+					offset = i;
+				} else {
+					continue;
+				}
+
+				// increasing = curVal > lastVal;
+				// if(increasing && firstCycle){
+				// 	belowZero = curVal < maxVal / 2;
+				// }
+			}
+
+			let x = (i - offset) * sliceWidth;
+			let y = (curVal / maxVal) * this.height;
+
+			if (!i) {
+				this.canvasCtx.moveTo(x, y);
+			} else {
+				this.canvasCtx.lineTo(x, y);
+			}
+		}
+		//canvasCtx.lineTo(canvas.width, canvas.height / 2);
+		this.canvasCtx.stroke();
+	}
+
+
+
+}
+
+module.exports = Display;
+
+},{}],7:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -2461,15 +2995,23 @@ class Envelope {
 		params.dynamicvalues = typeof params.dynamicvalues == "undefined" ? [0] : params.dynamicvalues;
 
 		this._params = params;
-		let parentAudioObj = xmlNode.parentNode.obj;
+		let parentAudioObj
+		if(xmlNode.parentNode.obj){
+			parentAudioObj = xmlNode.parentNode.obj;
+		} else {
+			// to let external objects like iMusic host envelopes
+			parentAudioObj = waxml.master;
+		}
+		
 		this._parentAudioObj = parentAudioObj;
 		this.timeScale = this.getParameter("timescale") || 1;
+		this.mono = this.getParameter("mode") == "mono";
 
 
 		// convert ADSR attribute to times and values
 		if(this._params.adsr){
 			this._params.times = [this._params.adsr.attack, this._params.adsr.decay, this._params.adsr.release];
-			this._params.values = [params.max, this._params.adsr.sustain, 0];
+			this._params.values = [params.max, params.max*this._params.adsr.sustain/100, 0];
 		}
 		if(!this._params.times){
 			console.error(`No times specified for ${this._xml}`);
@@ -2486,14 +3028,76 @@ class Envelope {
 		this._listeners = [];
 
 		this._params.targetvariables = this._params.targetvariables  || [];
+
+		if(this._params.target){
+			let targetParam; // = "frequency"; // default
+			let selector = this._params.target.split("_").map(str => {
+				str = str.trim();
+				if(str.includes(".")){
+					let ta = str.split(".");
+					str = ta[0];
+					targetParam = ta[1];
+				}
+				return `.${str.trim()}`;
+			}).join(" ");
+
+			let convertStr = this._params.convert ? this._params.convert[0] : "x";
+			waxml.querySelectorAll(selector).forEach(targetObject => {
+				let audioNode = targetObject._node;
+				targetParam = targetParam || (audioNode.detune ? "detune" : "gain");
+				if(audioNode[targetParam]){
+					this.addListener(targetObject._node[targetParam], convertStr);
+				}
+			});
+			
+		}
+
+		this.trig = this.start;
 	}
 
-	addListener(param, expression){
+	addListener(param, expression = "x"){
 
-		expression = WebAudioUtils.replaceEnvelopeName(expression);
-		let values = this._params.values.map(x => this.mapValue(x, expression));
+		if(expression.includes("€")){
+			// kolla på det här! Jag behöver styra upp hela kopplingen med ENV
+			expression = WebAudioUtils.replaceEnvelopeName(expression);
+		}
+		
+		let values = this._params.values.map(x => {
+			let val;
+			switch(expression){
+				case "MIDI->frequency":
+				val = WebAudioUtils.MIDInoteToFrequency(x);
+				break;
 
-		param.setTargetAtTime(values[values.length-1], this._ctx.currentTime, 0.001);
+				case "dB->power":
+				val = WebAudioUtils.dbToPower(x);
+				break;
+
+				default:
+				val = this.mapValue(x, expression);
+				break;
+			}
+			return val;
+		});
+
+		if(typeof this._params.default != "undefined"){
+			let def;
+			switch(expression){
+				case "MIDI->frequency":
+				def = WebAudioUtils.MIDInoteToFrequency(this._params.default);
+				break;
+
+				case "dB->power":
+				def = WebAudioUtils.dbToPower(this._params.default);
+				break;
+
+				default:
+				def = this.mapValue(this._params.default, expression);
+				break;
+			}
+			param.setTargetAtTime(def, this._ctx.currentTime, 0.001);
+		}
+		
 		this._listeners.push(
 			{
 				obj: param,
@@ -2507,41 +3111,64 @@ class Envelope {
 		return eval(expression);
 	}
 
-	start(args = []){
+	setTimes(times){
 
-		args = [...args];
-		let factor = typeof args[0] == "undefined" ? 1 : args[0];
-
-		// make it possible to update variables with data from event (like velocity or key)
-		this._params.targetvariables.forEach((varName, index) => {
-			this.waxml.setVariable(varName, args[index % args.length]);
+		let curOffset = times[0];
+		times = times.map(t => {
+			let relTime = t - curOffset;
+			curOffset = relTime + 0.01;
+			return relTime;
 		});
+		
+		this._params.times = times;
+	}
+
+	start(data = {}){
+
+		// args = [...args];
+		let factor = 1; //typeof args[0] == "undefined" ? 1 : args[0];
+
+		// moved to variable object allowing for a trig attribute
+		// make it possible to update variables with data from event (like velocity or key)
+		// this._params.targetvariables.forEach((varName, index) => {
+		// 	this.waxml.setVariable(varName, args[index % args.length]);
+		// });
 
 		this.running = true;
 
 
 
 		let delay = this.getParameter("delay");
-        let startTime = delay * this.timeScale + this._ctx.currentTime;
+        let startTime = delay * this.timeScale + this._ctx.currentTime + 0.001;
 
 		// map values and times to (possibly be modified by dynamic values * factor (like velocity)
-		let times = this._params.times.valueOf().map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamictimes, index));
+		let times = this._params.times.valueOf().map((val, index) => {
+			return this.mapDynamicValue(val, factor, this._params.dynamictimes, index);
+		});
 		
-		if(this._params.mode == "mono" && args[2] == 0){
+		if(this.mono && data.legato){
 			// don't retrigger if legato
 		} else {
+
 			this._listeners.forEach(target => {
 				target.obj.cancelScheduledValues(startTime);
 				let timeOffset = 0;
-				let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
-			
-				// remove release value
-				values.pop();
+				//let values = target.values.map((val, index) => this.mapDynamicValue(val, factor, this._params.dynamicvalues, index));
+				let values = target.values.map(val => val * this.parameters.max);
+
+				// remove release value seemed good when doing ADSR but not in general
+				if(this.parameters.adsr){
+					values.pop();
+				}
+
+				console.log("Env startTime: ", startTime);
 				values.forEach((value, index) => {
 					let time = times[index % this.timeModVal];
 					// See info about timeConstant and reaching the target value:
 					// https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/setTargetAtTime
-					target.obj.setTargetAtTime(value, startTime + timeOffset, time/3);
+					// let timeFactor = target.obj.value < value ? 1 : 0.2;
+					target.obj.setTargetAtTime(value, startTime + timeOffset, time);
+					console.log(value, startTime + timeOffset, time)
 					timeOffset += time;
 				});
 			});
@@ -2560,6 +3187,7 @@ class Envelope {
 
 	}
 
+
 	mapDynamicValue(val, factor, arr, index){
 		let f;
 		let fVal = arr[index % arr.length];
@@ -2573,10 +3201,10 @@ class Envelope {
 		return f * val;
 	}
 
-	stop(args = []){
+	stop(data = {}){
 
-		args = [...args];
-		let factor = typeof args[0] == "undefined" ? 1 : args[0];
+		// args = [...args];
+		let factor = 1; // typeof args[0] == "undefined" ? 1 : args[0];
 
 		this.running = false;
 		this.nextStartTime = 0;
@@ -2591,7 +3219,7 @@ class Envelope {
 		let t = this._params.times.valueOf()[tIndex];
 		let time = this.mapDynamicValue(t, factor, this._params.dynamicvalues, tIndex)
 		
-		if(this._params.mode == "mono" && args[2] == 0){
+		if(this.mono && data.legato){
 			// Don't release if mono mode and still keys down
 		} else {
 			this._listeners.forEach(target => {
@@ -2638,6 +3266,8 @@ class Envelope {
 		}
 	}
 
+
+	// is this method in use or is it obsolete?
 	getWAXMLparameters(){
 		let waxmlParams = [];
 		let paramNames = [];
@@ -2664,7 +3294,7 @@ class Envelope {
 
 module.exports = Envelope;
 
-},{"./WebAudioUtils.js":28}],7:[function(require,module,exports){
+},{"./WebAudioUtils.js":30}],8:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -2823,10 +3453,11 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":21}],8:[function(require,module,exports){
+},{"./Sequence.js":23}],9:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
+const XY_area = require('./XY_area.js');
 //var Finder = require('../finderjs/index.js');
 
 class GUI {
@@ -2835,7 +3466,6 @@ class GUI {
 
 		this.waxml = waxml;
 		this.elementCounter = 0;
-
 		
 		let style = document.createElement("style");
 		style.innerHTML = `
@@ -2843,13 +3473,8 @@ class GUI {
 			* {
 				font-family: sans-serif;
 			}
-			#waxml-GUI {
+			#waxml-GUI, #iMusic-GUI {
 				font-size: 80%;
-				top: 0px;
-				left: 0px;
-				width: 100%;
-				height: 100%;
-				position: absolute;
 				overflow: auto;
 				padding: 1em;
 				transition: 0.5s;
@@ -2861,10 +3486,12 @@ class GUI {
 				border-top: 1px solid grey;
 				margin-top: 1em;
 			}
-			#waxml-GUI button {
-				border-radius: 3px;
+			#waxml-GUI button,
+			#iMusic-GUI button {
+				border-radius: 5px;
 				padding: 0.2em 0.5em;
-   				margin: 0em 0.2em;
+				min-width: 5em;
+				margin-right: 0.5em;
 			}
 
 			#waxml-GUI > button.close {
@@ -2956,6 +3583,22 @@ class GUI {
 			#waxml-GUI .sliderContainer.variable input[type='range'] {
 				width: 15.6em;
 			}
+
+			#waxml-GUI select,
+			#iMusic-GUI select {
+				margin: 1em;
+				padding: 0.5em;
+				min-width: 10em;
+			}			
+
+			#waxml-GUI .errorBox,
+			#iMusic-GUI .errorBox {
+				color: #900;
+				border: 1px solid black;
+				margin-top: 1em;
+				padding: 1em;
+				width: 80%;
+			}
 		
 		`;
 
@@ -2964,6 +3607,7 @@ class GUI {
 		container.classList.add("WebAudioXML");
 
 		let allNodes = xmlNode.querySelectorAll("*[controls='true'], *[controls='show']");
+
 
 		if(xmlNode.firstChild.getAttribute("controls") == "show"){
 			document.head.appendChild(style);
@@ -2988,18 +3632,27 @@ class GUI {
 
 			shadowElement.appendChild(container);
 
+
+			this.HTML = shadowElement;
+
 			
 			let openbtn = document.createElement("button");
-			openbtn.innerHTML = "WebAudioXML GUI";
+			openbtn.innerHTML = "Music and Mixer";
 			openbtn.style.position = "absolute";
 			openbtn.style.right = "2px";
 			openbtn.style.top = "2px";
+			openbtn.classList.add("waxml-gui-btn");
 			document.body.appendChild(openbtn);
 			openbtn.addEventListener("click", e => {
 				e.target.style.display = "none";
 				shadowContainer.style.width = "100%";
 				shadowContainer.style.height = "100%";
 				shadowContainer.style.display = "block";
+
+				container.querySelectorAll("waxml-xy-handle").forEach(el => {
+					el.initRects();
+					el.move();
+				});
 			});
 			openbtn.style.display = allNodes.length ? "block": "none";
 
@@ -3023,6 +3676,9 @@ class GUI {
 		container.appendChild(header);
 
 
+		// ObjectBasedAudio
+
+		this.XY_areaFromAudioObjects(waxml.querySelectorAll("ObjectBasedAudio"), container);
 
 		// Find variables in use without <var> elements
 		let usedVariables = [];
@@ -3046,7 +3702,7 @@ class GUI {
 
 		// Generate sliders for <var> elememts and audio parameters
 		let specifiedContainer = document.createElement("div");
-		specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
+		//specifiedContainer.innerHTML = "<h2>&lt;var&gt; elements and Audio Parameters</h2>";
 		specifiedContainer.classList.add("container");
 		container.appendChild(specifiedContainer);
 
@@ -3056,12 +3712,12 @@ class GUI {
 			this.XMLtoSliders(xmlNode, specifiedContainer, true);
 		});
 
-		this.addUnspecifiedVariableSliders(this.usedVariables, unspecVarsContainer);
+		//this.addUnspecifiedVariableSliders(this.usedVariables, unspecVarsContainer);
 		
-		let columnView = document.createElement("div");
-		columnView.classList.add("columnView");
-		document.body.appendChild(columnView);
-		this.XMLtoColumnView([this.waxml.structure.XMLtree], columnView);
+		// let columnView = document.createElement("div");
+		// columnView.classList.add("columnView");
+		// document.body.appendChild(columnView);
+		// this.XMLtoColumnView([this.waxml.structure.XMLtree], columnView);
 	}
 
 
@@ -3106,18 +3762,134 @@ class GUI {
 		container.innerHTML = "<h2>Triggers</h2>";
 		el.appendChild(container);
 
-		xmlNode.querySelectorAll("*[id]").forEach(xmlNode => {
+		let idSelector = "Envelope[id], ObjectBasedAudio[id], AmbientAudio[id], AudioBufferSourceNode[id]";
+
+		xmlNode.querySelectorAll(idSelector).forEach(xmlNode => {
 			IDs.push(xmlNode.id);
 		});
 		[...new Set(IDs)].forEach(id => this.addButton(id, container, e => this.waxml.start(`#${id}`)));
 
-		xmlNode.querySelectorAll("*[class]").forEach(xmlNode => {
+		let selector = "Envelope[class], ObjectBasedAudio[class], AmbientAudio[class], AudioBufferSourceNode[class]";
+
+		xmlNode.querySelectorAll(selector).forEach(xmlNode => {
 			xmlNode.classList.forEach(className => classNames.push(className));
 		});
 		[...new Set(classNames)].forEach(className => this.addButton(className, container, e => this.waxml.start(`.${className}`)));
 
+		container.style.display = classNames.length + IDs.length ? "block" : "none";
 	}
 
+	XY_areaFromAudioObjects(objects, targetElement){
+
+		if(!objects || !objects.length){return}
+
+		let maxValues = objects.reduce((prevObject, curObject) => {
+			return {
+				positionX: Math.max(Math.abs(prevObject.positionX), Math.abs(curObject.positionX)),
+				positionZ: Math.max(Math.abs(prevObject.positionZ), Math.abs(curObject.positionZ))
+			}
+		}, {positionX: 1, positionZ: 1});
+		let maxVal = Math.max(maxValues.positionX, maxValues.positionZ)*2;
+
+		let range = maxVal * 2;
+		let XY_area = document.createElement("waxml-xy-area");
+		XY_area.setAttribute("width", "500px");
+		XY_area.setAttribute("height", "500px");
+		XY_area.setAttribute("columns", range);
+		XY_area.setAttribute("rows", range);
+		XY_area.setAttribute("border", "2px solid black");
+		XY_area.setAttribute("background-color", "#696");
+		targetElement.appendChild(XY_area);
+
+		let title;
+		title = document.createElement("div");
+		title.innerHTML = "<strong>Object:</strong>";
+		targetElement.appendChild(title);
+
+		let XYoutput = document.createElement("div");
+		XYoutput.innerHTML = " ";
+		targetElement.appendChild(XYoutput);
+
+		title = document.createElement("div");
+		title.innerHTML = "<strong>Listener:</strong>"
+		targetElement.appendChild(title);
+
+		let headPositionOutput = document.createElement("div");
+		targetElement.appendChild(headPositionOutput);
+
+		let headForwardOutput = document.createElement("div");
+		targetElement.appendChild(headForwardOutput);
+
+		let sndCnt = 0;
+		
+		objects.forEach(object => {
+			let tempName = object.src ? object.src.split("/").pop() : `Sound ${++sndCnt}`;
+			let label = object.name || object.id || tempName;
+			let handle = document.createElement("waxml-xy-handle");
+			handle.innerHTML = label;
+
+			handle.setAttribute("minX", -maxVal);
+			handle.setAttribute("minY", -maxVal);
+			handle.setAttribute("maxX", maxVal);
+			handle.setAttribute("maxY", maxVal);
+
+			handle.setAttribute("direction", "xy");
+			handle.setAttribute("x", (object.positionX + maxVal) / (maxVal*2));
+			handle.setAttribute("y", (object.positionZ + maxVal) / (maxVal*2));
+
+			XY_area.appendChild(handle);
+
+			handle.addEventListener("input", e => {
+				let x = e.target.getProperty("x");
+				let y = e.target.getProperty("y");
+				object.positionX = x;
+				object.positionZ = y;
+				XYoutput.innerHTML = `positionX: ${x.toFixed(1)} | positionZ: ${y.toFixed(1)}`;
+			});
+		});
+
+		XY_area.addEventListener("pointerdown", e => {
+			// turn listener
+			let point = XY_area.coordinateTovalue({x:e.clientX, y:e.clientY});
+			let deltaX = (point.x - head.x) * maxVal;
+			let deltaY = (point.y - head.y) * maxVal;
+			headForwardOutput.innerHTML = `forwardX: ${deltaX.toFixed(1)} | forwardZ: ${deltaY.toFixed(1)}`;
+			this.waxml.setVariable("forwardX", deltaX);
+			this.waxml.setVariable("forwardZ", deltaY);
+
+			let rad = head.pointToRelativeRadians(point);
+			head.style.transform = `rotate(${rad}rad)`;
+		});
+		headForwardOutput.innerHTML = `forwardX: ${this.waxml.getVariable("forwardX").toFixed(1)} | forwardZ: ${this.waxml.getVariable("forwardZ").toFixed(1)}`
+
+
+		// listening head
+		let head = document.createElement("waxml-xy-handle");
+		head.setAttribute("icon", "arrow-up-circle-fill");
+
+		head.setAttribute("size", "40px");
+		head.setAttribute("x", 0.5);
+		head.setAttribute("y", 0.5);
+		head.setAttribute("minX", -maxVal);
+		head.setAttribute("minY", -maxVal);
+		head.setAttribute("maxX", maxVal);
+		head.setAttribute("maxY", maxVal);
+
+		XY_area.appendChild(head);
+		head.addEventListener("input", e => {
+			let x = e.target.getProperty("x");
+			let y = e.target.getProperty("y");
+			this.waxml.setVariable("positionX", x);
+			this.waxml.setVariable("positionZ", y);
+			headPositionOutput.innerHTML = `positionX: ${x.toFixed(1)} | positionZ: ${y.toFixed(1)}`;
+		});
+
+		head.style.transform = `rotate(${-90}deg)`;
+		headPositionOutput.innerHTML = `positionX: ${this.waxml.getVariable("positionX").toFixed(1)} | positionZ: ${this.waxml.getVariable("positionZ").toFixed(1)}`
+
+		return XY_area;
+	
+	}
 
 	XMLtoSliders(xmlNode, el, displayContainer){
 		let nodeName = xmlNode.localName.toLowerCase()
@@ -3148,10 +3920,13 @@ class GUI {
 			subEl.classList.add(xmlNode.localName.toLowerCase());
 			subEl.classList.add("waxml-object");
 			
+			// 2022-08-30 - reduced to only show top level variables
+			if(xmlNode.parentNode.nodeName == "#document"){
+				Array.from(xmlNode.children).forEach(childNode => {
+					slidersAdded = this.XMLtoSliders(childNode, subEl) || slidersAdded;
+				});
+			}
 			
-			Array.from(xmlNode.children).forEach(childNode => {
-				slidersAdded = this.XMLtoSliders(childNode, subEl) || slidersAdded;
-			});
 			if(slidersAdded)el.appendChild(subEl);
 
 		} else {
@@ -3259,7 +4034,7 @@ module.exports = GUI;
 
 
 
-},{"./Mapper.js":15,"./WebAudioUtils.js":28}],9:[function(require,module,exports){
+},{"./Mapper.js":17,"./WebAudioUtils.js":30,"./XY_area.js":31}],10:[function(require,module,exports){
 
 
 
@@ -3282,7 +4057,7 @@ const HL1 = (bc) => class extends bc {
 
 module.exports = HL1;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 const HL1 = require("./HL1.js");
 
 
@@ -3303,7 +4078,7 @@ class HL2 extends HL1(OscillatorNode) {
 }
 
 module.exports = HL2;
-},{"./HL1.js":9}],11:[function(require,module,exports){
+},{"./HL1.js":10}],12:[function(require,module,exports){
 class InputBusses {
 
     constructor(ctx){
@@ -3337,14 +4112,12 @@ class InputBusses {
 }
 
 module.exports = InputBusses;
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
 var Watcher = require('./Watcher.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
-var XY_area = require('./XY_area.js');
-var XY_handle = require('./XY_handle.js');
 var Variable = require("./Variable.js");
 var KeyboardManager = require("./KeyboardManager.js");
 var MidiManager = require("./MidiManager.js");
@@ -3353,7 +4126,6 @@ var MidiManager = require("./MidiManager.js");
 class InteractionManager {
 
 	constructor(waxml){
-		this.defineCustomElements();
 
 		
 
@@ -3403,9 +4175,9 @@ class InteractionManager {
 		}
 
 		this.waxml.addEventListener("inited", e => {
-			this.connectToHTMLelements();
 			this.keyboardManager = new KeyboardManager(this.waxml);
 			this.midiManager = new MidiManager(this.waxml);
+			this.connectToHTMLelements();
 		});
 
 	}
@@ -3418,15 +4190,13 @@ class InteractionManager {
 		return this._variablesToStore;
 	}
 
-	defineCustomElements(){
-		customElements.define('waxml-xy-area', XY_area);
-		customElements.define('waxml-xy-handle', XY_handle);
-	}
-
 
 	init(){
 		this.inited = true;
 		this.waxml.init();
+	}
+
+	initSensors(){
 
 		if (window.DeviceMotionEvent) {
 
@@ -3473,159 +4243,186 @@ class InteractionManager {
 
 
 	connectToHTMLelements(){
-		// this.waxml.querySelectorAll("[start]:not([start=''])").forEach((obj, i) => {
-		// 	let trigData = WebAudioUtils.split(obj.parameters.start);
-		// 	let trigSelector = trigData[0];
 
-		// 	if(trigSelector){
-		// 		trigSelector = trigSelector.replace("/", "\\/");
-		// 		document.querySelectorAll(trigSelector).forEach((el, i) => {
-		// 			let trigEventName = trigData[1] || "pointerdown";
-		// 			el.addEventListener(trigEventName, e => obj.start());
-		// 		});
+		// init display elements
+		document.querySelectorAll("waxml-display").forEach( el => {
+			let inputSelector = el.inputSelector || "master";
+			if(inputSelector){
+				el.init(this.waxml._ctx);
+				this.waxml.querySelectorAll(inputSelector).forEach(obj => {
+					el.inputFrom(obj.output);
+				});
+			}
+		});
 
-		// 		if(obj.parameters.stop){
-		// 			let releaseData = WebAudioUtils.split(obj.parameters.stop);
-		// 			let releaseSelector = releaseData[0];
-		// 			if(releaseSelector){
-		// 				document.querySelectorAll(releaseSelector).forEach((el, i) => {
-		// 					let releaseEventName = releaseData[1] || "pointerup";
-		// 					el.addEventListener(releaseEventName, e => obj.stop());
-		// 				});
-		// 			}
-		// 		}
-		// 	}
-		// });
-
-		// this.waxml.querySelectorAll("[release]:not([release=''])").forEach((obj, i) => {
-		// 	let trigData = WebAudioUtils.split(obj.parameters.trig);
-		// 	let selector = trigData[0];
-		// 	let eventName = trigData[1] || "click";
-		// 	if(selector){
-		// 		document.querySelectorAll(selector).forEach((el, i) => {
-		// 			el.addEventListener(eventName, e => obj.stop());
-		// 		});
-		// 	}
-		// });
+		document.querySelectorAll("waxml-midi-controller").forEach( el => {
+			el.addEventListener("keydown", e => {
+				this.midiManager.noteOn(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+			});
+			el.addEventListener("keyup", e => {
+				this.midiManager.noteOff(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+			});
+			if(el.midiIn){
+				this.midiManager.addEventListener("MIDI:NoteOn", e => el.indicateKey(e.detail.keyNum, true));
+				this.midiManager.addEventListener("MIDI:NoteOff", e => el.indicateKey(e.detail.keyNum, false));
+			}
+		});
+		
 
 
 		// add waxml commands to HTML elements
 		[...document.querySelectorAll("*")].forEach( el => {
 
 			[...el.attributes].forEach( attr => {
+
 				if(attr.localName.startsWith("data-waxml-")){
-
-					
 					let val = attr.nodeValue;
-					
-					
-
-					let fn;
 					let attrNameArr = attr.localName.split("-");
-
-					// den här bakåtkompatibiliteten tror jag bara är dålig.
-					// och tas bort.
-					// Bättre att alltid köra data-waxml-[event/style]="targetVariable/styleProperty=value"
-					// if(attrNameArr.length == 3){
-					// 	// insert default click event
-					// 	attrNameArr.splice(2, 0, "click");
-					// }
-
-					
-
+					let fn, commandName;
 					let eventName = attrNameArr[2];
-					let commandName = attrNameArr[3];
 
-					switch(eventName){
-
-						case "style":
-							let CSSprop = val.split("=").shift().trim();
-							val = val.split("=").pop().trim();
-							let watcher = new Watcher(this.waxml._xml, val, {
-								waxml: this.waxml,
-								callBack: (val, time) => {
-									el.style[CSSprop] = val;
-								}
+					if(eventName == "midi"){
+						// remote control HTML elements with MIDI
+						val.split(";").map(str => str.trim()).forEach(filter => {
+							this.midiManager.addListener({
+								element: el,
+								task: attrNameArr[3],
+								target: attrNameArr[4],
+								filter: filter,
+								min: parseFloat(el.getAttribute("min") ||0),
+								max: parseFloat(el.getAttribute("max") || 100),
+								step: parseFloat(el.getAttribute("step") || 1)
 							});
 
-							this.watchers.push(watcher);
-						break;
-
-
-						default:
-
-							// Create empty link for <a> elements
-							if(el.localName == "a"){
-								var deadLink = "javascript:void(0)";
-								if(!el.attributes.href){
-									el.setAttribute("href", deadLink);
-								} else if(el.attributes.href.nodeValue == "#"){
-									el.attributes.href.nodeValue = deadLink;
-								}
-							}
-							if(val.includes("this.")){
-								let targetProperty = val.replace("this", "el");
-								val = {
-									valueOf: () => {
-										return eval(targetProperty);
+						});
+	
+					} else {
+	
+						commandName = attrNameArr[3];
+	
+						switch(eventName){
+	
+							case "style":
+								let CSSprop = val.split("=").shift().trim();
+								val = val.split("=").pop().trim();
+								let watcher = new Watcher(this.waxml._xml, val, {
+									waxml: this.waxml,
+									callBack: (val, time) => {
+										el.style[CSSprop] = val;
+									}
+								});
+	
+								this.watchers.push(watcher);
+							break;
+	
+	
+							default:
+	
+								// Create empty link for <a> elements
+								if(el.localName == "a"){
+									var deadLink = "javascript:void(0)";
+									if(!el.attributes.href){
+										el.setAttribute("href", deadLink);
+									} else if(el.attributes.href.nodeValue == "#"){
+										el.attributes.href.nodeValue = deadLink;
 									}
 								}
-							} else {
-								let floatVal = parseFloat(val);
-								if(!Number.isNaN(floatVal)){
-									val = floatVal;
+								
+								switch(commandName){
+									case "start":
+									case "play":
+										fn = e => {
+											this.waxml.start(val);
+											this.waxml.setVariable(val, 1);
+										}
+										break;
+			
+									case "stop":
+										fn = e => {
+											this.waxml.stop(val);
+	
+											// trix för att sätta resp keydown variable rätt
+											val = val.replace("keyup:", "keydown:");
+											this.waxml.setVariable(val, 0);
+										}
+										break;
+	
+									case "continue":
+										fn = e => {
+											this.waxml.continue(val);
+											this.waxml.setVariable(val, 1);
+										}
+										break;
+	
+	
+									case "set":
+										if(val.includes("=")){
+											let values = [];
+											// allow for multiple values
+											let rules = val.split(";").forEach(expression => {
+												let arr = expression.split("=").map(v => v.trim());
+												let key = arr[0];
+												let value = arr[1];
+												if(key){
+	
+													if(value.includes("this.")){
+														// allow for dynamic values from slider, switches etc.
+														let targetProperty = value.replace("this", "el");
+														value = {
+															valueOf: () => {
+																return eval(targetProperty);
+															}
+														}
+													} 
+													values.push({key: key, value: value});
+												}
+											});
+											fn = e => {
+												values.forEach(entry => {
+													this.waxml.setVariable(entry.key, entry.value.valueOf());
+												});
+											}
+											
+										} 
+	
+	
+	
+	
+										break;
+			
+									default:
+										fn = e => {
+											this.waxml.setVariable(commandName, val.valueOf());
+										}
+										break;
 								}
-							}
-							
-							switch(commandName){
-								case "start":
-								case "play":
-									fn = e => {
-										this.waxml.start(val);
-										this.waxml.setVariable(val, 1);
+								let frFn;
+								if(eventName == "timeupdate" && el.requestVideoFrameCallback){
+									// allow for frame synced updates
+									frFn = (now, metaData) => {
+										fn();
+										el.requestVideoFrameCallback(frFn);
 									}
-									break;
-		
-								case "stop":
-									fn = e => {
-										this.waxml.stop(val);
-
-										// trix för att sätta resp keydown variable rätt
-										val = val.replace("keyup:", "keydown:");
-										this.waxml.setVariable(val, 0);
-									}
-									break;
-		
-								default:
-									fn = e => {
-										this.waxml.setVariable(commandName, val.valueOf());
-									}
-									break;
-							}
-							let frFn;
-							if(eventName == "timeupdate" && el.requestVideoFrameCallback){
-								// allow for frame synced updates
-								frFn = (now, metaData) => {
-									fn();
 									el.requestVideoFrameCallback(frFn);
+								} else {
+									el.addEventListener(eventName, fn);
 								}
-								el.requestVideoFrameCallback(frFn);
-							} else {
-								el.addEventListener(eventName, fn);
-							}
-		
-							if(eventName == "play" && el.autoplay && el.currentTime){
-								// trig function manually if video has already begun playback
-								(frFn || fn)();
-							}
-						break;
-
-
+			
+								if(eventName == "play" && el.autoplay && el.currentTime){
+									// trig function manually if video has already begun playback
+									(frFn || fn)();
+								}
+							break;
+	
+	
+						}
+	
+	
+						
 					}
 
-
-					
 				}
+
 			});
 
 		});
@@ -3745,12 +4542,19 @@ class InteractionManager {
 
 	}
 
-	setDeviceMotion(e){}
+	setDeviceMotion(e){
+		this.setVariable("deviceMotionAccelerationX", e.acceleration.x);
+		this.setVariable("deviceMotionAccelerationY", e.acceleration.y);
+		this.setVariable("deviceMotionAccelerationZ", e.acceleration.z);
+		this.setVariable("deviceMotionRotationRateAlpha", e.rotationRate.alpha);
+		this.setVariable("deviceMotionRotationRateBeta", e.rotationRate.beta);
+		this.setVariable("deviceMotionRotationRateGamma", e.rotationRate.gamma);
+	}
 
 	setDeviceOrientation(e){
-		this._variables.alpha = e.alpha;
-		this._variables.beta = e.beta;
-		this._variables.gamma = e.gamma;
+		this.setVariable("deviceOrientationAlpha", e.alpha);
+		this.setVariable("deviceOrientationBeta", e.beta);
+		this.setVariable("deviceOrientationGamma", e.gamma);
 	}
 
 	copyTouchProperties(source, target){
@@ -4103,6 +4907,11 @@ class InteractionManager {
 		// These really ought to be the same container, but for now, they aren't...
 		
 		let container;
+
+		// remove initial dollar sign
+		if(key.substr(0,1) == "$"){
+			key = key.substr(1);
+		}
 		if(this.waxml.master && this.waxml.master.variables[key] instanceof Variable){
 			container = this.waxml.master.variables;
 		} else if(this._variables[key] instanceof Variable){
@@ -4154,7 +4963,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./MidiManager.js":16,"./Variable.js":24,"./VariableContainer.js":25,"./Watcher.js":26,"./WebAudioUtils.js":28,"./XY_area.js":29,"./XY_handle.js":30}],13:[function(require,module,exports){
+},{"./EventTracker.js":8,"./KeyboardManager.js":14,"./MidiManager.js":18,"./Variable.js":26,"./VariableContainer.js":27,"./Watcher.js":28,"./WebAudioUtils.js":30}],14:[function(require,module,exports){
 
 
 class KeyboardManager {
@@ -4165,9 +4974,11 @@ class KeyboardManager {
 		document.addEventListener("keyup", e => this.keyUp(e));
 		this.keysPressed = {};
 		this.waxml = waxml;
+		this.blockKeys = `.,;:#'*¨^´?+=)(/&%€#!"${"`"}`;
 	}
 
 	keyDown(e){
+		if(this.blockKeys.includes(e.key)){return}
 		if(!this.keysPressed[e.key]){
 
 			let monoTrig = false;
@@ -4192,6 +5003,7 @@ class KeyboardManager {
 	}
 
 	keyUp(e){
+		if(this.blockKeys.includes(e.key)){return}
 		if(this.keysPressed[e.key]){
 
 			this.keysPressed[e.key] = false;
@@ -4219,7 +5031,7 @@ class KeyboardManager {
 
 module.exports = KeyboardManager;
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 const InteractionManager = require("./InteractionManager");
 
 
@@ -4302,6 +5114,7 @@ Loader.loadAudio = (src, ctx) => {
 	});
 }
 
+
 Loader.loadXML = (url) => {
 
 	return new Promise((resolve, reject) => {
@@ -4360,7 +5173,445 @@ Loader.filesLoading = [];
 
 module.exports = Loader;
 
-},{"./InteractionManager":12}],15:[function(require,module,exports){
+},{"./InteractionManager":13}],16:[function(require,module,exports){
+
+const noteNames = "c,c#,d,d#,e,f,f#,g,g#,a,a#,b".split(",");
+
+class MIDIController extends HTMLElement {
+
+
+	constructor(){
+		super();
+
+		document.addEventListener("keydown", e => this.keyCommandDown(e));
+		document.addEventListener("keyup", e => this.keyCommandUp(e));
+	}
+
+	keyCommandDown(e){
+
+		let el = this.elements.find(el => el.keyCommand == e.key);
+		if(el){
+			el.dispatchEvent(new CustomEvent("pointerdown"))
+		}
+	}
+	keyCommandUp(e){
+		let el = this.elements.find(el => el.keyCommand == e.key);
+		if(el){
+			el.dispatchEvent(new CustomEvent("pointerup"))
+		}
+	}
+
+	connectedCallback(){
+		
+		let shadowElement = this.attachShadow({mode: 'open'});
+
+		let hoverColor = this.getAttribute("hoverColor") || this.getAttribute("hovercolor") || "#ccc";
+		let activeColor = this.getAttribute("activeColor") || this.getAttribute("activecolor") || "#66f";
+		let selectedColor = this.getAttribute("selectedColor") || this.getAttribute("selectedcolor") || "red";
+		let rootColor = this.getAttribute("rootColor") || this.getAttribute("rootcolor") || "#ccf";
+		this.type = (this.getAttribute("type") || "keyboard").toLowerCase();
+		this.rows = parseInt(this.getAttribute("rows") || 8);
+		this.cols = parseInt(this.getAttribute("cols") || 8);
+		this.scaleType = (this.getAttribute("scale") || "major").toLowerCase();
+		this.midiIn = (this.getAttribute("midiIn") || this.getAttribute("midiin")) == "true";
+		
+		let keyCommands = this.getAttribute("keyCommands") || this.getAttribute("keycommands") || "";
+		let delimiter = keyCommands.includes(",") ? "," : "";
+		this.keyCommands = keyCommands.split(delimiter);
+		
+		let labels = this.getAttribute("labels") || "";
+		delimiter = labels.includes(",") ? "," : "";
+		this.labels = labels.split(delimiter);
+
+		
+		this.overlap = parseInt(this.getAttribute("overlap") || 0);
+
+		
+
+		this.padMargin = parseInt(this.getAttribute("padMargin") || this.getAttribute("padmargin") || 5)
+		
+		switch(this.scaleType){
+			case "major":
+			this.scale = [0,2,4,5,7,9,11,12];
+			break;
+
+			case "minor":
+			this.scale = [0,2,3,5,7,8,10,12];
+			break;
+			
+			case "chromatic":
+			this.scale = [0,1,2,3,4,5,6,7,8,9,10,11,12];
+			break;
+			
+			case "pentatonic":
+			this.scale = [0,2,4,7,9,12];
+			break;
+			
+			case "blues":
+			this.scale = [0,3,5,6,7,10,12];
+			break;
+
+			default:
+			// defined with numbers
+			let scale;
+			let useLetters = false;
+			let delimiter = this.scaleType.includes(",") ? "," : "";
+			scale = this.scaleType.split(delimiter).map(str => {			
+				let keyNum = parseInt(str);
+				if(isNaN(keyNum)){
+					// map letters to numbers
+					keyNum = Math.max(0,noteNames.indexOf(str));
+					useLetters = true;
+				}
+				return keyNum;
+			});
+			if(useLetters){
+				// add octave
+				scale.push(12);
+			}
+			this.scale = scale.length ? scale : [0,2,4,5,7,9,11,12];
+			break;
+		}
+		this.scaleMod = this.scale.pop();
+
+
+		let style = document.createElement("style");
+		style.innerHTML = `
+			.controller {
+				display: block;
+				position: absolute;
+			}
+
+			.pad {
+				display: flex;
+				position: absolute;
+				border: 1px solid black;
+				border-radius: 5px;
+				box-sizing: border-box;
+				background-color: white;
+				justify-content: center;
+				align-items: center;
+				font-size: 120%;
+				user-select: none;
+			}
+			.pad.root {
+				background-color: ${rootColor};
+			}
+			.key {
+				display: flex;
+				position: absolute;
+				border: 1px solid black;
+				user-select: none;
+				font-size: 100%;
+				justify-content: center;
+				align-items: end;
+			}
+			.key.white {
+				height: 100%;
+				background-color: white;
+				z-index: 0;
+			}
+			.key.black {
+				height: 100%;
+				background-color: black;
+				z-index: 1;
+				color: white;
+				font-size: 70%;
+			}
+			.key:hover, .pad:hover {
+				background-color: ${hoverColor};
+			}
+			.key.active, .pad.active  {
+				background-color: ${activeColor};
+			}
+			.key.selected, .pad.selected {
+				background-color: ${selectedColor};
+			}
+			.key.selected:hover, .pad.selected:hover {
+				background-color: ${hoverColor};
+			}
+			.key.selected.active, .pad.selected.active {
+				background-color: ${activeColor};
+			}
+		`;
+
+
+		let w = parseFloat(this.getAttribute("width"));
+		let h = parseFloat(this.getAttribute("height"));
+
+		let channel = this.getAttribute("channel");
+		this.channel = channel ? parseInt(channel) : 1;
+		
+		let velocity = this.getAttribute("velocity");
+		this.velocity = velocity ? parseInt(velocity) : 127;
+
+
+		let min = this.getAttribute("min");
+		min = min ? nearestWhiteKey(parseInt(min), -1) : 36;
+		let max = this.getAttribute("max");
+		max = max ? nearestWhiteKey(parseInt(max), 1) : 84;
+		this.min = min;
+		this.max = max;
+
+		this.width = w;
+		this.height = h;
+
+		this.minIndex = whiteKeyIndex(this.min);
+		this.maxIndex = whiteKeyIndex(this.max);
+		this.range = this.maxIndex - this.minIndex + 1;
+		this.whiteKeyWidth = this.width / this.range;
+
+		this.style.display = "block";
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
+		//this.style.backgroundColor = "red";
+
+		shadowElement.appendChild(style);
+
+		let controllerElement =	this.generateController(min, max);
+		shadowElement.appendChild(controllerElement);
+
+		this.keys = [];
+
+		this.addEventListener("down", e => {
+			let keyNum = e.detail.key.value;
+			this.keys[keyNum] = true;
+			this.value = keyNum;
+
+			let data = {channel: this.channel, keyNum: keyNum, velocity: this.velocity};
+			this.dispatchEvent(new CustomEvent("keydown", {detail:data}));
+			this.indicateKey(keyNum, true);
+		});
+		this.addEventListener("up", e => {
+			let keyNum = e.detail.key.value;
+			this.keys[keyNum] = false;
+			this.value = keyNum;
+
+			let data = {channel: this.channel, keyNum: keyNum, velocity: this.velocity};
+			this.dispatchEvent(new CustomEvent("keyup", {detail:data}));
+			this.indicateKey(keyNum, false);
+		});
+		this.addEventListener("pointerleave", e => {
+			if(this.pointerDown){
+				this.pointerDown = false;
+				this.releaseAllKeys();
+			}
+		});
+		this.addEventListener("pointerup", e => {
+			if(this.pointerDown){
+				this.pointerDown = false;
+				this.releaseAllKeys();
+			}
+		});
+		
+	}
+
+	indicateKey(keyNum, state = false){
+		this.elements.forEach(el => {
+			if(el.keyNum == keyNum){
+				if(state){
+					el.classList.add("active");
+				} else {
+					el.classList.remove("active");
+				}
+				
+			}
+		});
+	}
+
+	generateController(min, max){
+		let el = document.createElement("div");
+		el.classList.add("controller");
+		this.elements = [];
+		
+		let child;
+		switch(this.type){
+			case "launchpad":
+			for(let row = 0; row<this.rows; row++){
+				for(let col = 0; col<this.cols; col++){
+					child = this.generatePad(row,col);
+					el.appendChild(child);
+					this.elements.push(child);
+				}
+			}
+			
+			break;
+
+			default:
+			for(let keyNum = min; keyNum<=max; keyNum++){
+				child = this.generateKey(keyNum);
+				el.appendChild(child);
+				this.elements.push(child);
+			}
+			break;
+
+		}
+			
+		
+		return el;
+	}
+
+	generatePad(row,col){
+		let el = document.createElement("div");
+		el.classList.add("pad");
+		let rect = this.rowAndColToRect(row,col);
+		setElementRect(el, rect);
+		
+
+		let index = row * this.cols + col - (row * this.overlap);
+		let octave = Math.floor(index / this.scale.length);
+		let relIndex = index % this.scale.length;
+		let keyNum = this.min + octave * this.scaleMod + this.scale[relIndex];
+		
+
+		if(!relIndex){
+			el.classList.add("root");
+		}
+		el.keyDown = false;
+		el.keyNum = keyNum;
+		el.value = keyNum;
+		this.addLabel(el, index);
+		this.addKeyCommand(el, index)
+
+		this.addEventListeners(el);
+		return el;
+	}
+
+	rowAndColToRect(row,col){
+		let rect = {};
+		rect.x = col / this.cols * (this.width + this.padMargin);
+		rect.y = (1 - (row+1) / this.rows) * (this.height + this.padMargin);
+		rect.width = (this.width - this.padMargin * (this.cols-1)) / this.cols;
+		rect.height = (this.height - this.padMargin * (this.rows -1)) / this.rows;
+		return rect;
+	}
+
+	generateKey(keyNum){
+
+		let el = document.createElement("div");
+		el.classList.add("key");
+		el.classList.add(isBlackKey(keyNum) ? "black" : "white");
+
+		let rect = this.keyNumToRect(keyNum);
+		setElementRect(el, rect);
+
+		el.keyDown = false;
+		el.keyNum = keyNum;
+		el.value = keyNum;
+
+		let index = keyNum-this.min;
+		this.addLabel(el, index);
+		this.addKeyCommand(el, index)
+		this.addEventListeners(el);
+		return el;
+	}
+
+	addEventListeners(el){
+
+		this.pointerDown = false;
+
+		el.addEventListener("pointerenter", e => {
+			if(this.pointerDown && !el.keyDown){
+				el.keyDown = true;
+				this.dispatchEvent(new CustomEvent("down", {detail:{key: el}}));
+				this.releaseAllKeys([el]);	
+			}
+		});
+		el.addEventListener("pointerdown", e => {
+			e.preventDefault();
+			this.pointerDown = true;
+			el.keyDown = true;
+			// el.classList.add("active");
+			this.dispatchEvent(new CustomEvent("down", {detail:{key: el}}));
+		});
+		el.addEventListener("pointerup", e => {
+			el.keyDown = false;
+			this.pointerDown = false;
+			// el.classList.remove("active");
+			this.dispatchEvent(new CustomEvent("up", {detail:{key: el}}));
+		});
+	}
+
+
+
+	
+
+	releaseAllKeys(omit = []){
+		this.elements.forEach(el => {
+			if(el.keyDown && !omit.includes(el)){
+				el.keyDown = false;
+				el.classList.remove("active");
+				this.dispatchEvent(new CustomEvent("up", {detail:{key: el}}));
+			}
+		});
+	}
+	
+	
+	keyNumToRect(keyNum){
+		let rect = {};
+		rect.x = this.whiteKeyNumToX(keyNum);
+		rect.y = 0;
+
+		if(isBlackKey(keyNum)){
+			let blackKeyWidth = this.whiteKeyWidth * 0.7;
+			let blackKeyHeight = this.height * 0.6;
+			rect.x += this.whiteKeyWidth - blackKeyWidth / 2;
+			rect.width = blackKeyWidth;
+			rect.height = blackKeyHeight;
+		} else {
+			rect.width = this.whiteKeyWidth;
+			rect.height = this.height;
+		}
+		return rect;
+	}
+	
+
+	whiteKeyNumToX(keyNum){
+		let keyIndex = whiteKeyIndex(keyNum);
+		return (keyIndex - this.minIndex) / this.range * this.width;
+	}
+	addLabel(el, index){
+		if(this.labels.length){
+			el.innerHTML = this.labels[index % this.labels.length];
+		}
+	}
+
+	addKeyCommand(el, index){
+		if(index<this.keyCommands.length){
+			el.keyCommand = this.keyCommands[index];
+		}
+	}
+
+}
+
+function isBlackKey(keyNum){
+	return [1,3,6,8,10].includes(keyNum % 12);
+}
+function nearestWhiteKey(keyNum, dir = -1){
+	return isBlackKey(keyNum) ? keyNum + dir : keyNum;
+}
+
+function whiteKeyIndex(keyNum){
+	let wk = nearestWhiteKey(keyNum);
+	let octave = Math.floor(wk / 12);
+	let relKey = wk % 12;
+	return [0,2,4,5,7,9,11].indexOf(relKey) + octave * 7;
+}
+
+function setElementRect(el, rect){
+	el.style.left = `${rect.x}px`;
+	el.style.top = `${rect.y}px`;
+	el.style.width = `${rect.width}px`;
+	el.style.height = `${rect.height}px`;
+}
+
+
+
+
+
+module.exports = MIDIController;
+
+},{}],17:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
@@ -4447,7 +5698,8 @@ class Mapper{
 			}
 
 		}
-		this.isNumeric = this.mapout ? this.mapout.every(element => typeof element.valueOf() === 'number') : true;
+
+		this.isNumeric = this.mapout ? this.mapout.valueOf().every(element => typeof element.valueOf() === 'number') : true;
 	}
 
 	printInfo(params){
@@ -4460,6 +5712,17 @@ class Mapper{
 
 	getValue(x){
 
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+		
+		
 		// truncate x if needed
 		if(typeof x == "undefined")return x;
 
@@ -4469,12 +5732,12 @@ class Mapper{
 			break;
 
 			case "string":
-			if(this.mapin){
-				let i = this.mapin.valueOf().indexOf(x);
+			if(mapin){
+				let i = mapin.indexOf(x);
 				if(i == -1){
 					return 0;
 				} else {
-					x = this.mapout[i];
+					x = mapout[i];
 					x = this.convert(x, i);
 					return x;
 				}
@@ -4486,8 +5749,8 @@ class Mapper{
 
 			default:
 			x = x.valueOf();
-			x = this.mapin ? Math.max(x, Math.min(...this.mapin)) : x;
-			x = this.mapin ? Math.min(x, Math.max(...this.mapin)) : x;
+			x = mapin ? Math.max(x, Math.min(...mapin)) : x;
+			x = mapin ? Math.min(x, Math.max(...mapin)) : x;
 			return this.mapValue(x);
 			break;
 
@@ -4536,8 +5799,9 @@ class Mapper{
 
 		x = this.convert(x, i);
 
-		return x;
-
+		if(!isNaN(x)){
+			return x;
+		}
   	}
 
 	inToMapInIndex(x){
@@ -4550,35 +5814,63 @@ class Mapper{
 	inToMapOutIndex(x, i){
 		// let e = this.mapin.filter(entry => entry <= x).pop();
 		// let i = this.mapin.indexOf(e);
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
 
-		if(this.mapout.length > this.mapin.length && i+2 == this.mapin.length){
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
+		if(mapout.valueOf().length > mapin.valueOf().length && i+2 == mapin.length){
 			// more out-values than in-values and this is the next to last in-value
 		
 			// pick an out-value from the range between next to last and last in value
-			let outValues = this.mapout.filter((val, index) => index >= i);
+			let outValues = mapout.filter((val, index) => index >= i);
 			let len = outValues.length-1;
 			let x2 = x * len; // / Math.max(...this.mapin);
 			i += Math.floor(x2);
 			x = x == 1 ? x : x2 % 1;
-		} else if(this.mapout.length >= this.mapin.length && i+1 == this.mapin.length){
+		} else if(mapout.length >= mapin.length && i+1 == mapin.length){
 			// last mapin-value is mapped to last mapout-value
-			i = this.mapout.length-1;
+			i = mapout.length-1;
 			x = 0;
 		} else {
 			// if(i+2 >= this.mapout.length){
 			// match in to out values
-			i = i % this.mapout.length;
+			i = i % mapout.length;
 		}
 		return {i:i,x:x};
 	}
 
 	in2Rel(x, i){
-		let in1 = this.mapin[i % this.mapin.length];
-		let in2 = this.mapin[(i+1) % this.mapin.length];
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+		let in1 = mapin[i % this.mapin.length];
+		let in2 = mapin[(i+1) % this.mapin.length];
 		return (x-in1)/(in2-in1);
 	}
 
 	rel2Out(x, i){
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
 		if(this.isNumeric){
 			// interpolate between two in-values
 
@@ -4589,8 +5881,8 @@ class Mapper{
 				}
 			}
 
-			let out1 = this.mapout[i % this.mapout.length];
-			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let out1 = mapout[i % mapout.length];
+			let out2 = mapout[(i+1) % mapout.length];
 
 			// if(i+2 >= this.mapout.length){
 			// 	// match in to out values
@@ -4613,7 +5905,7 @@ class Mapper{
 		} else {
 
 			// pick a string value from mapout
-			return this.mapout[i % this.mapout.length];
+			return mapout[i % mapout.length];
 		}
 	}
 
@@ -4622,10 +5914,19 @@ class Mapper{
 			//let cycle = Math.floor(noteOffs / obj.stepsCycle);
 			//let noteInCycle = noteOffs % obj.stepsCycle;
 
+			let mapin;
+			if(this.mapin){
+				mapin = this.mapin.valueOf();
+			}
+	
+			let mapout;
+			if(this.mapout){
+				mapout = this.mapout.valueOf();
+			}
 
 		if(steps instanceof Array){
-			let out1 = this.mapout[i % this.mapout.length];
-			let out2 = this.mapout[(i+1) % this.mapout.length];
+			let out1 = mapout[i % mapout.length];
+			let out2 = mapout[(i+1) % mapout.length];
 			let range = Math.abs(out2 - out1);
 
 			// create a pattern for range
@@ -4654,8 +5955,19 @@ class Mapper{
 	}
 
 	offset(x, i){
+
+		let mapin;
+		if(this.mapin){
+			mapin = this.mapin.valueOf();
+		}
+
+		let mapout;
+		if(this.mapout){
+			mapout = this.mapout.valueOf();
+		}
+
 		if(this.isNumeric){
-			return x + this.mapout[i % this.mapout.length];
+			return x + mapout[i % mapout.length];
 		} else {
 			return x;
 		}
@@ -4840,13 +6152,16 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":20,"./WebAudioUtils.js":28}],16:[function(require,module,exports){
+},{"./Range.js":22,"./WebAudioUtils.js":30}],18:[function(require,module,exports){
+const fnNames = ["start", "stop", "trig"];
 
 class MidiManager {
 
 	constructor(waxml){
 		this.waxml = waxml;
 		this.keysPressed = Array(16).fill(Array(127).fill(false));
+		this.listeners = [];
+		this.eventListeners = [];
 
 		if (navigator.requestMIDIAccess) {
 			console.log('This browser supports WebMIDI!');
@@ -4858,10 +6173,10 @@ class MidiManager {
 					input.onmidimessage = e => this.getMIDIMessage(e);
 				}
 			}, () => {
-				console.error('Could not access your MIDI devices.');
+				console.warn('Could not access your MIDI devices.');
 			});
 		} else {
-			console.error('WebMIDI is not supported in this browser.');
+			console.warn('WebMIDI is not supported in this browser.');
 		}
 
 	}
@@ -4884,7 +6199,7 @@ class MidiManager {
 		// to remove the channel information (accepting input from all MIDI channels)
 		// then perform this magic line
 		// (read more: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators	
-		let channel = status % 0x10;
+		let channel = status % 0x10 + 1;
 		status = status >> 4;
 		
 		let val;
@@ -4892,14 +6207,20 @@ class MidiManager {
 			case 9: // NoteOn
 			if (data2 > 0) {
 				this.noteOn(channel, data1, data2);
+				this.remoteControl(`NoteOn=${channel}:${data1}`, data2);
+				this.remoteControl(`NoteOn=${data1}`, data2);
 			} else {
 				this.noteOff(channel, data1);
+				this.remoteControl(`NoteOff=${channel}:${data1}`, 0);
+				this.remoteControl(`NoteOff=${data1}`, 0);
 			}
 			break;
 
 
 			case 8: // NoteOff
 			this.noteOff(channel, data1, data2);
+			this.remoteControl(`NoteOff=${channel}:${data1}`, data2);
+			this.remoteControl(`NoteOff=${data1}`, data2);
 			break;
 
 
@@ -4907,12 +6228,18 @@ class MidiManager {
 			val = data2/127;
 			this.waxml.setVariable(`MIDI:CC:${data1}`, val);
 			this.waxml.setVariable(`MIDI:ControlChange:${data1}`, val);
+			this.remoteControl(`ControlChange=${channel}:${data1}:${data2}`);
+			this.remoteControl(`ControlChange=${data1}:${data2}`);
+			this.remoteControl(`ControlChange=${channel}:${data1}`, data2);
+			this.remoteControl(`ControlChange=${data1}`, data2);
 			break;
 				
 			case 14: // pitch bend
 			val = (data2 + data1/128)/64 - 1;
 			this.waxml.setVariable(`MIDI:PB`, val);
 			this.waxml.setVariable(`MIDI:PitchBend`, val);
+			this.remoteControl(`PitchBend:${channel}`, val);
+			this.remoteControl("PitchBend", val);
 			break;
 
 			default:
@@ -4922,22 +6249,51 @@ class MidiManager {
 		console.log({status: status, channel: channel, data1: data1, data2: data2});
 	}
 
+	addListener(obj){
+		this.listeners.push(obj);
+	}
+
+	remoteControl(filter, val){
+		this.listeners.filter(obj => obj.filter == filter).forEach(obj => {
+			switch(obj.task){
+				case "trig":
+				obj.element.dispatchEvent(new CustomEvent(obj.target));
+				break;
+
+				case "set":
+				if(filter.includes("PitchBend")){
+					val = (val+1) / 2 * (obj.max-obj.min) + obj.min;
+				} else {
+					val = val / 127 * (obj.max-obj.min) + obj.min;
+				}
+
+				val = Math.round(val/obj.step)*obj.step;
+				
+				obj.element[obj.target] = val;
+				obj.element.dispatchEvent(new CustomEvent("input"));
+				obj.element.dispatchEvent(new CustomEvent("change"));
+				break;
+			}
+		});
+	}
+
 	noteOn(ch, key, vel){
+		//console.log(ch, key, vel);)
 
 		if(!this.keysPressed[ch][key]){
 
-			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 			this.keysPressed[ch][key] = true;
+			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let ev = `MIDI:NoteOn`;
 
-			this.waxml.start(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
-			this.waxml.start(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+			fnNames.forEach(fn => {
+				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+					this.waxml[fn](targetEv, data);
+				});
+			});
 
-			this.waxml.stop(`MIDI:NoteOn`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}`, [vel/127]);
-			this.waxml.stop(`MIDI:NoteOn:${ch}:${key}:${vel}`);
+			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
 
 		}
 	}
@@ -4947,24 +6303,36 @@ class MidiManager {
 		if(this.keysPressed[ch][key]){
 
 			this.keysPressed[ch][key] = false;
-			let monoTrig = this.keysPressed[ch].find(state => state) ? false : true;
+			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 	
-			this.waxml.start(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.start(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
-			this.waxml.start(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let ev = `MIDI:NoteOff`;
 
-			this.waxml.stop(`MIDI:NoteOff`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}`, [vel/127, key, monoTrig]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}`, [vel/127]);
-			this.waxml.stop(`MIDI:NoteOff:${ch}:${key}:${vel}`);
+			fnNames.forEach(fn => {
+				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+					this.waxml[fn](targetEv, data);
+				});
+			});
+			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
+
 		}
+	}
+	addEventListener(name, fn){
+		if(typeof name !== "string"){return}
+		if(typeof fn !== "function"){return}
+		this.eventListeners[name] = this.eventListeners[name] || [];
+		this.eventListeners[name].push(fn);
+	}
+
+	dispatchEvent(e){
+		this.eventListeners[e.type] = this.eventListeners[e.type] || [];
+		this.eventListeners[e.type].forEach(fn => fn(e));
 	}
 
 }
 
 module.exports = MidiManager;
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 
 var processorName = 'white-noise-processor';
 var _noise;
@@ -5027,7 +6395,7 @@ class Noise {
 module.exports = Noise;
 
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 
@@ -5042,19 +6410,17 @@ class ObjectBasedAudio {
 
         this.input = new GainNode(this._ctx);
         this.pannerNode = new PannerNode(this._ctx, params);
+        this.gainNode = new GainNode(this._ctx);
         this.send = new GainNode(this._ctx);
         this.output = new GainNode(this._ctx);
+ 
+        this.input.connect(this.pannerNode);  
+        this.pannerNode.connect(this.gainNode);  
+        this.gainNode.connect(this.send)
+        this.gainNode.connect(this.output);
 
-        this.input.connect(this.pannerNode);   
-        this.pannerNode.connect(this.send)
-        this.pannerNode.connect(this.output);
-
-        if(params.src){
-            this.bufferSource = new BufferSourceObject(this, params);
-            this.bufferSource.connect(this.pannerNode);
-        } else {
-            // console.error("No src specified for ObjectBasedAudio", params);
-        }
+        this.bufferSource = new BufferSourceObject(this, params);
+        this.bufferSource.connect(this.pannerNode);
 
         if(params.convolution){
             this.convolverNode = waxml.getConvolver(params.convolution).node;
@@ -5103,8 +6469,8 @@ class ObjectBasedAudio {
     }
 
     fade(val = 1, time = 0){
-        this.gain.cancelScheduledValues(this._ctx.currentTime);
-        this.gain.setTargetAtTime(val, this._ctx.currentTime, time);
+        this.output.gain.cancelScheduledValues(this._ctx.currentTime);
+        this.output.gain.setTargetAtTime(val, this._ctx.currentTime, time);
     }
 	
     get input(){
@@ -5287,7 +6653,7 @@ class ObjectBasedAudio {
         if(typeof this._params.positionX == "undefined"){
             this._params.positionX = this.pannerNode.positionX;
         }
-        return this.pannerNode.positionX;
+        return this.pannerNode.positionX.value;
     }
     set positionX(val){
         this._params.positionX = val;
@@ -5298,7 +6664,7 @@ class ObjectBasedAudio {
         if(typeof this._params.positionY == "undefined"){
             this._params.positionY = this.pannerNode.positionY;
         }
-        return this.pannerNode.positionY;
+        return this.pannerNode.positionY.value;
     }
     set positionY(val){
         this._params.positionY = val;
@@ -5309,7 +6675,7 @@ class ObjectBasedAudio {
         if(typeof this._params.positionZ == "undefined"){
             this._params.positionZ = this.pannerNode.positionZ;
         }
-        return this.pannerNode.positionZ;
+        return this.pannerNode.positionZ.value;
     }
     set positionZ(val){
         this._params.positionZ = val;
@@ -5349,7 +6715,8 @@ class ObjectBasedAudio {
     }
   
     get gain(){
-        return this.output.gain;
+        // return this.output.gain.value;
+        return this.gainNode.gain;
     }
      
     connect(destination){
@@ -5373,15 +6740,46 @@ class ObjectBasedAudio {
         }
     }
 
+    resume(){
+        let transitionTime = this.getParameter("transitionTime");
+        this.fadeIn(transitionTime/3);
+		if(this.bufferSource._buffer){
+            this.bufferSource.resume();
+        } else {
+            let fn = () => this.bufferSource.resume();
+            this.bufferSource.addCallBack(fn);
+        }
+	}
+
+    get playing(){
+        return this.bufferSource ? this.bufferSource.playing : false;
+    }
+
+    set playing(state){
+        if(this.bufferSource){
+            this.bufferSource.playing = state;
+        }
+       
+    }
+
+
+	continue(){
+		this.resume();
+	}
+
     stop(){
 
         // fadeout first
         let transitionTime = this.getParameter("transitionTime");
         this.fadeOut(transitionTime/5);
+        this.playing = false;
 
         if(this.bufferSource){
+            this.bufferSource.stop({dontDisconnect: true})
             // avoid cutting audio before fade is done
-            this.stopTimeout = setTimeout(e => this.bufferSource.stop(), transitionTime * 1000 * 1.5);
+            this.stopTimeout = setTimeout(e => {
+                this.bufferSource.disconnect();
+            }, transitionTime * 1000 * 1.5);
         }
         
     }
@@ -5400,12 +6798,35 @@ class ObjectBasedAudio {
         // we hard-code the Y component to 0, as Y is the axis of rotation
         return [x, 0, z];
     }
-	    
+
+
+
+    get offset(){
+        return this.bufferSource ? this.bufferSource.offset :  0;
+    }
+
+    set offset(val){
+        if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this.bufferSource), 'offset')){
+            this.bufferSource.offset = val;
+        }
+    }
+
+    get relOffset(){
+        return this.bufferSource ? this.bufferSource.relOffset : 0;
+    }
+
+    set relOffset(val){
+        if(this.bufferSource){
+            if(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this.bufferSource), 'relOffset')){
+                this.bufferSource.relOffset = val;
+            }
+        }
+    }
 }
 
 module.exports = ObjectBasedAudio;
 
-},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],19:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],21:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -5451,6 +6872,7 @@ class Parser {
 
 	initFromString(str){
 		return new Promise((resolve, reject) => {
+			this.XMLstring = str;
 			let parser = new DOMParser();
 			let xml = parser.parseFromString(str,"text/xml");
 			this._xml = xml.firstElementChild;
@@ -5497,7 +6919,7 @@ class Parser {
 					
 					this._xml = document.implementation.createDocument(null, null);
 					this.linkExternalXMLFile(this._xml, source, localPath)
-					.then(xmlNode => {
+					.then((xmlNode) => {
 						// return root <Audio> element
 						return resolve(this._xml.firstElementChild);
 					});
@@ -5520,6 +6942,7 @@ class Parser {
 			localPath = Loader.getFolder(url);
 			Loader.loadXML(url)
 			.then((externalXML) => {
+				
 				externalXML.setAttribute("localpath", localPath);
 				return resolve(this.appendXMLnode(parentXML, externalXML, localPath));
 			});
@@ -5814,16 +7237,40 @@ class Parser {
 
 	}
 
+	set XMLstring(str){
+		if(str){
+			this._XMLstring = str;
+		}		
+	}
+
 	get XMLstring(){
 		return this._XMLstring;
 	}
+
+
+	createObject(xmlNode){
+		let params = WebAudioUtils.attributesToObject(xmlNode.attributes);
+		let obj;
+		switch(xmlNode.nodeName.toLowerCase()){
+			case "envelope":
+			obj = new Envelope(xmlNode, this.waxml, params);
+			break;
+
+			default:
+			obj = new AudioObject(xmlNode, this.waxml, "", params);
+			break;
+		}
+		return obj;
+	}
+
+
 }
 
 
 
 module.exports = Parser;
 
-},{"./AudioObject.js":2,"./Envelope.js":6,"./Loader.js":14,"./Synth.js":22,"./Variable.js":24,"./Watcher.js":26,"./WebAudioUtils.js":28}],20:[function(require,module,exports){
+},{"./AudioObject.js":2,"./Envelope.js":7,"./Loader.js":15,"./Synth.js":24,"./Variable.js":26,"./Watcher.js":28,"./WebAudioUtils.js":30}],22:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -5957,7 +7404,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":28}],21:[function(require,module,exports){
+},{"./WebAudioUtils.js":30}],23:[function(require,module,exports){
 
 
 
@@ -6119,7 +7566,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -6377,7 +7824,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":23,"./Watcher.js":26,"./WebAudioUtils.js":28}],23:[function(require,module,exports){
+},{"./Trigger.js":25,"./Watcher.js":28,"./WebAudioUtils.js":30}],25:[function(require,module,exports){
 
 
 
@@ -6486,7 +7933,7 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -6495,25 +7942,34 @@ var WebAudioUtils = require('./WebAudioUtils.js');
 class Variable {
 
 	constructor(xmlNode, params){
+
+		if(xmlNode){
+			this._parentAudioObj = xmlNode.parentNode.audioObject;
+		}
+		
+
 		this._params = params;
 		this._callBackList = [];
 		this.waxml = params.waxml;
 		this.lastUpdate = 0;
 		this._polarity = 0;
 		this._derivative = 0;
-		this._derivativePolarity = 0;
 		this._derivative2 = 0;
-		this._derivative2Polarity = 0;
+		this._derivative3 = 0;
 		this._xml = xmlNode;
 		this.name = params.name;
 
 		this.derivativeValues = [0];
 		// this.derivative2Values = [0];
-		this.smoothDerivative = 2;
+		// this.smoothDerivative = 3;
+		this.registeredTimes = [];
 
 
 		this._mapper = new Mapper(params);
 		this.scheduledEvents = [];
+
+		this.autoTriggerTimeout = 0;
+		this.lastBroadCastedValues = {};
 
 		// if(this.name == "pan"){
 		// 	console.log("hej");
@@ -6531,9 +7987,14 @@ class Variable {
 		// 		}
 		// 	});
 		// }
+
+		if(params.trig){
+			//this.argumentIndex = parseInt((params.value || "").split("[").pop()) || 0;
+			this.targetParameter = params.value;
+		}	
 		if(typeof params.default != "undefined"){
 			this.value = params.default;
-		} else if(typeof params.value != "undefined"){
+		} else if(!params.trig && typeof params.value != "undefined"){
 			this.value = params.value.valueOf();
 		}
 
@@ -6550,61 +8011,107 @@ class Variable {
 		}
 	}
 
+	trig(){
+		// this feature lets the variable update to one argument 
+		// passed to the function. I.e. MIDI:NoteOn, {channel: ch, keyNum: nr, velocity: vel}
+		this.setValue(arguments[0][this.targetParameter]);
+	}
+
 	valueOf(){
 		return this.value;
 	}
 
-	setValue(val, transistionTime){
+	setValue(val = this._value, transistionTime = 0, autoTrigger = false){
 
-		if(this._value != val){
-			// this.setDerivative(val);
+		// clear autoTrigger (no matter if the function is triggered manually or automatically)
+		// the autoTrigger makes sure derivatas are reset even if no data is updated
+		if(this.autoTriggerTimeout){
+			clearTimeout(this.autoTriggerTimeout);
+			this.autoTriggerTimeout = 0;
+		}
 
-			let now = this.time;
+		if(typeof val == "boolean"){
+			// pick minin if false, maxin if true
+			val = val ? this.maxIn : this.minIn;
+		}
 
-			this._value = val;
-			this.mappedValue = this._mapper.getValue(this._value);
+		let oldValue = this._value;
+		let newValue = val;
 
-			if(typeof this.lastMappedValue == "undefined"){
-				this.lastMappedValue = this.mappedValue;
-				this.lastUpdate = now;
-			} else {
+		let curFrame = this.curFrame;
+
+		if(val == parseFloat(val))val = parseFloat(val);
+		this._value = val;
+
+		this.mappedValue = this._mapper.getValue(this._value);
+		
+		if(typeof this.mappedValue != "undefined"){
+
+			// successful mapping
+			let frames = 1;
+
+			if(typeof this.lastMappedValue != "undefined"){
+				// don't run on first data value
+
 				let diff = this.mappedValue - this.lastMappedValue;
 				this.lastMappedValue = this.mappedValue;
-				
-				let time = 1; // now - this.lastUpdate;
+				frames = curFrame - this.lastUpdate;
 			
-				if(time){
+				if(frames){
 					if(diff >= 0 && this._polarity <= 0){
 						this._polarity = 1;
 						this.broadCastEvent("trough");
-						this.broadCastEvent("polarityChange");
+						this.polarityChange();
 					} else if(diff <= 0 && this._polarity >= 0){
 						this._polarity = -1;
 						this.broadCastEvent("crest");
-						this.broadCastEvent("polarityChange");
+						this.polarityChange();
 					}
 
+					let newDerivative1;
+					if(diff){
+						newDerivative1 = diff / frames;
+					} else {
+						// let the derivative fall towards zero if set
+						newDerivative1 = this._derivative ? this._derivative * this.fallOffRatio : 0;
+					}
 
-					let newDerivative = diff; // / time;
-					this.lastUpdate = now;
-	
-					let lastAVG = this._derivative;
-					let newAVG = this.setDerivative(newDerivative);
-
-					this._derivative = newAVG;
+					newDerivative1 = this.getDerivativeAVG(newDerivative1);
 					
-					this._derivative2 = newAVG - lastAVG;
+					let newDerivative2 = newDerivative1 - this._derivative;
+					let newDerivative3 = newDerivative2 - this._derivative2;
+
+					// let lastAVG = this._derivative;
+					// let newAVG = this.setDerivative(newDerivative);
+
+					this._derivative = newDerivative1;
+					this._derivative2 = newDerivative2;
+					this._derivative3 = newDerivative3;
 
 					// this._derivative2 = newDerivative - this._derivative;
 					// this._derivative = newDerivative;
 				}
 				
 				// this._derivative = newDerivative;
+				this.doCallBacks(transistionTime);
+			}
+			this.lastUpdate = curFrame;
+			this.lastMappedValue = this.mappedValue;
+
+			let delay;
+			if(autoTrigger){
+				delay = 1 / this.frameRate;
+			} else {
+				delay = this.AVGtime(frames / this.frameRate);
+			}
+			
+			if(this._params.stream){
+				this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
 			}
 
 
-			this.doCallBacks(transistionTime);
 		}
+		
 	}
 
 	get value() {
@@ -6645,7 +8152,8 @@ class Variable {
 		return arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
 	}
 
-	setDerivative(val){
+	getDerivativeAVG(val){
+		// feature used to smooth the derivative, but it also slows down the responsitivity
 		if(isNaN(val)){
 			console.log(`setDerivative(${val})`);
 		}
@@ -6656,14 +8164,37 @@ class Variable {
 		return this.average(this.derivativeValues);
 	}
 
+	get smoothDerivative(){
+		if(!this._smoothDerivative){
+			this._smoothDerivative = this.getParameter("smoothDerivative");
+		}
+		return this._smoothDerivative;
+	}
+
+	get frameRate(){
+		if(!this._frameRate){
+			this._frameRate = this.getParameter("frameRate");
+		}
+		return this._frameRate;
+	}
+
+	get fallOffRatio(){
+		if(!this._fallOffRatio){
+			this._fallOffRatio = this.getParameter("fallOffRatio");
+		}
+		return this._fallOffRatio;
+	}
+
 	get derivative(){
-		return this.average(this.derivativeValues);
-		// return this._derivative || 0;
+		return this._derivative || 0;
 	}
 
 	get derivative2(){
-		// return this.average(this.derivative2Values);
 		return this._derivative2 || 0;
+	}
+
+	get derivative3(){
+		return this._derivative3 || 0;
 	}
 
 	get acceleration(){
@@ -6678,8 +8209,12 @@ class Variable {
 		if(this.waxml){
 			return this.waxml._ctx.currentTime;
 		} else {
-			return Date.now();
+			return Date.now() / 1000;
 		}
+	}
+
+	get curFrame(){
+		return this.time * this.frameRate;
 	}
 
 	broadCastEvent(eventName){
@@ -6690,6 +8225,11 @@ class Variable {
 			});
 		}
 		
+	}
+
+	polarityChange(){
+		this.derivativeValues = [];
+		this.broadCastEvent("polarityChange");
 	}
 
 	// setDerivative(newVal){
@@ -6767,16 +8307,56 @@ class Variable {
 	}
 
 	get default(){
-		return this._params.default ? this._params.default : 1;
+		return typeof this._params.default == "undefined" ? 1 : this._params.default;
 	}
 
 	get defaultValue(){
 		return this.default;
 	}
 
+	AVGtime(time = 0){
+		// I decided to use frameRate instead of this auto-detect update rate for incoming data
+		// It defaults to 30 but can be set for any element
+
+		// But then I changed my mind. I think it will too much effort to specify all values manually.
+		// Better if the system can handle quite a lot automatically
+		let nrOfTimeValues = 10;
+		if(this._AVGtime) {
+			return this._AVGtime;
+		} else {
+			if(time){
+				this.registeredTimes.push(time);
+				if(this.registeredTimes.length > 10){
+					this.registeredTimes.shift();
+				}
+				return this.registeredTimes.reduce((a,b) => a + b) / nrOfTimeValues;
+
+				// time = this.registeredTimes.sort((a,b) => a < b);
+			} else {
+				return 0.1;
+			}
+			
+			// if(this.registeredTimes.length > 10){
+			// 	// calculate average time. Exclude outliers
+			// 	let sortedArr = this.registeredTimes.sort((a,b) => a < b);
+			// 	let filteredArr = sortedArr.filter((el, i) => i > 20 && i < 80);
+			// 	this._AVGtime = filteredArr.reduce((a,b) => a + b) / filteredArr.length;
+			// } else {
+			// 	return time || 0.1;
+			// }
+		}
+	}
+
 	doCallBacks(transistionTime){
+		let lastBroadCastedValues;
 		this._callBackList.forEach(obj => {
-			obj.callBack(this[obj.prop], transistionTime);
+			// if(this.lastBroadCastedValues != this[obj.prop]){ // Det här ställde till det!!! Loopen kördes bara
+			// för det första objektet
+				obj.callBack(this[obj.prop], transistionTime);
+				// this.lastBroadCastedValues = this[obj.prop];
+				// lastBroadCastedValues = this.lastBroadCastedValues;
+			// }
+			
 		});
 	}
 
@@ -6807,18 +8387,51 @@ class Variable {
 		this.doCallBacks(0.001);
 	}
 
-	getParameter(paramName){
+	
+    getParameter(paramName){
+		let val;
+  
 		if(typeof this._params[paramName] === "undefined"){
 			
 			if(this._parentAudioObj){
 				return this._parentAudioObj.getParameter(paramName);
 			} else {
-				return 0;
+  
+				// return default values
+				switch(paramName){
+				  case "transitionTime":
+					val = 0.001;
+				  break;
+  
+				  case "frameRate":
+					val = 30;
+				  break;
+  
+				  case "fallOffRatio":
+					val = 0.5;
+				  break;
+
+				  case "smoothDerivative":
+					val = 5;
+				  break;
+  
+				  case "loopEnd":
+					// avoid setting loopEnd to 0
+					// ideally (maybe) setting it to duration
+					// of audio buffer
+				  break;
+  
+				  default:
+					val = 0;
+				  break;
+				}
+				return val;
 			}
   
 		} else {
-			let val = this._params[paramName];
+			val = this._params[paramName];
   
+			// adjust time
 			switch(paramName){
 				case "transitionTime":
 				case "loopEnd":
@@ -6831,13 +8444,13 @@ class Variable {
 			}
 			return val;
 		}
-	  }
+	}
 
 }
 
 module.exports = Variable;
 
-},{"./Mapper.js":15,"./WebAudioUtils.js":28}],25:[function(require,module,exports){
+},{"./Mapper.js":17,"./WebAudioUtils.js":30}],27:[function(require,module,exports){
 
 
 
@@ -6873,7 +8486,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -7255,7 +8868,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":24,"./WebAudioUtils.js":28}],27:[function(require,module,exports){
+},{"./Variable.js":26,"./WebAudioUtils.js":30}],29:[function(require,module,exports){
 /*
 MIT License
 
@@ -7291,6 +8904,11 @@ var InteractionManager = require('./InteractionManager.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 var Variable = require('./Variable.js');
 var InputBusses = require('./InputBusses.js');
+
+var XY_area = require('./XY_area.js');
+var XY_handle = require('./XY_handle.js');
+var Display = require('./Display.js');
+var MIDIController = require('./MIDIController.js');
 
 
 
@@ -7390,6 +9008,9 @@ class WebAudio {
 			console.warn("No WebAudioXML source specified")
 		}
 
+		
+		this.defineCustomElements();
+
 		this.ui = new InteractionManager(this);
 
 
@@ -7415,6 +9036,14 @@ class WebAudio {
 	// 	}
 	// }
 
+	
+
+	defineCustomElements(){
+		customElements.define('waxml-xy-area', XY_area);
+		customElements.define('waxml-xy-handle', XY_handle);
+		customElements.define('waxml-display', Display);
+		customElements.define('waxml-midi-controller', MIDIController);		
+	}
 
 	init(){
 		if(!this.audioInited){
@@ -7440,9 +9069,14 @@ class WebAudio {
 		this.master.fadeIn(0.1);
 	}
 
-	getXMLString(){
+	get XMLstring(){
+		return this.parser.XMLstring;
+	}
+
+	toString(){
 		return new XMLSerializer().serializeToString(this._xml);
 	}
+
 
 	updateFromString(str){
 		return new Promise((resolve, reject) => {
@@ -7567,52 +9201,120 @@ class WebAudio {
 	}
 
 	start(selector, options){
-
+		
+		if(!this._xml){return}
+		let selectStr;
 		if(!selector){
-			selector = "*";
-		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("["))){
-			selector = `*[start='${selector}']`;
+			selectStr = "*";
+		} else if(selector.includes("[") || selector.includes("#") || selector.includes(".") ){
+			// complex and correct selector expected
+			selectStr = selector;
+		} else if(selector.includes(":")){
+			// special case for keydown:x and keyup:x
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}']`).join(",");
+		} else {
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
 		}
-		this._xml.querySelectorAll(selector).forEach(XMLnode => {
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
 				XMLnode.obj.noteOn(options);
 			}
 		});
+
+		this.callPlugins("start", selector, options);
+		
 		
 	}
 
 	trig(selector, options){
 		if(!this._xml){return}
-
-		this._xml.querySelectorAll(`*[trig='${selector}'],*[noteon='${selector}'],*[start='${selector}']`).forEach(XMLnode => {
+		let selectStr = `*[trig='${selector}'], *[noteon='${selector}'], *[start='${selector}']`;
+		if(!selector.includes(":")){
+			if(selector.substr(0,1) != "."){
+				// support for class selection without the dod syntax
+				selector = "." + selector;
+			}
+			selectStr += `,${selector}`;
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
 			} else if(XMLnode.obj.noteOn){
 				XMLnode.obj.noteOn(options);
+			} else if(XMLnode.obj.trig){
+				XMLnode.obj.trig(options);
 			}
+		});
+		this.callPlugins("trig", selector, options);
+	}
+
+	continue(selector){
+		if(!this._xml){return}
+
+		let selectStr = `*[start='${selector}']`;
+		if(!selector){
+			selectStr = "*";
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+		}
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+			if(XMLnode.obj.continue){
+				XMLnode.obj.continue();
+			} 
+		});
+
+	}
+
+	resume(selector){
+		if(!this._xml){return}
+
+		let selectStr = `*[start='${selector}']`;
+		if(!selector){
+			selectStr = "*";
+		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+		}
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+			if(XMLnode.obj.resume){
+				XMLnode.obj.resume();
+			} 
 		});
 	}
 	
 
 	release(selector, options){
 		if(!this._xml){return}
-		
-		this._xml.querySelectorAll(`*[noteoff='${selector}'], *[stop='${selector}']`).forEach(XMLnode => {
+		let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
+		if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+			// select both elements with attribute "stop="selector" and class="selector"
+			selectStr += ", " + selector.split(",").map(sel => `*[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
+		}
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.stop){
 				XMLnode.obj.stop(options);
 			} else if(XMLnode.obj.noteOff){
-				XMLnode.obj.noteOn(options);
+				XMLnode.obj.noteOff(options);
 			}
 		});
 	}
 
 	stop(selector, options){
 		this.release(selector, options);
+		this.callPlugins("stop", selector, options);
 	}
 	
 
@@ -7629,6 +9331,16 @@ class WebAudio {
 		this.plugins.push(plugin);
 		// consider returning an interface to
 		// variables here
+	}
+
+	callPlugins(fn, arg1, arg2, arg3){
+		
+		this.plugins.forEach(plugin => {
+			console.log("callPlugins", fn, arg1, arg2, arg3)
+			if(plugin.call){
+				plugin.call(fn, arg1, arg2, arg3);
+			}
+		});
 	}
 
 	addEventListener(name, fn){
@@ -7775,42 +9487,53 @@ class WebAudio {
 		// read transitionTime
 		let xTime = transitionTime
 		if(this._xml){
-			xTime = xTime || this._xml.obj.getParameter("transitionTime");
+			if(typeof xTime == "undefined"){
+				xTime = this.master.getParameter("transitionTime");
+			} 
 		}
-		xTime = xTime || 0.001;
+		xTime = xTime || 0.01;
 
 		let floatVal = parseFloat(val);
 		if(typeof floatVal == "number"){
 			let listener = this._ctx.listener;
 			switch(key){
 				case "positionx":
-				listener.positionX.setTargetAtTime(floatVal, 0, xTime);
+				case "positionX":
+				listener.positionX.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "positiony":
-				listener.positionY.setTargetAtTime(floatVal, 0, xTime);
+				case "positionY":
+				listener.positionY.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "positionz":
-				listener.positionZ.setTargetAtTime(floatVal, 0, xTime);
+				case "positionZ":
+				listener.positionZ.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 	
 				case "forwardx":
-				listener.forwardX.setTargetAtTime(floatVal, 0, xTime);
+				case "forwardX":
+				listener.forwardX.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "forwardy":
-				listener.forwardY.setTargetAtTime(floatVal, 0, xTime);
+				case "forwardY":
+				listener.forwardY.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "forwardz":
-				listener.forwardZ.setTargetAtTime(floatVal, 0, xTime);
+				case "forwardZ":
+				listener.forwardZ.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 	
 				case "upx":
-				listener.upX.setTargetAtTime(floatVal, 0, xTime);
+				case "upX":
+				listener.upX.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "upy":
-				listener.upY.setTargetAtTime(floatVal, 0, xTime);
+				case "upY":
+				listener.upY.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 				case "upz":
-				listener.upZ.setTargetAtTime(floatVal, 0, xTime);
+				case "upZ":
+				listener.upZ.setTargetAtTime(floatVal, this._ctx.currentTime, xTime);
 				break;
 			}
 			if(val == floatVal){val = floatVal}
@@ -7841,12 +9564,43 @@ class WebAudio {
 	}
 	
 	getVariable(key){
-		return this.ui.getVariable(key);
+		switch(key){
+
+			case "positionX":
+			return this._ctx.listener.positionX.value;
+			break;
+			case "positionY":
+			return this._ctx.listener.positionY.value;
+			break;
+			case "positionZ":
+			return this._ctx.listener.positionZ.value;
+			break;
+
+			case "forwardX":
+			return this._ctx.listener.forwardX.value;
+			break;
+			case "forwardY":
+			return this._ctx.listener.forwardY.value;
+			break;
+			case "forwardZ":
+			return this._ctx.listener.forwardZ.value;
+			break;
+
+			default:
+			return this.ui.getVariable(key);
+			break;
+
+		}
+		
 	}
 
 	// InteractionManager
 	get lastGesture(){
 		return this.ui.lastGesture;
+	}
+
+	initSensors(){
+		this.ui.initSensors();
 	}
 
 	addSequence(name = "default", events){
@@ -7881,16 +9635,35 @@ class WebAudio {
 
 	querySelectorAll(selector){
 		let arr = [];
-		this._xml.querySelectorAll(selector).forEach(xml => {
-			let audioObject = xml.obj;
-			arr.push(xml.obj);
-		});
+		switch(selector){
+			case "master":
+			arr.push(this.master);
+			break;
+
+			default:
+			this._xml.querySelectorAll(selector).forEach(xml => {
+				let audioObject = xml.obj;
+				arr.push(xml.obj);
+			});
+			break;
+		}
+
+		
 		return arr;
 	}
 	querySelector(selector){
-		let xml = this._xml.querySelector(selector);
-		if(xml){
-			return xml.obj;
+
+		switch(selector){
+			case "master":
+			this.master;
+			break;
+
+			default:
+			let xml = this._xml.querySelector(selector);
+			if(xml){
+				return xml.obj;
+			}
+			break;
 		}
 		return -1;
 	}
@@ -7906,6 +9679,12 @@ class WebAudio {
 		}
 		return convolverNodeObject;
 	}
+
+	// a way to create WAXML objects from iMusicXML
+	createObject(xmlNode){
+		return this.parser.createObject(xmlNode);
+	}
+
 
 }
 
@@ -8015,7 +9794,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":8,"./HL2.js":10,"./InputBusses.js":11,"./InteractionManager.js":12,"./Parser.js":19,"./Variable.js":24,"./WebAudioUtils.js":28}],28:[function(require,module,exports){
+},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./Display.js":6,"./GUI.js":9,"./HL2.js":11,"./InputBusses.js":12,"./InteractionManager.js":13,"./MIDIController.js":16,"./Parser.js":21,"./Variable.js":26,"./WebAudioUtils.js":30,"./XY_area.js":31,"./XY_handle.js":32}],30:[function(require,module,exports){
 
 class WebAudioUtils {
 
@@ -8128,14 +9907,15 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		// waxml
 		case "transitionTime":
-			
-		
-		value = parseFloat(value);
+		v = parseFloat(value);
+		if(!isNaN(v)){value = v};
 		break;
 
 
 		case "maxDelayTime":
-		value = parseFloat(value) || 1;
+		v = parseFloat(value);
+		if(!isNaN(v)){value = v};
+		value = value || 1;
 		break;
 
 		case "adsr":
@@ -8215,7 +9995,10 @@ WebAudioUtils.typeFixParam = (param, value) => {
 
 		default:
 		floatVal = parseFloat(value);
-		if(!Number.isNaN(floatVal)){
+		// if(!Number.isNaN(floatVal)){
+		// 	value = floatVal;
+		// }
+		if(floatVal == value){
 			value = floatVal;
 		}
 		break;
@@ -8391,6 +10174,22 @@ WebAudioUtils.caseFixParameter = param => {
 
 		case "randomdetune":
 		param = "randomDetune";
+		break;
+
+		case "framerate":
+		param = "frameRate";
+		break;
+
+		case "falloffratio":
+		param = "fallOffRatio";
+		break;
+
+		case "smoothderivative":
+		param = "smoothDerivative";
+		break;
+
+		case "reloffset":
+		param = "relOffset";
 		break;
 
   	}
@@ -8674,15 +10473,19 @@ WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
 
 module.exports = WebAudioUtils;
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
 
 	constructor(){
 		super();
+	}
 
+
+	connectedCallback(){
 		// grid
+
 		let columns = parseInt(this.getAttribute("columns") || 1);
 		let rows = parseInt(this.getAttribute("rows") || 1);
 
@@ -8695,6 +10498,7 @@ class XY_area extends HTMLElement {
 			this.style.backgroundImage = `linear-gradient(${gridColor} 1px, transparent 0),
 			linear-gradient(90deg, ${gridColor} 1px, transparent 0)`;
 			this.style.backgroundSize = `${colWidth}% ${rowHeight}%`;
+
 		}
 
 
@@ -8709,10 +10513,26 @@ class XY_area extends HTMLElement {
 
 		this.style.touchAction = "none";
 		this.style.display = "inline-block"; // not good
-		this.style.width = "200px";
-		this.style.height = "200px";
+
+		let w = parseFloat(this.getAttribute("width")) || 200;
+		let h = parseFloat(this.getAttribute("height")) || 200;
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
 		this.style.boxSizing = "border-box";
 		this.style.backgroundColor = this.getAttribute("background-color") || "#CCC";
+		this.style.border = this.getAttribute("border") || "1px solid black";
+
+		this.style["-webkit-touch-callout"] = "none"; /* iOS Safari */
+    	this.style["-webkit-user-select"] = "none"; /* Safari */
+    	this.style["-khtml-user-select"] = "none"; /* Konqueror HTML */
+		this.style["-moz-user-select"] = "none"; /* Old versions of Firefox */
+        this.style["-ms-user-select"] = "none"; /* Internet Explorer/Edge */
+        this.style["user-select"] = "none"; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+
+
+		this.colWidth = w / columns;
+		this.rowHeight = h / rows;
 		
 		this.type = this.getAttribute("type") || "square";
 		switch(this.type){
@@ -8725,24 +10545,30 @@ class XY_area extends HTMLElement {
 		}
 
 
-		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch='true']");
+		this.initialRect = this.getBoundingClientRect();
+
+		let catchHandles = this.querySelectorAll("waxml-xy-handle[catch]");
 		if(catchHandles.length){
 			this.style.cursor = "pointer";
-			this.addEventListener("pointerdown", e => {
+			let eventName = catchHandles[0].getAttribute("catch");
+			if(eventName == "true"){eventName = "pointerdown"}
+			this.addEventListener(eventName, e => {
 				let data = {
 					clientX: e.clientX,
 					clientY: e.clientY,
-					pointerId: e.pointerId
+					pointerId: e.pointerId,
+					preventDefault: () => {}
 				}
 				catchHandles.forEach(handle => {
 					let br = handle.getBoundingClientRect();
-					data.offsetX = br.width / 2;
-					data.offsetY = br.height / 2;
+					data.offsetX = -br.width / 2;
+					data.offsetY = -br.height / 2;
+					
 					handle.pointerDown(data);
 					handle.pointerMove(data);
 				});
 			});
-		}
+		} 
 		
 	}
 
@@ -8869,40 +10695,68 @@ class XY_area extends HTMLElement {
 	}
 
 
-
-	connectedCallback() {
-	}
 }
 
 module.exports = XY_area;
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 class XY_handle extends HTMLElement {
 
 	constructor(){
 		super();
+	}
+
+
+	connectedCallback() {
+
 		this.style.position = "absolute";
-		this.style.minWidth = this.getAttribute("width") || this.getAttribute("size")  || "20px";
-		this.style.minHeight = this.getAttribute("height") || this.getAttribute("size") || "20px";
-		this.style.backgroundColor = this.getAttribute("background-color") || "#555";
-		this.style.color = this.getAttribute("color") || "#fff";
-		this.style.border = "2px solid black";
-		this.style.boxSizing = "border-box";
-		this.style.borderRadius = parseFloat(this.style.minWidth) / 2 + "px";
-		this.style.fontFamily = "sans-serif";
-		this.style.fontSize = this.getAttribute("font-size") || "10px";
-		this.style.textAlign = "center";
-		this.style.verticalAlign = "middle";
-		this.style.lineHeight = "1.3em";
-		this.style.padding = "3px";
 		this.style.cursor = "pointer";
 
 		// ensure that the XY_area has a specified position
+		// It seems like this one is nessecary
 		this.parentElement.style.position = this.parentElement.style.position || "relative";
 
+		let w = this.getAttribute("width") || this.getAttribute("size")  || "20px";
+		let h = this.getAttribute("height") || this.getAttribute("size") || "20px";
+
+		if(w == "grid"){
+			// set size to grid
+			w = `${this.parentElement.colWidth || 20}px`;
+			h = `${this.parentElement.rowHeight || 20}px`;
+		}
+
+		let icon = this.getIcon(this.getAttribute("icon"));
+		if(icon){
+			this.innerHTML = icon;
+			this.style.width = w;
+			this.style.height = h;
+			this.style.padding = "0px";
+		} else {
+			this.style.boxSizing = "border-box";
+			this.style.minWidth = w;
+			this.style.minHeight = h;
+			this.style.backgroundColor = this.getAttribute("background-color") || "#555";
+			this.style.color = this.getAttribute("color") || "#fff";
+			this.style.borderRadius = parseFloat(this.style.minWidth) / 2 + "px";
+			this.style.fontFamily = "sans-serif";
+			this.style.fontSize = this.getAttribute("font-size") || "10px";
+			this.style.textAlign = "center";
+			this.style.verticalAlign = "middle";
+			this.style.lineHeight = "1.3em";
+			this.style.padding = "3px";
+			this.style.border = "2px solid black";
+		}
+		this.initialRect = this.getBoundingClientRect();
+		let parentRect = this.parentNode.initialRect;
 		this.initRects();
+		this.effectiveArea = {
+			left: this.initialRect.width / 2,
+			top: this.initialRect.height / 2,
+			width: parentRect.width - (this.initialRect.width * 1),
+			height: parentRect.height - this.initialRect.height
+		}
 
 		let dir = this.getAttribute("direction") || "xy";
 		this.direction = {
@@ -8930,6 +10784,12 @@ class XY_handle extends HTMLElement {
 
 		this._angleOffset = this.getAttribute("angleoffset");
 
+
+		this._minX = parseFloat(this.getAttribute("minx") || 0);
+		this._minY = parseFloat(this.getAttribute("miny") || 0);
+		this._maxX = parseFloat(this.getAttribute("maxx") || 1);
+		this._maxY = parseFloat(this.getAttribute("maxy") || 1);
+
 		this.move(this.x, this.y);
 
 
@@ -8937,6 +10797,7 @@ class XY_handle extends HTMLElement {
 		this.addEventListener("pointerdown", e => this.pointerDown(e), false);
 
 		this.addEventListener("pointerup", e => {
+			e.preventDefault();
 			this.dragged = false;
 			this.dispatchEvent(new CustomEvent("input"));
 			this.classList.remove("dragged");
@@ -8949,29 +10810,31 @@ class XY_handle extends HTMLElement {
 	}
 
 	pointerDown(e){
+		e.preventDefault();
+		e.cancelBubble = true;
 		this.initRects();
 		this.dragged = true;
 		this.clickOffset = {x: e.offsetX, y:e.offsetY};
-		this.setPointerCapture(e.pointerId);
+		if(e.pointerId){this.setPointerCapture(e.pointerId)};
 		this.pointerMove(e);
 	}
 
 	pointerMove(e){
-		//event.preventDefault();
+		e.preventDefault();
 		if(this.dragged){
 
 			if(this.direction.x){
-				let x = e.clientX-this.clickOffset.x-this.boundRect.left;
+				let x = e.clientX-this.boundRect.left;
 				x = Math.max(0, Math.min(x, this.boundRect.width));
 				this.x = x / this.boundRect.width;
-				this.style.left = `${x}px`;
+				this.style.left = `${this.x * this.effectiveArea.width}px`;
 			}
 
 			if(this.direction.y){
-				let y = e.clientY-this.clickOffset.y-this.boundRect.top;
+				let y = e.clientY-this.boundRect.top;
 				y = Math.max(0, Math.min(y, this.boundRect.height));
 				this.y = y / this.boundRect.height;
-				this.style.top = `${y}px`;
+				this.style.top = `${this.y * this.effectiveArea.height}px`;
 			}
 
 			if(this.parentElement.type == "circle"){
@@ -9104,11 +10967,11 @@ class XY_handle extends HTMLElement {
 		let deltaX, deltaY, rad, angle;
 		switch(prop){
 			case "x":
-			return x;
+			return this._minX + x * (this._maxX-this._minX);
 			break;
 
 			case "y":
-			return y; 
+			return this._minY + y * (this._maxY-this._minY); 
 			break;
 
 			case "angle":
@@ -9154,6 +11017,16 @@ class XY_handle extends HTMLElement {
 		return (0.5 + (rad / Math.PI + 1) / 2) % 1;
 	}
 
+	pointToRelativeRadians(point){
+		let rad = Math.atan2(point.y - this.y, point.x - this.x);
+		return rad;
+	}
+
+
+	pointToRelativeCoordinate(point){
+		return {x: point.x - this.x, y: point.y - this.y};
+	}
+
 	set value(point){
 		this.x = Math.max(0, Math.min(1, point.x));
 		this.y = Math.max(0, Math.min(1, point.y));
@@ -9186,22 +11059,28 @@ class XY_handle extends HTMLElement {
 		this.rect = this.getBoundingClientRect();
 		let br = this.parentNode.getBoundingClientRect();
 		this.boundRect = {
-			left: br.left,
-			top: br.top,
+			left: br.left + this.rect.width / 2,
+			top: br.top + this.rect.height / 2,
 			width: br.width - this.rect.width,
 			height: br.height - this.rect.height
 		};
 	}
 
-	move(x, y){
+	move(x = this.x, y = this.y){
 		if(this.direction.x)this.style.left = x * this.boundRect.width + "px";
 		if(this.direction.y)this.style.top = y * this.boundRect.height + "px";
 	}
-	connectedCallback() {
 
+	getIcon(id){
+		switch(id){
+			case "arrow-up-circle-fill":
+			return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="white"  viewBox="0 0 16 16">
+				<path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+			</svg>`;
+		}
 	}
 }
 
 module.exports = XY_handle;
 
-},{"./WebAudioUtils.js":28}]},{},[27]);
+},{"./WebAudioUtils.js":30}]},{},[29]);

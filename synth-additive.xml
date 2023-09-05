@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio version="1.0" timeUnit="ms" gain="0dB">
+    
+    <var name="frequency" trig="MIDI:NoteOn:2" value="keyNum" convert="MIDI->frequency"/>
+    <var name="modulation" default="0" value="$MIDI:ControlChange:2:1"/>
+    <var name="spread" default="0" value="$MIDI:ControlChange:2:11" mapin="0,1" mapout="1, 1.5, 2, 2.5, 3" curve="step" />
+
+    <Envelope default="0" name="env1" trig="MIDI:NoteOn:2" stop="MIDI:NoteOff:2" ADSR="0,200,20,200" legato="true" />
+    <Envelope default="0" name="env2" trig="MIDI:NoteOn:2" stop="MIDI:NoteOff:2" ADSR="10,200,20,200" legato="true" />
+
+    
+    <!-- LFO -->
+    <Chain class="LFO" gain="$modulation*100" output="none">
+        <OscillatorNode frequency="5"/>
+    </Chain>
+    
+    <!-- Oscillators -->
+    <Chain>
+        <Mixer gain="-9dB">
+            <OscillatorNode type="sine" frequency="$frequency" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*2*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*3*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*4*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*5*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*6*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*7*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*8*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*9*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*10*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*11*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*12*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*13*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*14*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*15*$spread" detune=".LFO"/>
+            <OscillatorNode type="sine" frequency="$frequency*16*$spread" detune=".LFO"/>
+        </Mixer>
+        <BiquadFilterNode type="lowpass" frequency="$frequency*2*$spread" />
+        <BiquadFilterNode type="lowpass" frequency="€env1*10000" />
+        <GainNode gain="€env2"/>
+    </Chain>
+
+</Audio>

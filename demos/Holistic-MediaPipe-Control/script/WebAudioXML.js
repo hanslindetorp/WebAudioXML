@@ -309,14 +309,17 @@ class AmbientAudio {
         // Evaluate if setTargetAtTime is the best method. It might not give equal power.
         // fade in or out
         this.fade1.gain.setTargetAtTime((this.cnt+1) % 2, this.nextTime, fadeTime / 5);
-        //this.fade1.gain.linearRampToValueAtTime((this.cnt+1) % 2, this._ctx.currentTime + fadeTime);
+        // this.fade1.gain.linearRampToValueAtTime((this.cnt+1) % 2, this._ctx.currentTime + fadeTime / 2);
+        //this.fade1.gain.exponentialRampToValueAtTime((this.cnt+1) % 2 + (10 ** -10), fadeTime);
+        
         // fade in or out
         this.fade2.gain.setTargetAtTime(this.cnt % 2, this.nextTime, fadeTime / 5);
-        //this.fade2.gain.linearRampToValueAtTime(0, 0, this._ctx.currentTime + fadeTime);
+        //this.fade2.gain.linearRampToValueAtTime(this.cnt % 2, this._ctx.currentTime + fadeTime / 2);
+        //this.fade2.gain.exponentialRampToValueAtTime(this.cnt % 2 + (10 ** -10), fadeTime);
 
         this.nextTime += delay;
         this.cnt++;
-        let timeToNextTrig = this.nextTime - this._ctx.currentTime - 0.01;
+        let timeToNextTrig = this.nextTime - this._ctx.currentTime - 0;
         setTimeout(e => this.trigSample(), timeToNextTrig * 1000);
     }
     
@@ -325,7 +328,7 @@ class AmbientAudio {
 
 module.exports = AmbientAudio;
 
-},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":30}],2:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":31}],2:[function(require,module,exports){
 
 const WebAudioUtils = require('./WebAudioUtils.js');
 const Loader = require('./Loader.js');
@@ -622,20 +625,37 @@ class AudioObject{
         break;
 
         case "channelmergernode":
+        // this._node = new ChannelMergerNode(this._ctx, {
+        //   numberOfInputs: this._ctx.destination.maxChannelCount,
+        //   channelCount: 1,
+        //   channelCountMode: "explicit",
+        //   channelInterpretation: "discrete"
+        // });
         this._node = new ChannelMergerNode(this._ctx, {
           numberOfInputs: this._ctx.destination.maxChannelCount,
-          channelCount: 1,
-          channelCountMode: "explicit",
           channelInterpretation: "discrete"
         });
-        this.inputs = [];
-        while(this.inputs.length < this._ctx.destination.maxChannelCount){
+
+        this.channels = [];
+        while(this.channels.length < this._ctx.destination.maxChannelCount){
           let gainNode = new GainNode(this._ctx, {
             channelCount: 1,
             channelCountMode: "explicit",
             channelInterpretation: "discrete"
           });
-          gainNode.connect(this._node, 0, this.inputs.length);
+          gainNode.connect(this._node, 0, this.channels.length);
+          this.channels.push(gainNode);
+        }
+
+        this.inputs = [];
+        while(this.inputs.length < xmlNode.childElementCount){
+          let gainNode = new GainNode(this._ctx, {
+            channelCount: 1,
+            channelCountMode: "explicit",
+            channelInterpretation: "discrete"
+          });
+          
+          //gainNode.connect(this._node, 0, this.inputs.length);
           this.inputs.push(gainNode);
         }
         break;
@@ -2040,7 +2060,7 @@ class AudioObject{
 
 module.exports = AudioObject;
 
-},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":14,"./Mapper.js":16,"./Noise.js":19,"./ObjectBasedAudio.js":20,"./Variable.js":26,"./VariableContainer.js":27,"./Watcher.js":28,"./WebAudioUtils.js":30}],3:[function(require,module,exports){
+},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5,"./Loader.js":15,"./Mapper.js":17,"./Noise.js":20,"./ObjectBasedAudio.js":21,"./Variable.js":27,"./VariableContainer.js":28,"./Watcher.js":29,"./WebAudioUtils.js":31}],3:[function(require,module,exports){
 var Loader = require('./Loader.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 
@@ -2309,7 +2329,7 @@ class BufferSourceObject {
 
 module.exports = BufferSourceObject;
 
-},{"./Loader.js":14,"./WebAudioUtils.js":30}],4:[function(require,module,exports){
+},{"./Loader.js":15,"./WebAudioUtils.js":31}],4:[function(require,module,exports){
 
 
 class Connector {
@@ -2543,10 +2563,21 @@ class Connector {
 
 					case "channelmergernode":
 					let trgCh = xmlNode.obj.getParameter("channel") || [[...xmlNode.parentNode.children].indexOf(xmlNode)];
+					let nodeIndex = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					let targetInput = xmlNode.parentNode.obj.inputs[nodeIndex];
+					xmlNode.obj.connect(targetInput);
+
 					let channelCount = this._ctx.destination.channelCount; //xmlNode.parentNode.obj.inputs.length;
+					
 					trgCh.forEach((outputCh, i) => {
 						let inputCh = i % xmlNode.obj._node.channelCount;
-						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh % channelCount], inputCh, 0);
+						outputCh = outputCh % channelCount;
+						//xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh % channelCount], inputCh, 0);
+						//xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[targetInput], inputCh, outputCh);
+						let targetChannel = xmlNode.parentNode.obj.channels[outputCh];
+						targetInput.connect(targetChannel, inputCh, 0);
+
+						console.log(`childIndex: ${targetInput}, inputCh: ${inputCh}, output: ${outputCh}`);
 					});
 					break;
 
@@ -2704,7 +2735,7 @@ class ConvolverNodeObject {
 
 module.exports = ConvolverNodeObject;
 
-},{"./Loader.js":14}],6:[function(require,module,exports){
+},{"./Loader.js":15}],6:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -3020,7 +3051,7 @@ class Envelope {
 
 module.exports = Envelope;
 
-},{"./WebAudioUtils.js":30}],7:[function(require,module,exports){
+},{"./WebAudioUtils.js":31}],7:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -3179,7 +3210,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":23}],8:[function(require,module,exports){
+},{"./Sequence.js":24}],8:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -3760,7 +3791,7 @@ module.exports = GUI;
 
 
 
-},{"./Mapper.js":16,"./WebAudioUtils.js":30,"./XY_area.js":31}],9:[function(require,module,exports){
+},{"./Mapper.js":17,"./WebAudioUtils.js":31,"./XY_area.js":32}],9:[function(require,module,exports){
 
 
 
@@ -3839,6 +3870,297 @@ class InputBusses {
 
 module.exports = InputBusses;
 },{}],12:[function(require,module,exports){
+
+
+class Inspector extends HTMLElement {
+
+	constructor(){
+		super();
+		this.variables = [];
+		this.inspectedValues = [];
+		this.nrOfValues = 200;
+	}
+
+	connectedCallback(){
+
+		let w = parseFloat(this.getAttribute("width")) || 400;
+		let h = parseFloat(this.getAttribute("height")) || 200;
+		this.style.position = `relative`;
+
+		let mappingDisplay = document.createElement("div");
+		mappingDisplay.style.width = w * 0.5;
+		mappingDisplay.style.height = h * 0.5;
+		mappingDisplay.style.left = `${w * 0.52}px`;
+		mappingDisplay.style.position = `absolute`;
+		this.appendChild(mappingDisplay);
+
+		this.mappingCanvas = document.createElement("canvas");
+		this.mappingCanvas.width = w * 0.5;
+		this.mappingCanvas.height = h * 0.5;
+		mappingDisplay.appendChild(this.mappingCanvas);
+
+		this.mappingCanvasCtx = this.mappingCanvas.getContext("2d");
+		this.mappingCanvasCtx.lineWidth = 2;
+		this.mappingCanvasCtx.strokeStyle = "#EEE";
+
+
+		// create dancing dot
+		let dot = document.createElement("div");
+		let dotSize = Math.min(w,h) / 35;
+		dot.style.width = `${dotSize}px`;
+		dot.style.height = `${dotSize}px`;
+		dot.style.borderRadius = `${dotSize/2}px`;
+		dot.style.backgroundColor = `white`;
+		dot.style.border = `1px solid grey`;
+		dot.style.position = "absolute";
+		mappingDisplay.appendChild(dot)
+		this.dot = dot;
+		this.dotSize = dotSize;
+
+
+
+		this.inputCanvas = document.createElement("canvas");
+		this.appendChild(this.inputCanvas);
+		this.inputCanvas.width = w * 0.5;
+		this.inputCanvas.height = h * 0.5;
+		this.inputCanvas.style.top = `${h * 0.55}px`;
+		this.inputCanvas.style.left = `${w * 0.52}px`;
+		this.inputCanvas.style.position = `absolute`;
+
+		this.inputCanvasCtx = this.inputCanvas.getContext("2d");
+		this.inputCanvasCtx.lineWidth = 2;
+		this.inputCanvasCtx.strokeStyle = "orange";
+
+		let label = document.createElement("span");
+		label.style.position = "absolute";
+		label.style.top = `${h * 0.55}px`;
+		label.style.left = `${w * 0.53}px`;
+		label.style.backgroundColor = "black";
+		label.style.color = "orange";
+		label.style.fontFamily = "sans-serif";
+		this.appendChild(label);
+		this.minInputHTML = label;
+		
+		label = document.createElement("span");
+		label.style.position = "absolute";
+		label.style.top = `${h * 0.55}px`;
+		label.style.right = `-15px`;
+		label.style.textAlign = `right`;
+		label.style.backgroundColor = "black";
+		label.style.color = "orange";
+		label.style.fontFamily = "sans-serif";
+		this.appendChild(label);
+		this.maxInputHTML = label;
+
+
+
+		this.outputCanvas = document.createElement("canvas");
+		this.appendChild(this.outputCanvas);
+		this.outputCanvas.width = w * 0.5;
+		this.outputCanvas.height = h * 0.5;
+		this.outputCanvas.style.position = `absolute`;
+
+		this.outputCanvasCtx = this.outputCanvas.getContext("2d");
+		this.outputCanvasCtx.lineWidth = 2;
+		this.outputCanvasCtx.strokeStyle = "green";
+
+		label = document.createElement("span");
+		label.style.position = "absolute";
+		label.style.top = `${h * 0.44}px`;
+		label.style.right = `${w * 0.5}px`;
+		label.style.textAlign = `right`;
+		label.style.backgroundColor = "black";
+		label.style.color = "green";
+		label.style.fontFamily = "sans-serif";
+		this.appendChild(label);
+		this.minOutputHTML = label;
+		
+		label = document.createElement("span");
+		label.style.position = "absolute";
+		label.style.top = `0px`;
+		label.style.right = `${w * 0.5}px`;
+		label.style.textAlign = `right`;
+		label.style.backgroundColor = "black";
+		label.style.color = "green";
+		label.style.fontFamily = "sans-serif";
+		this.appendChild(label);
+		this.maxOutputHTML = label;
+
+
+		this.width = w;
+		this.height = h;
+
+		this.style.display = "block";
+		this.style.width =  `${w}px`;
+		this.style.height =  `${h}px`;
+
+		this.inputSelector = this.getAttribute("target");
+
+		this.draw = this.drawRealTimeData;
+
+
+		// create selector
+		this.selector = document.createElement("select");
+		this.selector.style.position = `absolute`;
+		this.selector.style.top = `${h * 0.65}px`;
+		this.selector.addEventListener("change", e => {
+			if(e.target.selectedIndex > 0){
+				this.selectVariable(parseInt(e.target.selectedIndex-1));
+			}
+		});
+		this.appendChild(this.selector);
+
+
+	}
+
+
+	init(waxml){
+		this.waxml = waxml;
+
+		if(this.variables.length == 1){
+			this.selectVariable(0);
+			this.selector.style.display = "none";
+		} else {
+			let option = document.createElement("option");
+			option.innerHTML = "Select variable";
+			option.setAttribute("selected", "true")
+			this.selector.prepend(option);
+		}
+		this.update();
+	}
+
+	selectVariable(index){
+		this.inspectedValues = [];
+		delete(this.minInput);
+		this.targetVariable = this.variables[index];
+		this.drawMappingCurve(this.targetVariable);
+	}
+
+	addVariable(variable){
+		this.variables.push(variable);
+
+		let option = document.createElement("option");
+		option.innerHTML = variable.name;
+
+		this.selector.appendChild(option);
+	}
+
+	update(){
+		requestAnimationFrame(e => this.update());
+		if(!this.targetVariable){return}
+
+		let curValuePair = this.targetVariable.valuePairs;
+		this.inspectedValues.unshift(curValuePair);
+		while(this.inspectedValues.length > this.nrOfValues){
+			this.inspectedValues.pop();
+		}
+		this.moveDot(curValuePair);
+		this.setMinAndMaxValues(curValuePair);
+		this.draw();
+	}
+
+	moveDot(curValuePair){
+		let x = (curValuePair.input - this.mappingValues.minX) / this.mappingValues.rangeX * this.mappingCanvas.width;
+		let y = this.mappingCanvas.height - (curValuePair.output - this.mappingValues.minY) / this.mappingValues.rangeY * this.mappingCanvas.height;
+		this.dot.style.top = `${y}px`;
+		this.dot.style.left = `${x-this.dotSize/2}px`;
+	}
+
+	setMinAndMaxValues(curValuePair){
+		if(typeof this.minInput == "undefined" || typeof curValuePair.input == "undefined"){
+			this.minInput = curValuePair.input;
+			this.maxInput = curValuePair.input;
+			this.minOutput = curValuePair.output;
+			this.maxOutput = curValuePair.output;
+		} else {
+			this.minInput = Math.min(this.minInput, curValuePair.input);
+			this.maxInput = Math.max(this.maxInput, curValuePair.input);
+			this.minOutput = Math.min(this.minOutput, curValuePair.output);
+			this.maxOutput = Math.max(this.maxOutput, curValuePair.output);
+		}
+		this.inputRange = this.maxInput - this.minInput;
+		this.outputRange = this.maxOutput - this.minOutput;
+
+		this.minInputHTML.innerHTML = this.minInput;
+		this.maxInputHTML.innerHTML = this.maxInput;
+		this.minOutputHTML.innerHTML = this.minOutput;
+		this.maxOutputHTML.innerHTML = this.maxOutput;
+	}
+
+	drawMappingCurve(targetVariable){
+		this.mappingCanvasCtx.clearRect(0, 0, this.mappingCanvas.width, this.mappingCanvas.height);
+		this.mappingCanvasCtx.beginPath();
+
+		let points = targetVariable.getMappingPoints();
+		let minX = points.reduce((point1, point2) => point2.x > point1.x ? point1 : point2).x;
+		let maxX = points.reduce((point1, point2) => point2.x < point1.x ? point1 : point2).x;
+		let minY = points.reduce((point1, point2) => point2.y > point1.y ? point1 : point2).y;
+		let maxY = points.reduce((point1, point2) => point2.y < point1.y ? point1 : point2).y;
+		let rangeX = maxX - minX;
+		let rangeY = maxY - minY;
+
+		this.mappingValues = {
+			minX: minX,
+			maxX: maxX,
+			minY: minY,
+			maxY: maxY,
+			rangeX: rangeX,
+			rangeY: rangeY
+		}
+
+		let w = this.mappingCanvas.width;
+		let h = this.mappingCanvas.height;
+
+		points.forEach((point, i) => {
+			let x = (point.x-minX)/rangeX * w;
+			let y = h - ((point.y-minY)/rangeY * h);
+			if (!i) {
+				this.mappingCanvasCtx.moveTo(x, y);
+			} else {
+				this.mappingCanvasCtx.lineTo(x, y);
+			}
+		});
+		this.mappingCanvasCtx.lineTo(this.mappingCanvas.width, 0);
+		this.mappingCanvasCtx.stroke();
+
+	}
+
+	drawRealTimeData() {
+
+		if(!this.targetVariable){return}
+
+		this.inputCanvasCtx.clearRect(0, 0, this.inputCanvas.width, this.inputCanvas.height);
+		this.outputCanvasCtx.clearRect(0, 0, this.outputCanvas.width, this.outputCanvas.height);
+
+		this.inputCanvasCtx.beginPath();
+		this.outputCanvasCtx.beginPath();
+
+		this.inspectedValues.forEach((valuePair, i) => {
+			if(this.inputRange == 0 || this.outputRange == 0){return} // avoid dividing by zero
+			let inputX = (valuePair.input - this.minInput) / this.inputRange * this.inputCanvas.width;
+			let inputY = i / this.nrOfValues * this.outputCanvas.height;
+			let outputX = (1 - i / this.nrOfValues) * this.outputCanvas.width;
+			let outputY = (1 - (valuePair.output - this.minOutput) / this.outputRange) * this.outputCanvas.height;
+			if (!i) {
+				this.inputCanvasCtx.moveTo(inputX, inputY);
+				this.outputCanvasCtx.moveTo(outputX, outputY);
+			} else {
+				this.inputCanvasCtx.lineTo(inputX, inputY);
+				this.outputCanvasCtx.lineTo(outputX, outputY);
+			}
+		});
+
+		this.inputCanvasCtx.stroke();
+		this.outputCanvasCtx.stroke();
+	}
+
+
+
+}
+
+module.exports = Inspector;
+
+},{}],13:[function(require,module,exports){
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
@@ -3979,6 +4301,31 @@ class InteractionManager {
 					el.inputFrom(obj.output);
 				});
 			}
+		});
+
+		// init inspector elements
+		document.querySelectorAll("waxml-inspector").forEach( el => {
+			let selectors;
+
+			if(el.inputSelector){
+				selectors = el.inputSelector.split(",").map(sel => sel.trim()).map(sel => {
+					if(!sel.includes("[name=")){
+						return `Audio > var[name='${sel}']`;
+					} else {
+						return sel;
+					}
+				});
+			} else {
+				selectors = ["Audio > var"];
+			}
+
+			selectors.forEach(sel => {
+				this.waxml.querySelectorAll(sel).forEach(variable => {
+					el.addVariable(variable);
+				});
+			});
+			
+			el.init(this.waxml);
 		});
 
 		document.querySelectorAll("waxml-midi-controller").forEach( el => {
@@ -4689,7 +5036,7 @@ class InteractionManager {
 
 module.exports = InteractionManager;
 
-},{"./EventTracker.js":7,"./KeyboardManager.js":13,"./MidiManager.js":18,"./Variable.js":26,"./VariableContainer.js":27,"./Watcher.js":28,"./WebAudioUtils.js":30}],13:[function(require,module,exports){
+},{"./EventTracker.js":7,"./KeyboardManager.js":14,"./MidiManager.js":19,"./Variable.js":27,"./VariableContainer.js":28,"./Watcher.js":29,"./WebAudioUtils.js":31}],14:[function(require,module,exports){
 
 
 class KeyboardManager {
@@ -4757,7 +5104,7 @@ class KeyboardManager {
 
 module.exports = KeyboardManager;
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 const InteractionManager = require("./InteractionManager");
 
 
@@ -4899,7 +5246,7 @@ Loader.filesLoading = [];
 
 module.exports = Loader;
 
-},{"./InteractionManager":12}],15:[function(require,module,exports){
+},{"./InteractionManager":13}],16:[function(require,module,exports){
 
 const noteNames = "c,c#,d,d#,e,f,f#,g,g#,a,a#,b".split(",");
 
@@ -5337,7 +5684,7 @@ function setElementRect(el, rect){
 
 module.exports = MIDIController;
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
@@ -5878,7 +6225,7 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":22,"./WebAudioUtils.js":30}],17:[function(require,module,exports){
+},{"./Range.js":23,"./WebAudioUtils.js":31}],18:[function(require,module,exports){
 
 
 class Meter extends HTMLElement {
@@ -6219,7 +6566,7 @@ class Meter extends HTMLElement {
 
 module.exports = Meter;
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 const fnNames = ["start", "stop", "trig"];
 
 class MidiManager {
@@ -6399,7 +6746,7 @@ class MidiManager {
 }
 
 module.exports = MidiManager;
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 
 var processorName = 'white-noise-processor';
 var _noise;
@@ -6462,7 +6809,7 @@ class Noise {
 module.exports = Noise;
 
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 
@@ -6893,7 +7240,7 @@ class ObjectBasedAudio {
 
 module.exports = ObjectBasedAudio;
 
-},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],21:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":5}],22:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -7339,7 +7686,7 @@ class Parser {
 
 module.exports = Parser;
 
-},{"./AudioObject.js":2,"./Envelope.js":6,"./Loader.js":14,"./Synth.js":24,"./Variable.js":26,"./Watcher.js":28,"./WebAudioUtils.js":30}],22:[function(require,module,exports){
+},{"./AudioObject.js":2,"./Envelope.js":6,"./Loader.js":15,"./Synth.js":25,"./Variable.js":27,"./Watcher.js":29,"./WebAudioUtils.js":31}],23:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -7473,7 +7820,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":30}],23:[function(require,module,exports){
+},{"./WebAudioUtils.js":31}],24:[function(require,module,exports){
 
 
 
@@ -7635,7 +7982,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -7893,7 +8240,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":25,"./Watcher.js":28,"./WebAudioUtils.js":30}],25:[function(require,module,exports){
+},{"./Trigger.js":26,"./Watcher.js":29,"./WebAudioUtils.js":31}],26:[function(require,module,exports){
 
 
 
@@ -8002,7 +8349,7 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -8086,11 +8433,29 @@ class Variable {
 		this.setValue(arguments[0][this.targetParameter]);
 	}
 
+	getMappingPoints(steps = 1000){
+
+		let points = [];
+		let minIn = typeof this.minIn == "undefined" ? 0 : this.minIn;
+		let maxIn = typeof this.maxIn == "undefined" ? 1 : this.maxIn;
+
+		let inputRange = maxIn - minIn;
+
+		for(let i = 0; i <= steps; i++){
+			let x = minIn + i / steps * inputRange;
+			let y = this._mapper.getValue(x);
+			points.push({x: x, y: y});
+		}
+		return points;
+	}
+
 	valueOf(){
 		return this.value;
 	}
 
 	setValue(val = this._value, transistionTime = 0, autoTrigger = false){
+
+		this.lastInputValue = val;
 
 		// clear autoTrigger (no matter if the function is triggered manually or automatically)
 		// the autoTrigger makes sure derivatas are reset even if no data is updated
@@ -8162,8 +8527,9 @@ class Variable {
 				}
 				
 				// this._derivative = newDerivative;
-				this.doCallBacks(transistionTime);
+				
 			}
+			this.doCallBacks(transistionTime);
 			this.lastUpdate = curFrame;
 			this.lastMappedValue = this.mappedValue;
 
@@ -8177,7 +8543,6 @@ class Variable {
 			if(this._params.stream){
 				this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
 			}
-
 
 		}
 		
@@ -8195,6 +8560,10 @@ class Variable {
 
 	set value(val) {
 		this.setValue(val);
+	}
+
+	get valuePairs(){
+		return {input: this.lastInputValue, output: this.lastMappedValue};
 	}
 
 	setTargetAtTime(param, val=0, delay=0, time=0){
@@ -8519,7 +8888,7 @@ class Variable {
 
 module.exports = Variable;
 
-},{"./Mapper.js":16,"./WebAudioUtils.js":30}],27:[function(require,module,exports){
+},{"./Mapper.js":17,"./WebAudioUtils.js":31}],28:[function(require,module,exports){
 
 
 
@@ -8555,7 +8924,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -8937,7 +9306,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":26,"./WebAudioUtils.js":30}],29:[function(require,module,exports){
+},{"./Variable.js":27,"./WebAudioUtils.js":31}],30:[function(require,module,exports){
 /*
 MIT License
 
@@ -8978,6 +9347,7 @@ var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
 var Meter = require('./Meter.js');
 var MIDIController = require('./MIDIController.js');
+var Inspector = require('./Inspector.js');
 
 
 
@@ -9115,7 +9485,8 @@ class WebAudio {
 		customElements.define('waxml-xy-area', XY_area);
 		customElements.define('waxml-xy-handle', XY_handle);
 		customElements.define('waxml-meter', Meter);
-		customElements.define('waxml-midi-controller', MIDIController);		
+		customElements.define('waxml-midi-controller', MIDIController);	
+		customElements.define('waxml-inspector', Inspector);		
 	}
 
 	init(){
@@ -9874,7 +10245,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":8,"./HL2.js":10,"./InputBusses.js":11,"./InteractionManager.js":12,"./MIDIController.js":15,"./Meter.js":17,"./Parser.js":21,"./Variable.js":26,"./WebAudioUtils.js":30,"./XY_area.js":31,"./XY_handle.js":32}],30:[function(require,module,exports){
+},{"./Connector.js":4,"./ConvolverNodeObject.js":5,"./GUI.js":8,"./HL2.js":10,"./InputBusses.js":11,"./Inspector.js":12,"./InteractionManager.js":13,"./MIDIController.js":16,"./Meter.js":18,"./Parser.js":22,"./Variable.js":27,"./WebAudioUtils.js":31,"./XY_area.js":32,"./XY_handle.js":33}],31:[function(require,module,exports){
 
 class WebAudioUtils {
 
@@ -10553,7 +10924,7 @@ WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
 
 module.exports = WebAudioUtils;
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
@@ -10779,7 +11150,7 @@ class XY_area extends HTMLElement {
 
 module.exports = XY_area;
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 class XY_handle extends HTMLElement {
@@ -11163,4 +11534,4 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{"./WebAudioUtils.js":30}]},{},[29]);
+},{"./WebAudioUtils.js":31}]},{},[30]);
