@@ -27,26 +27,35 @@ main {
 section {
     padding: 0;
     padding-top: 50px;
-    background-color: #666;
+    background-color: #000;
 }
 
-section > a {
+a.button {
+
     display: inline-block;
     border-radius: 10px;
     text-align: center;
     font-size: 2.5em;
     color: black;
     height: 8.9%;
-    width: 100%;
-    margin: 1px -2px;
     padding-top: 0.4em;
     background-color: rgb(228, 228, 228);
     border: 1px solid #666;
     box-sizing: border-box;
+    margin: 1px -2px;
 
 }
+a.button:hover {
+    cursor: hand;
+}
 
-section > a:active, section > a.selected {
+section > * {
+    width: 100%;
+}
+
+
+
+section  a:active, section  a.selected {
     background-color: aqua;
 }
 section > a.black {
@@ -62,9 +71,25 @@ section > a.micro {
 }
 
 
-section#key a {
-    height: 8.1%;
+section#key > * {
+    height: 7.3%;
 }
+section#key > #tuning {
+    display: inline;
+}
+
+section#key > #tuning > .button {
+    width: 24%;
+}
+
+section#key > #tuning .slider {
+    width: 50%;
+}
+
+section#key > div > a {
+
+}
+
 
 .slidecontainer {
     width: 95%; /* Width of the outside container */
@@ -112,6 +137,9 @@ nav {
     display: block;
     background-color: black;
     height: 50px;
+    width: 100%;
+    position: absolute;
+    top: 19px;
 }
 
 nav a {
@@ -121,7 +149,6 @@ nav a {
     text-align: center;
     padding-top: 0.5em;
     width: 24%;
-    height: 100%;
 }
 
 h2 {

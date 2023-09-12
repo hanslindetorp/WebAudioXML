@@ -3,7 +3,7 @@
 
     xmlns="https://www.w3schools.com"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.5.xsd"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.11.xsd"
 
     version="1.0" 
     timeUnit="ms" 
@@ -12,9 +12,12 @@
 
 
     <!-- Bordun -->
+    <var name="detune" default="0" />
     <var name="root" default="2" mapin="0,12"/>
+    <var name="octave" mapin="-1,0,1" mapout="4,5,6" curve="steps" default="0" />
+    
     <var name="lp" default="3" value="$drone" mapin="3,4" mapout="250,400" />
-    <var name="dronemix" value="$drone" default="3" mapin="0,3" mapout="0,1"/>
+    <var name="dronemix" value="$drone" default="5" mapin="0,5"/>
     <var name="rev" default="-3" mapin="-20,0" convert="dB->power"/>
 
     <OscillatorNode frequency="0.3" output="next"/>
@@ -22,18 +25,23 @@
 
     <Chain>
 
-        <var name="f1" value="$root+36" convert="MIDI->frequency"/>
-        <var name="f2" value="$root+43" convert="MIDI->frequency"/>
+        <var name="f1" value="$root+$octave*12" convert="MIDI->frequency"/>
+        <var name="f2" value="$root-5+$octave*12" convert="MIDI->frequency"/>
+        <var name="f3" value="$root-12+$octave*12" convert="MIDI->frequency"/>
 
-        <OscillatorNode type="square" frequency="$f1" output="#a, #b, #c" />
-        <OscillatorNode type="square" frequency="$f2" output="#b, #c" />
-        <OscillatorNode type="square" frequency="$f1*2" output="#c" />
+            
 
-        <Mixer mix="$dronemix" gain="-9dB">
+        <OscillatorNode name="b1" type="square" frequency="$f1" detune="$detune" output="#b1, #b1-4" />
+        <OscillatorNode name="b-4" type="square" frequency="$f2" detune="$detune" output="#b-4, #b1-4, #b-8-4" />
+        <OscillatorNode name="b-8" type="square" frequency="$f3" detune="$detune" output="#b-8, #b-8-4" />
+
+        <Mixer selectindex="$dronemix" gain="-9dB">
             <GainNode />
-            <GainNode id="a" />
-            <GainNode id="b" />
-            <GainNode id="c" />
+            <GainNode id="b-8-4" />
+            <GainNode id="b-8" />
+            <GainNode id="b1-4" />
+            <GainNode id="b-4" />
+            <GainNode id="b1" />
         </Mixer>
 
         <BiquadFilterNode transitionTime="200" frequency="$lp" detune="#lfo"/>
@@ -42,14 +50,23 @@
     
 
     <!-- Melody -->
-
+    <var name="key" default="1" mapin="-4,-3,-2,1,2,3,4,5,6,7,8" mapout="-5,-4,-2,0,2,3,5,7,8,10,12" curve="steps"/>
     <var name="microtune" default="0" mapin="0,1" mapout="0,1"/>
-    <var name="key" default="1" mapin="-4,-3,-2,1,2,3,4,5,6,7,8" mapout="-5,-4+$microtune,-2+$microtune,0,2,3+$microtune,5+$microtune,7,8+$microtune,10+$microtune,12" curve="steps"/>
-    <var name="octave" mapin="-1,0,1" mapout="4,5,6" curve="steps" default="0" />
+    <!-- <var name="tempered_tuning" default="0" /> -->
+
+    <var name="offsets" mapin="7,6,4,3,2,1,0,-1,-2,-3" mapout="[
+        [0.18,0.34,0.52,0.67,0.88],
+        [0.14,0.315,0.49,0.665,0.84], 
+        [],
+        []]" 
+    />
+
+
+
     <var name="melodygain" />
     <Chain>
-        <var name="pitch" value="$root+$key+$octave*12" convert="MIDI->frequency"/>
-        <OscillatorNode transitionTime="0" type="square" frequency="$pitch"/>
+        <var name="pitch" value="$root+$key+$microtune+$octave*12" convert="MIDI->frequency"/>
+        <OscillatorNode transitionTime="0" type="square" frequency="$pitch" detune="$detune" />
         <BiquadFilterNode frequency="$pitch*1.5" />
         <GainNode transitionTime="50" gain="$melodygain" />
         <ObjectBasedAudio gain="-3dB" positionZ="-2" positionX="1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/>

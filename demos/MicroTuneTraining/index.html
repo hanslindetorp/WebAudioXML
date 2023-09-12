@@ -8,7 +8,7 @@
 		<script src="plugins/max.size.js"></script>
 		<script>
 			// Här bestäms vilken sida som visas först
-			window.addEventListener("load", () => location.href = "#play");
+			window.addEventListener("load", () => location.href = "#play-just");
 		</script>
 	</head>
 
@@ -17,83 +17,138 @@
 
 		<main class="max-size pages">
 
-			<section id="play">
-				<a data-waxml-pointerdown-set="microtune=0;key=8">8</a>
 
-				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=7">7a</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=7">7b</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=7">7c</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=7">7d</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=7">7e</a>
+			<section class="play" id="play-just">
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=8">8</a>
 
-				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=6">6a</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=6">6b</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=6">6c</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=6">6d</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=6">6e</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.18;key=7">7a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.34;key=7">7b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.52;key=7">7c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.67;key=7">7d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.88;key=7">7e</a>
 
-				<a data-waxml-pointerdown-set="microtune=0;key=5">5</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.14;key=6">6a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.315;key=6">6b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.49;key=6">6c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.665;key=6">6d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.84;key=6">6e</a>
 
-				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=4">4a</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=4">4b</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=4">4c</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=4">4d</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=4">4e</a>
+				<a class="button" data-waxml-pointerdown-set="microtune=0.02;key=5">5</a>
+
+				<a class="button micro" data-waxml-pointerdown-set="microtune=-0.02;key=4">4a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=4">4b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.50;key=4">4c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.69;key=4">4d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.88;key=4">4e</a>
 
 				
-				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=3">3a</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=3">3b</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=3">3c</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=3">3d</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=3">3e</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.16;key=3">3a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.335;key=3">3b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.51;key=3">3c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.685;key=3">3d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.86;key=3">3e</a>
 				
-				<a data-waxml-pointerdown-set="microtune=0;key=2">2</a>
-				<a data-waxml-pointerdown-set="microtune=0;key=1;">1</a>
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=2">2</a>
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=1;">1</a>
 
-				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=-2">2e</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=-2">-2d</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=-2">-2c</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=-2">-2b</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=-2">-2a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.18;key=-2">2e</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.34;key=-2">-2d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.52;key=-2">-2c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.67;key=-2">-2b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.88;key=-2">-2a</a>
 
-				<a class="micro" data-waxml-pointerdown-set="microtune=0;key=-3">3e</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.25;key=-3">-3d</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.5;key=-3">-3c</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=0.75;key=-3">-3b</a>
-				<a class="micro" data-waxml-pointerdown-set="microtune=1;key=-3">-3a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.14;key=-3">3e</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.315;key=-3">-3d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.49;key=-3">-3c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.665;key=-3">-3b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.84;key=-3">-3a</a>
 
-				<a data-waxml-pointerdown-set="microtune=0;key=-4">-4</a>
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=-4">-4</a>
 			</section>
 
+			<section class="play" id="play-equal">
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=8">8</a>
+
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0;key=7">7a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=7">7b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.5;key=7">7c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.75;key=7">7d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=1;key=7">7e</a>
+
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0;key=6">6a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=6">6b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.5;key=6">6c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.75;key=6">6d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=1;key=6">6e</a>
+
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=5">5</a>
+
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0;key=4">4a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=4">4b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.5;key=4">4c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.75;key=4">4d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=1;key=4">4e</a>
+
+				
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0;key=3">3a</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=3">3b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.5;key=3">3c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.75;key=3">3d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=1;key=3">3e</a>
+				
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=2">2</a>
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=1;">1</a>
+
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0;key=-2">2e</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=-2">-2d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.5;key=-2">-2c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.75;key=-2">-2b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=1;key=-2">-2a</a>
+
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0;key=-3">3e</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.25;key=-3">-3d</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.5;key=-3">-3c</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=0.75;key=-3">-3b</a>
+				<a class="button micro" data-waxml-pointerdown-set="microtune=1;key=-3">-3a</a>
+
+				<a class="button" data-waxml-pointerdown-set="microtune=0;key=-4">-4</a>
+			</section>
+id="playBtn" 
 			<section id="key">
-				<a data-waxml-pointerdown-set="root=11">B</a>
-				<a class="black" data-waxml-pointerdown-set="root=10">A#</a>
-				<a data-waxml-pointerdown-set="root=9">A</a>
-				<a class="black" data-waxml-pointerdown-set="root=8">G#</a>
-				<a data-waxml-pointerdown-set="root=7">G</a>
-				<a class="black" data-waxml-pointerdown-set="root=6">F#</a>
-				<a data-waxml-pointerdown-set="root=5">F</a>
-				<a data-waxml-pointerdown-set="root=4">E</a>
-				<a class="black" data-waxml-pointerdown-set="root=3">D#</a>
-				<a class="selected" data-waxml-pointerdown-set="root=2">D</a>
-				<a class="black" data-waxml-pointerdown-set="root=1">C#</a>
-				<a data-waxml-pointerdown-set="root=0">C</a>
+				<div id="tuning">
+					<a class="button selected" data-tuning="just">Just</a>
+					<a class="button" data-tuning="equal">Equal</a>
+					<input class="slider" type="range" min="-75" max="75" data-waxml-input-set="detune=this.value" />
+				</div>
+				<a class="button" data-waxml-pointerdown-set="root=11">B</a>
+				<a class="button black" data-waxml-pointerdown-set="root=10">A#</a>
+				<a class="button" data-waxml-pointerdown-set="root=9">A</a>
+				<a class="button black" data-waxml-pointerdown-set="root=8">G#</a>
+				<a class="button" data-waxml-pointerdown-set="root=7">G</a>
+				<a class="button black" data-waxml-pointerdown-set="root=6">F#</a>
+				<a class="button" data-waxml-pointerdown-set="root=5">F</a>
+				<a class="button" data-waxml-pointerdown-set="root=4">E</a>
+				<a class="button black" data-waxml-pointerdown-set="root=3">D#</a>
+				<a class="button selected" data-waxml-pointerdown-set="root=2">D</a>
+				<a class="button black" data-waxml-pointerdown-set="root=1">C#</a>
+				<a class="button" data-waxml-pointerdown-set="root=0">C</a>
 				
 			</section>
 
 			<section id="sound">
 				<h2>Octave:</h2>
-				<a class="octave" data-waxml-pointerdown-set="octave=1">+1</a>
-				<a class="octave selected" data-waxml-pointerdown-set="octave=0">0</a>
-				<a class="octave" data-waxml-pointerdown-set="octave=-1">-1</a>
+				<a class="button octave" data-waxml-pointerdown-set="octave=1">+1</a>
+				<a class="button octave selected" data-waxml-pointerdown-set="octave=0">0</a>
+				<a class="button octave" data-waxml-pointerdown-set="octave=-1">-1</a>
 
 
 				<h2>Drone:</h2>
-				<a class="drone" data-waxml-pointerdown-set="drone=4">D</a>
-				<a class="drone selected" data-waxml-pointerdown-set="drone=3">C</a>
-				<a class="drone" data-waxml-pointerdown-set="drone=2">B</a>
-				<a class="drone" data-waxml-pointerdown-set="drone=1">A</a>
-				<a class="drone" data-waxml-pointerdown-set="drone=0">Off</a>
+				<a class="button drone selected" data-waxml-pointerdown-set="drone=5">1</a>
+				<a class="button drone" data-waxml-pointerdown-set="drone=4">-4</a>
+				<a class="button drone" data-waxml-pointerdown-set="drone=3">1 and -4</a>
+				<a class="button drone" data-waxml-pointerdown-set="drone=2">-8</a>
+				<a class="button drone" data-waxml-pointerdown-set="drone=1">-8 and -4</a>
+				<a class="button drone" data-waxml-pointerdown-set="drone=0">Off</a>
 
 				<h2>Reverb:</h2>
 				<div class="slidecontainer">
@@ -112,7 +167,7 @@
 			</section>
 
 			<nav>
-				<a href="#play">Play</a>
+				<a id="playBtn" href="#play-just">Play</a>
 				<a href="#key">Key</a>
 				<a href="#sound">Sound</a>
 				<a href="#mode">Cred</a>

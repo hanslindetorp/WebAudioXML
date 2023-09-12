@@ -1,10 +1,10 @@
-console.log("Mall HT2022. Version 1.2");
+//console.log("Mall HT2022. Version 1.2");
 //iMus.debug = true;
 
 window.addEventListener("load", e => {
 
 
-    let melodyBtns = document.querySelectorAll("section#play a");
+    let melodyBtns = document.querySelectorAll("section.play a");
     melodyBtns.forEach(btn => {
         btn.addEventListener("pointerdown", e => {
             waxml.setVariable("melodygain", 1);
@@ -30,12 +30,29 @@ window.addEventListener("load", e => {
         });
     });
 
-    let keyBtns = document.querySelectorAll("section#key a");
+    
+    let tuningButtons = document.querySelectorAll("section#key > #tuning > .button");
+    tuningButtons.forEach(btn => {
+        btn.addEventListener("pointerdown", e => {
+            tuningButtons.forEach(btn => btn.classList.remove("selected"));
+            e.target.classList.add("selected");
+            let playBtn = document.querySelector("nav #playBtn");
+            playBtn.setAttribute("href", `#play-${e.target.dataset.tuning}`);
+        });
+    });
+
+    let keyBtns = document.querySelectorAll("section#key > a");
     keyBtns.forEach(btn => {
         btn.addEventListener("pointerdown", e => {
             keyBtns.forEach(btn => btn.classList.remove("selected"));
             e.target.classList.add("selected");
         });
+    });
+
+    let masterTune = document.querySelector("section#key > #tuning .slider");
+    masterTune.addEventListener("dblclick", e => {
+        e.target.value = 0;
+        e.target.dispatchEvent(new CustomEvent("input"));
     });
 
     document.querySelectorAll("section > a").forEach(btn => {
