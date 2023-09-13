@@ -7,7 +7,7 @@
 
     version="1.0" 
     timeUnit="ms" 
-    gain="-3dB"
+    gain="-6dB"
     controls="false">
 
 
@@ -45,7 +45,7 @@
         </Mixer>
 
         <BiquadFilterNode transitionTime="200" frequency="$lp" detune="#lfo"/>
-        <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/>
+        <!-- <ObjectBasedAudio positionZ="-2" positionX="-1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/> -->
     </Chain>
     
 
@@ -69,7 +69,7 @@
         <OscillatorNode transitionTime="0" type="square" frequency="$pitch" detune="$detune" />
         <BiquadFilterNode frequency="$pitch*1.5" />
         <GainNode transitionTime="50" gain="$melodygain" />
-        <ObjectBasedAudio gain="-3dB" positionZ="-2" positionX="1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/>
+        <!-- <ObjectBasedAudio gain="-3dB" positionZ="-2" positionX="1" convolutionGain="$rev" convolution="plugins/convolution/send3.wav"/> -->
     </Chain>
 
 
