@@ -26,7 +26,7 @@ main {
 
 section {
     padding: 0;
-    padding-top: 50px;
+    padding-top: 70px;
     background-color: #000;
 }
 
@@ -80,6 +80,8 @@ section#key > #tuning {
 
 section#key > #tuning > .button {
     width: 24%;
+    height: auto;
+    padding-top: 0;
 }
 
 section#key > #tuning .slider {

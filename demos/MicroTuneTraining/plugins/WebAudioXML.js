@@ -328,7 +328,7 @@ class AmbientAudio {
 
 module.exports = AmbientAudio;
 
-},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":35}],2:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./WebAudioUtils.js":37}],2:[function(require,module,exports){
 
 const WebAudioUtils = require('./WebAudioUtils.js');
 const Loader = require('./Loader.js');
@@ -353,8 +353,10 @@ class AudioObject extends EventTarget{
 	  	let _ctx = this.waxml._ctx;
       let parentAudioObj = xmlNode.parentNode.audioObject;
       this._parentAudioObj = parentAudioObj;
+      this.childIndex = [...xmlNode.parentNode.children].indexOf(xmlNode);
 
       if(parentAudioObj){
+        // stupid!
         parentAudioObj.addChildObj(this);
       }
       
@@ -957,6 +959,18 @@ class AudioObject extends EventTarget{
     }
 
 
+    getControllingVariableName(parameterName){
+
+      // NOTE!
+      // This assumes there is only one controlling variable
+			let parameter = this.parameters[parameterName];
+      if(parameter){
+        return parameter.variableNames[0];
+      }
+			
+    }
+
+
   	get connection(){
 	  	return this._node;
   	}
@@ -1065,6 +1079,7 @@ class AudioObject extends EventTarget{
     }
 
   	start(data = {}){
+      this.dispatchEvent(new CustomEvent("start"));
       this._playing = true;
       let time = data.time || this._ctx.currentTime;
       //console.log(time - this._ctx.currentTime);
@@ -1303,8 +1318,9 @@ class AudioObject extends EventTarget{
         }
 
   	  	if(transitionTime && param.setTargetAtTime){
-  		  	param.setTargetAtTime(value, startTime, transitionTime);
-  	  	} else if(param.setValueAtTime){
+  		  	param.setTargetAtTime(value, startTime, transitionTime / 2);
+          // console.log(`transitionTime: ${transitionTime}`);
+        } else if(param.setValueAtTime){
   		  	param.setValueAtTime(value, startTime);
   	  	}
 
@@ -2066,13 +2082,27 @@ class AudioObject extends EventTarget{
   		return this._variables[key];
   	}
 
+    // for dynamic mixer
+    addEventsFromChildren(){
+      let variableName = this.getControllingVariableName("selectindex");
+      if(variableName){
+        this.childObjects.forEach(obj => {
+
+          obj.addEventListener("start", e => {
+            this.waxml.setVariable(variableName, e.target.childIndex);
+          });
+        });
+      }
+      
+    }
+
 
 }
 
 
 module.exports = AudioObject;
 
-},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":6,"./Loader.js":16,"./Mapper.js":18,"./Noise.js":21,"./ObjectBasedAudio.js":22,"./Variable.js":28,"./VariableContainer.js":29,"./Watcher.js":33,"./WebAudioUtils.js":35}],3:[function(require,module,exports){
+},{"./AmbientAudio.js":1,"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":6,"./Loader.js":18,"./Mapper.js":20,"./Noise.js":23,"./ObjectBasedAudio.js":24,"./Variable.js":30,"./VariableContainer.js":31,"./Watcher.js":35,"./WebAudioUtils.js":37}],3:[function(require,module,exports){
 var Loader = require('./Loader.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 
@@ -2341,31 +2371,36 @@ class BufferSourceObject {
 
 module.exports = BufferSourceObject;
 
-},{"./Loader.js":16,"./WebAudioUtils.js":35}],4:[function(require,module,exports){
+},{"./Loader.js":18,"./WebAudioUtils.js":37}],4:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class Command extends EventTarget {
 
-	constructor(params){
+	constructor(params, waxml){
 		super();
+		this.waxml = waxml;
 		this._params = params;
-		this.start = this.trig;
+		this.timeouts = [];
 	}
 
 	get pos(){
 		return this._params.pos;
 	}
 
-	get command(){
-		return this._params.command;
+	set pos(val){
+		this._params.pos = val;
+	}
+
+	get type(){
+		return this._params.type;
 	}
 
 	get selector(){
 		return this._params.selector;
 	}
 
-	get key(){
+	get variable(){
 		return this._params.key;
 	}
 
@@ -2373,13 +2408,59 @@ class Command extends EventTarget {
 		return this._params.value;
 	}
 
+	set offset(val){
+		this._params.offset = val;
+	}
 
-	trig(data = {}){
 
-		let delay = this.getParameter("delay");
-        let startTime = data.startTime || delay * this.timeScale + this._ctx.currentTime + 0.001;
+	get offset(){
+		return this._params.offset || 0;
+	}
 
-		this.dispatchEvent(new CustomEvent("trig"));
+
+	trig(time = this.waxml._ctx.currentTime){
+
+		switch(this.type){
+			case "trig":
+				this.waxml.trig(this.selector, {time:time});
+				// console.log(this.selector);
+			break;
+
+			case "set":
+				// delay += this.offset; // check this!!
+				let delay = time - this.waxml._ctx.currentTime;
+				this.timeouts.push({
+					id: setTimeout(() => {
+						this.waxml.setVariable(this.variable, this.value);
+					}, delay*1000-1), // to rather prepare variable than do it too late 
+					time: time
+				});
+			break;
+		}
+		
+
+		// this.timeouts.push(setTimeout(() => {
+
+		// 	switch(this.type){
+		// 		case "trig":
+		// 			this.waxml.trig(this.selector, {time:time});
+		// 		break;
+		// 		case "set":
+		// 			this.waxml.setVariable(this.variable, this.value);
+		// 		break;
+		// 	}
+
+		// }, delay*1000));
+	}
+
+	clear(time){
+		// clear timeout 
+		let currentTime = this.waxml._ctx.currentTime;
+		time = time || currentTime;
+		this.timeouts.filter(timeout => timeout.time >= currentTime).forEach(timeout => {
+			clearTimeout(timeout.id);
+		});
+		this.timeouts = this.timeouts.filter(timeout => timeout.time <  currentTime);
 	}
 	
 
@@ -2416,7 +2497,7 @@ class Command extends EventTarget {
 
 module.exports = Command;
 
-},{"./WebAudioUtils.js":35}],5:[function(require,module,exports){
+},{"./WebAudioUtils.js":37}],5:[function(require,module,exports){
 
 
 class Connector {
@@ -2624,6 +2705,8 @@ class Connector {
 			switch (xmlNode.nodeName.toLowerCase()) {
 				case "var":
 				case "envelope":
+				case "command":
+				case "snapshot":
 					// don't connect
 					break;
 				default:
@@ -2822,7 +2905,7 @@ class ConvolverNodeObject {
 
 module.exports = ConvolverNodeObject;
 
-},{"./Loader.js":16}],7:[function(require,module,exports){
+},{"./Loader.js":18}],7:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -3138,7 +3221,7 @@ class Envelope {
 
 module.exports = Envelope;
 
-},{"./WebAudioUtils.js":35}],8:[function(require,module,exports){
+},{"./WebAudioUtils.js":37}],8:[function(require,module,exports){
 
 var Sequence = require('./Sequence.js');
 
@@ -3297,7 +3380,7 @@ class EventTracker {
 
 module.exports = EventTracker;
 
-},{"./Sequence.js":25}],9:[function(require,module,exports){
+},{"./Sequence.js":27}],9:[function(require,module,exports){
 
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -3305,7 +3388,9 @@ const XY_area = require('./XY_area.js');
 //var Finder = require('../finderjs/index.js');
 var VariableMatrix = require('./VariableMatrix');
 var DynamicMixer = require('./dynamic-mixer/Mixer.js');
-var PresetController = require('./variable-matrix/PresetController.js');
+var SnapshotController = require('./variable-matrix/SnapshotController.js');
+const OutputMonitor = require('./GUI/OutputMonitor.js');
+const LinearArranger = require('./GUI/LinearArranger.js');
 
 
 
@@ -3602,7 +3687,7 @@ class GUI {
 				background-color: black;
 			}
 
-			waxml-matrix-preset-controller {
+			waxml-snapshot-controller {
 				position: relative;
 				display: block;
 				border: 1px solid #333;
@@ -3610,7 +3695,7 @@ class GUI {
 				background-color: #999;
 				padding: 10px;
 			}
-			waxml-matrix-preset-controller > * {
+			waxml-snapshot-controller > * {
 				background-color: #ccc;
 				border: 1px solid #333;
     			border-radius: 10px;
@@ -3621,16 +3706,16 @@ class GUI {
 				display: inline-block;
 				box-sizing: border-box;
 			}
-			.waxml-preset-button-container {
+			.waxml-snapshot-button-container {
 			}
-			waxml-matrix-preset-controller textarea {
+			waxml-snapshot-controller textarea {
 			}
-			.waxml-preset-button-container > div {
+			.waxml-snapshot-button-container > div {
 
 			}
 
 			
-			waxml-matrix-preset-component {
+			waxml-snapshot-component {
 				
 				border: 1px solid #333;
 				border-radius: 0.5em;
@@ -3640,14 +3725,14 @@ class GUI {
 				padding: 0.7em;
 				display: inline-grid !important;
 			}
-			waxml-matrix-preset-component button.delete {
+			waxml-snapshot-component button.delete {
 				width: 1.5em;
 				height: 1.5em;
 				padding: 0em !important;
 				min-width: auto !important;
 				min-height: auto !important;
 			}
-			waxml-matrix-preset-controller button.add {
+			waxml-snapshot-controller button.add {
 				width: 1.5em;
 				height: 1.5em;
 				padding: 0em !important;
@@ -3699,6 +3784,160 @@ class GUI {
 			waxml-dynamic-mixer meter:-moz-meter-optimum::-moz-meter-bar {
 				#555;
 			}
+
+			waxml-output-monitor {
+				display: block;
+				width: 99%;
+				height: 300px;
+				border: 1px solid #333;
+				background-color: #bbb;
+				overflow-y: scroll;
+
+				color: #000;
+				font-size: 120%;
+				font-family: Monospace;
+				padding: 0.5em;
+				border-radius: 0.5em;
+				margin: 1em auto;
+			}
+			
+			waxml-output-monitor table {
+				width: 100%;
+			}
+
+			waxml-output-monitor table td {
+				padding: 2px;
+			}
+
+			waxml-output-monitor table td.number {
+				text-align: right;
+			}
+
+			waxml-linear-arranger {
+				display: block;
+				width: 100%;
+				height: 500px;
+				background: #777;
+				margin-left: 1em;
+				border-radius: 0.5em;
+				border: 1px solid #333;
+				margin: 1em auto;
+			}
+
+			waxml-linear-arranger > * {
+				height: 100%;
+				display: inline-block;
+				position: relative;
+				vertical-align: top;
+			}
+
+			waxml-linear-arranger > .list {
+				width: 19%;
+				background-color: #555;
+				border-right: 1px solid black;
+			}
+
+			waxml-linear-arranger > .list > * {
+				border-bottom: 1px solid black;
+				box-sizing: border-box;
+				margin-left: 1em;
+				line-height: 2em;
+			}
+			
+
+			waxml-linear-arranger > .main {
+				width: 80%;
+				overflow-y: hidden;
+				overflow-x: scroll;
+			}
+
+			waxml-linear-arranger button.zoom {
+				float: right;
+				width: 1em;
+				height: 1.7em;
+				margin-right: 0 !important;
+				background-color: #ccc;
+				
+			}
+
+			waxml-linear-arranger .content {
+				width: 100%;
+				height: 100%;
+				left: 0%;
+				position: absolute;
+			}
+
+
+			waxml-linear-arranger .content > * {
+				position: relative;
+				width: 100%;
+				border-bottom: 1px solid #777;
+				box-sizing: border-box;
+			}
+
+			waxml-linear-arranger .position-pointer {
+				height: 100%;
+				left: 0%;
+				position: absolute;
+				z-index: 1;
+				border-left: 3px solid #006;
+			}
+
+			waxml-linear-arranger .grid {
+				width: 100%;
+				height: 100%;
+				position: absolute;
+			}
+			waxml-linear-arranger .grid > * {
+				position: absolute;
+				border-left: 1px solid black;
+			}
+
+			waxml-linear-arranger .grid .barline {
+				height: 100%;
+			}
+
+			waxml-linear-arranger .grid .beatline {
+				height: 100%;
+				border-left: 1px dashed #333;
+			}
+
+			waxml-linear-arranger .object {
+				height: 100%;
+				position: absolute;
+				border: 1px solid #333;
+				border-radius: 5px;
+				color: #333;
+				padding-left: 0.5em;
+			}
+
+
+
+			waxml-linear-arranger .voice .object {
+				background-color: rgba(185,108,106,0.8);
+			}
+			
+			waxml-linear-arranger .class .object {
+				background-color: rgba(119,140,196,0.8);
+			}
+			
+			waxml-linear-arranger .other:nth-child(4n) .object {
+				background-color: rgba(129,186,201,0.8);
+			}
+			
+			waxml-linear-arranger .other:nth-child(4n+1) .object {
+				background-color: rgba(158,198,118,0.8);
+			}
+			
+			waxml-linear-arranger .other:nth-child(4n+2) .object {
+				background-color: rgba(202,192,130,0.8);
+			}
+			
+			waxml-linear-arranger .other:nth-child(4n+3) .object {
+				background-color: rgba(198,160,119,0.8);
+			}
+			
+
 			
 		
 		`;
@@ -3773,15 +4012,20 @@ class GUI {
 		// Generate triggers
 		this.XMLtoTriggerButtons(xmlNode, container);
 
+		this.linearArranger = new LinearArranger(this.waxml);
+		container.appendChild(this.linearArranger);
 
-		// ObjectBasedAudio
+		this.outputMonitor = new OutputMonitor();
+		container.appendChild(this.outputMonitor);
 
 		this.addDynamicMixers(waxml.querySelectorAll(`*[controls*="waxml-dynamic-mixer"]`), container);
 
 		this.addVariableMatrixes(waxml.querySelectorAll(`*[controls*="waxml-variable-matrix"]`), container);
 		
-		this.addPresetController(container);
+		this.addSnapshotController(container);
 
+
+		// ObjectBasedAudio
 		this.XY_areaFromAudioObjects(waxml.querySelectorAll("ObjectBasedAudio"), container);
 
 		// Find variables in use without <var> elements
@@ -3857,19 +4101,19 @@ class GUI {
 		objects.forEach(obj => {
 			// add a matrix for each object with controls="waxml-variable-matrix"
 			let matrix = new VariableMatrix(obj);
-			matrix.setAttribute("class", "waxml-preset waxml-gui-matrix");
+			matrix.setAttribute("class", "waxml-snapshot waxml-gui-matrix");
 			container.appendChild(matrix);
 		});
 	}
 
-	addPresetController(container, group="waxml-gui"){
+	addSnapshotController(container, group="waxml-gui"){
 		let header = document.createElement("h1");
-		header.innerHTML = "Presets";
+		header.innerHTML = "Snapshots";
 		container.appendChild(header);
-		let presetController = new PresetController({
-			class: "waxml-preset waxml-gui-matrix"
+		let snapshotController = new SnapshotController({
+			class: "waxml-snapshot waxml-gui-matrix"
 		}, this.waxml);
-		container.appendChild(presetController);
+		container.appendChild(snapshotController);
 	}
 
 	addUnspecifiedVariableSliders(names, container){
@@ -4170,6 +4414,27 @@ class GUI {
 		return sliderContainer;
 	}
 
+	log(message){
+		this.outputMonitor.log(message);
+	}
+
+	initLinearArranger(structure){
+		this.linearArranger.init(structure);
+	}
+
+	visualize(obj){
+		return this.linearArranger.visualize(obj);
+	}
+	visualFadeOut(data){
+		this.linearArranger.visualFadeOut(data);
+	}
+
+	scrollArrangeWindow(time){
+		this.linearArranger.scrollTo(time);
+	}
+
+
+
 }
 
 
@@ -4180,7 +4445,297 @@ module.exports = GUI;
 
 
 
-},{"./Mapper.js":18,"./VariableMatrix":31,"./WebAudioUtils.js":35,"./XY_area.js":36,"./dynamic-mixer/Mixer.js":39,"./variable-matrix/PresetController.js":41}],10:[function(require,module,exports){
+},{"./GUI/LinearArranger.js":10,"./GUI/OutputMonitor.js":11,"./Mapper.js":20,"./VariableMatrix":33,"./WebAudioUtils.js":37,"./XY_area.js":38,"./dynamic-mixer/Mixer.js":41,"./variable-matrix/SnapshotController.js":43}],10:[function(require,module,exports){
+
+
+class LinearArranger extends HTMLElement {
+
+    constructor(waxml){
+        super();
+		this.inited = false;
+        this.voiceTracks = {};
+        this.classTracks = {};
+        this.otherTracks = [];
+        this.nrOfTracks = 0;
+        this.waxml = waxml;
+        this.timeFactor = 10;
+    }
+
+    connectedCallback(){
+
+    }
+
+    init(structure){
+        this.inited = true;
+
+        let trackList = document.createElement("div");
+        trackList.classList.add("list");
+        this.appendChild(trackList);
+
+        let frame = document.createElement("div");
+        this.frame = frame;
+        frame.classList.add("main");
+        this.appendChild(frame);
+        frame.addEventListener("pointerenter", e => {
+            this.scrolling = true;
+        });
+        frame.addEventListener("pointerleave", e => {
+            this.scrolling = false;
+        });
+
+        let content = document.createElement("div");
+        this.content = content;
+        content.classList.add("content");
+        content.dataset.width = 100;
+        frame.appendChild(content);
+
+        // zoom buttons
+        let btn = document.createElement("button");
+        btn.classList.add("zoom");
+        btn.innerHTML = "+";
+        btn.addEventListener("click", e => {
+            this.zoomFactor(1.25);
+        });
+        this.appendChild(btn);
+
+        btn = document.createElement("button");
+        btn.classList.add("zoom");
+        btn.innerHTML = "-";
+        btn.addEventListener("click", e => {
+            this.zoomFactor(0.8);
+        });
+        this.appendChild(btn);
+
+
+        let positionPointer = document.createElement("div");
+        positionPointer.classList.add("position-pointer");
+        this.positionPointer = positionPointer;
+        content.appendChild(positionPointer);
+
+        this.grid = document.createElement("div");
+        this.grid.classList.add("grid");
+        content.appendChild(this.grid);
+
+        structure.sections.forEach(section => {
+            let otherTrackCounter = 0;
+            section.tracks.forEach((track, i) => {
+
+                let graphicalTrack;
+                let tag;
+                tag = track.tags.length ? track.tags[0] : 0;
+                if(track.parameters.voice){
+                    graphicalTrack = this.addVoice(track.parameters.voice);
+                }
+                else if(tag){
+                    graphicalTrack = this.addClass(tag);
+                } else {
+                    graphicalTrack = this.addOtherTrack(otherTrackCounter++);
+                } 
+
+                if(graphicalTrack){
+                    track.graphicalTrack = graphicalTrack;
+                } else {
+                    console.log(track);
+                }
+                
+
+            });
+
+
+            section.leadIns.forEach(leadin => {
+                let tag = leadin.tags.length ? leadin.tags[0] : 0;
+                let graphicalTrack;
+                if(leadin.parameters.voice){
+                    graphicalTrack = this.addVoice(leadin.parameters.voice);
+                } else if(tag){
+                    graphicalTrack = this.addClass(tag);
+                }      
+                if(graphicalTrack){
+                    leadin.graphicalTrack = graphicalTrack;
+                } else {
+                    console.log(leadin);
+                }
+            });
+        });
+
+
+        structure.motifs.forEach(motif => {
+
+            let tag = motif.tags.length ? motif.tags[0] : 0;
+            let graphicalTrack;
+            if(motif.parameters.voice){
+                graphicalTrack = this.addVoice(motif.parameters.voice);
+            } else if(tag){
+                graphicalTrack = this.addClass(tag);
+            }
+        
+            if(graphicalTrack){
+                motif.graphicalTrack = graphicalTrack;
+            } else {
+                console.log(motif);
+            }
+        });
+
+        Object.entries(this.voiceTracks).forEach(([label, div]) => {
+            let el = this.createTrackLabel(label)
+            trackList.appendChild(el);
+            content.appendChild(div)
+        });
+        Object.entries(this.classTracks).forEach(([label, div]) => {
+            let el = this.createTrackLabel(label)
+            trackList.appendChild(el);
+            content.appendChild(div)
+        });
+        
+        this.otherTracks.forEach((div, i) => {
+            let el = this.createTrackLabel(i)
+            trackList.appendChild(el);
+            content.appendChild(div)
+        });
+
+        this.querySelectorAll(".track").forEach(obj => {
+            obj.style.height = `${100/this.nrOfTracks}%`;
+        });
+
+    }
+
+    addVoice(name){
+        if(!this.voiceTracks[name]){
+            this.voiceTracks[name] = this.createTrack("voice");
+        }
+        return this.voiceTracks[name];
+    }
+    addClass(name){
+        if(!this.classTracks[name]){
+            this.classTracks[name] = this.createTrack("class");
+        }
+        return this.classTracks[name];
+    }
+    addOtherTrack(i){
+        if(!this.otherTracks[i]){
+            this.otherTracks[i] = this.createTrack("other");
+        }
+        return this.otherTracks[i];
+    }
+
+    createTrack(className){
+        this.nrOfTracks++;
+        let el = document.createElement("div");
+        el.classList.add(className);
+        el.classList.add("track");
+        return el;
+    }
+
+    createTrackLabel(label){
+        let el = document.createElement("div");
+        el.classList.add("track");
+        el.innerHTML = label;
+        return el;
+    }
+        
+
+    visualize(obj){
+
+        let el = document.createElement("div");
+        let container = obj.graphicalTrack || this.grid;
+        el.innerHTML = obj.label || "";
+        el.style.left = `${obj.pos*this.timeFactor}%`;
+        if(obj.length){
+            el.style.width = `${obj.length*this.timeFactor}%`;
+        }
+        el.classList.add(obj.class || "object");
+        container.appendChild(el);
+        return el;
+    }
+    
+    visualFadeOut(data){
+        let percent = this.timeToPercent(data.time);
+        let left = parseFloat(data.element.style.left);
+        let width = parseFloat(data.element.style.width);
+        let newWidth = percent - left;
+        if(newWidth < width){
+            console.log(`Change width: ${width} -> ${newWidth}`);
+            data.element.style.width = `${newWidth}%`;
+        }
+
+    }
+
+    scrollTo(time=this.waxml._ctx.currentTime){
+        // this.content.style.left = `${80-(time*this.timeFactor)}%`;
+        // let pix = this.timeToPix(time);
+        this.positionPointer.style.left = `${this.timeToPercent(time)}%`;
+        if(!this.scrolling){
+            this.frame.scrollLeft = this.timeToPix(time) - this.content.clientWidth * 0.8;
+        }
+    }
+
+    timeToPercent(time){
+        return time*this.timeFactor;
+    }
+
+    timeToPix(time){
+        return time*this.timeFactor * this.content.clientWidth * 0.01;
+    }
+
+    clear(){
+        // remove all segments
+    }
+
+    zoomFactor(factor){
+        let w = parseFloat(this.content.dataset.width) * factor;
+        this.content.dataset.width = w;
+        this.content.style.width = `${w}%`;
+    }
+}
+
+module.exports = LinearArranger;
+},{}],11:[function(require,module,exports){
+
+
+class OutputMonitor extends HTMLElement {
+
+    constructor(){
+        super();
+        this.classList.add("waxml-output-monitor");
+
+        this.table = document.createElement("table");
+        this.appendChild(this.table);
+    }
+
+    log(message){
+        
+        if(typeof message == "string"){
+            // comma separated string (else array)
+            message = message.split(",");
+        }
+        let tr = document.createElement("tr");
+        message.forEach(val => {
+            let td = document.createElement("td");
+            if(typeof val == "string"){
+                val = val.trim();
+            }
+            let floatVal = parseFloat(val);
+            if(floatVal == val){
+		        let decimals = Math.ceil(Math.max(0, 2 - Math.log(floatVal || 1)/Math.log(10)));
+                val = floatVal.toFixed(decimals);
+                td.classList.add("number");
+            }
+            td.innerHTML = val;
+            tr.appendChild(td);
+        });
+        this.table.appendChild(tr);
+
+        // auto scroll
+        this.scrollTop = this.scrollHeight;
+    }
+
+    clear(){
+        this.table.innerHTML = "";
+    }
+}
+
+module.exports = OutputMonitor;
+},{}],12:[function(require,module,exports){
 
 
 
@@ -4203,7 +4758,7 @@ const HL1 = (bc) => class extends bc {
 
 module.exports = HL1;
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 const HL1 = require("./HL1.js");
 
 
@@ -4224,7 +4779,7 @@ class HL2 extends HL1(OscillatorNode) {
 }
 
 module.exports = HL2;
-},{"./HL1.js":10}],12:[function(require,module,exports){
+},{"./HL1.js":12}],14:[function(require,module,exports){
 class InputBusses {
 
     constructor(ctx){
@@ -4258,7 +4813,7 @@ class InputBusses {
 }
 
 module.exports = InputBusses;
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 
 
 class Inspector extends HTMLElement {
@@ -4549,7 +5104,7 @@ class Inspector extends HTMLElement {
 
 module.exports = Inspector;
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 var EventTracker = require('./EventTracker.js');
 var VariableContainer = require('./VariableContainer.js');
@@ -4565,12 +5120,19 @@ class InteractionManager {
 	constructor(waxml){
 
 		
+		// Super interesting:
+		// On MAC iOS, it doesn't work if I attach a stored function to the event
+		// I Have to make the call directly. ?!?!
+		// Unfortunately, this makes it tricky to remove the event listener
+		// after it has been used.
 
-		let initCall = e => {
-			this.waxml.init();
-			window.removeEventListener("pointerdown", initCall);
-		}
-		window.addEventListener("pointerdown", initCall);
+		// let initCall = e => {
+			// this.waxml.init();
+			// window.removeEventListener("pointerdown", initCall);
+		// }
+		// window.addEventListener("pointerdown", initCall);
+
+		window.addEventListener("pointerdown", () => this.waxml.init());
 
 		this.eventTracker = new EventTracker(waxml);
 		this.waxml = waxml;
@@ -4795,9 +5357,15 @@ class InteractionManager {
 								switch(commandName){
 									case "start":
 									case "play":
+									case "trig":
 										fn = e => {
-											this.waxml.start(val);
-											this.waxml.setVariable(val, 1);
+											this.waxml.trig(val);
+
+											// do we need this line?
+											// would it be better to build proper and transparant
+											// solutions for mapping events to variables
+											// and vice versa.
+											// this.waxml.setVariable(val, 1);
 										}
 										break;
 			
@@ -4849,10 +5417,6 @@ class InteractionManager {
 											
 										} 
 	
-										break;
-
-									case "preset":
-										this.vaxml.recallPreset(val);
 										break;
 
 
@@ -5428,8 +5992,7 @@ class InteractionManager {
 
 
 module.exports = InteractionManager;
-
-},{"./EventTracker.js":8,"./KeyboardManager.js":15,"./MidiManager.js":20,"./Variable.js":28,"./VariableContainer.js":29,"./Watcher.js":33,"./WebAudioUtils.js":35}],15:[function(require,module,exports){
+},{"./EventTracker.js":8,"./KeyboardManager.js":17,"./MidiManager.js":22,"./Variable.js":30,"./VariableContainer.js":31,"./Watcher.js":35,"./WebAudioUtils.js":37}],17:[function(require,module,exports){
 
 
 class KeyboardManager {
@@ -5497,7 +6060,7 @@ class KeyboardManager {
 
 module.exports = KeyboardManager;
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 const InteractionManager = require("./InteractionManager");
 
 
@@ -5639,7 +6202,7 @@ Loader.filesLoading = [];
 
 module.exports = Loader;
 
-},{"./InteractionManager":14}],17:[function(require,module,exports){
+},{"./InteractionManager":16}],19:[function(require,module,exports){
 
 const noteNames = "c,c#,d,d#,e,f,f#,g,g#,a,a#,b".split(",");
 
@@ -6077,7 +6640,7 @@ function setElementRect(el, rect){
 
 module.exports = MIDIController;
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Range = require('./Range.js');
 
@@ -6622,7 +7185,7 @@ class Mapper{
 
 module.exports = Mapper;
 
-},{"./Range.js":24,"./WebAudioUtils.js":35}],19:[function(require,module,exports){
+},{"./Range.js":26,"./WebAudioUtils.js":37}],21:[function(require,module,exports){
 
 
 class Meter extends HTMLElement {
@@ -6963,7 +7526,7 @@ class Meter extends HTMLElement {
 
 module.exports = Meter;
 
-},{}],20:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 const fnNames = ["start", "stop", "trig"];
 
 class MidiManager {
@@ -7143,7 +7706,7 @@ class MidiManager {
 }
 
 module.exports = MidiManager;
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 
 var processorName = 'white-noise-processor';
 var _noise;
@@ -7206,7 +7769,7 @@ class Noise {
 module.exports = Noise;
 
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 
@@ -7637,7 +8200,7 @@ class ObjectBasedAudio {
 
 module.exports = ObjectBasedAudio;
 
-},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":6}],23:[function(require,module,exports){
+},{"./BufferSourceObject.js":3,"./ConvolverNodeObject.js":6}],25:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Loader = require('./Loader.js');
@@ -7647,6 +8210,7 @@ var Envelope = require('./Envelope.js');
 var Command = require('./Command.js');
 var Watcher = require('./Watcher.js');
 var Synth = require('./Synth.js');
+const SnapshotComponent = require('./variable-matrix/SnapshotComponent.js');
 
 
 
@@ -8035,6 +8599,11 @@ class Parser {
 			target.setVariable(params.name, variableObj);
 			break;
 
+			case "snapshot":
+			xmlNode.obj = new SnapshotComponent(xmlNode);
+			this.waxml.addSnapshot(xmlNode.obj);
+			break;
+
 			case "envelope":
 			xmlNode.obj = new Envelope(xmlNode, this.waxml, params);
 			break;
@@ -8076,17 +8645,7 @@ class Parser {
 			break;
 
 			case "command":
-			obj = new Command(params);
-			obj.addEventListener("trig", e => {
-				switch(e.target.command){
-					case "trig":
-						this.waxml.trig(e.target.selector);
-					break;
-					case "set":
-						this.waxml.setVariable(e.target.key, e.target.value);
-					break;
-				}
-			});
+			obj = new Command(params, this.waxml);
 			break;
 
 			default:
@@ -8103,7 +8662,7 @@ class Parser {
 
 module.exports = Parser;
 
-},{"./AudioObject.js":2,"./Command.js":4,"./Envelope.js":7,"./Loader.js":16,"./Synth.js":26,"./Variable.js":28,"./Watcher.js":33,"./WebAudioUtils.js":35}],24:[function(require,module,exports){
+},{"./AudioObject.js":2,"./Command.js":4,"./Envelope.js":7,"./Loader.js":18,"./Synth.js":28,"./Variable.js":30,"./Watcher.js":35,"./WebAudioUtils.js":37,"./variable-matrix/SnapshotComponent.js":42}],26:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
@@ -8237,7 +8796,7 @@ class MinMax {
 
 module.exports = Range;
 
-},{"./WebAudioUtils.js":35}],25:[function(require,module,exports){
+},{"./WebAudioUtils.js":37}],27:[function(require,module,exports){
 
 
 
@@ -8399,7 +8958,7 @@ class Sequence {
 
 module.exports = Sequence;
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Watcher = require('./Watcher.js');
@@ -8657,7 +9216,7 @@ class Synth{
 
 module.exports = Synth;
 
-},{"./Trigger.js":27,"./Watcher.js":33,"./WebAudioUtils.js":35}],27:[function(require,module,exports){
+},{"./Trigger.js":29,"./Watcher.js":35,"./WebAudioUtils.js":37}],29:[function(require,module,exports){
 
 
 
@@ -8766,7 +9325,7 @@ class Trigger {
 
 module.exports = Trigger;
 
-},{}],28:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -9220,7 +9779,7 @@ class Variable {
 	}
 
 	get watchedVariableNames(){
-		if(this._params.value.type == "watcher"){
+		if(typeof this._params.value == "object" && this._params.value.type == "watcher"){
 			return Object.entries(this._params.value._variables).map(([key]) => key);
 		} else {
 			return [];
@@ -9317,7 +9876,7 @@ class Variable {
 
 module.exports = Variable;
 
-},{"./Mapper.js":18,"./WebAudioUtils.js":35}],29:[function(require,module,exports){
+},{"./Mapper.js":20,"./WebAudioUtils.js":37}],31:[function(require,module,exports){
 
 
 
@@ -9353,7 +9912,7 @@ class VariableContainer {
 
 module.exports = VariableContainer;
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 
 
 class VariableController extends HTMLElement {
@@ -9388,7 +9947,7 @@ class VariableController extends HTMLElement {
 
 		data.step = data.steps ||0.01;
 		let range = data.max - data.min;
-		this.decimals = Math.ceil(Math.max(0, 2 - Math.log(range)/Math.log(10)));
+		this.decimals = Math.ceil(Math.max(0, 2 - Math.log(range || 1)/Math.log(10)));
 
 		this.waxml = waxml;
 		this.targetVariable = data.targetVariable;
@@ -9409,6 +9968,7 @@ class VariableController extends HTMLElement {
 		this.setAttributes(this, {
 			watchedVariable: data.watchedVariable
 		});
+		data["data-default"] = data.value;
 		this.setAttributes(interactionElement, data);
 		// interactionElement.style.position = "absolute";
 		// interactionElement.style.width = "100%";
@@ -9420,6 +9980,13 @@ class VariableController extends HTMLElement {
 		});
 		interactionElement.addEventListener("click", e => {
 			e.stopPropagation();
+		});
+		interactionElement.addEventListener("dblclick", e => {
+			e.stopPropagation();
+			let val = parseFloat(e.target.dataset.default);
+			this.value = val;
+			this.targetVariable.value = val;
+			this.textElement.value = val.toFixed(this.decimals);
 		});
 
 		let meter = document.createElement("meter");
@@ -9497,7 +10064,7 @@ class VariableController extends HTMLElement {
 
 module.exports = VariableController;
 
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 const Variable = require('./Variable.js');
 const VariableMatrixRow = require('./VariableMatrixRow.js');
 const Watcher = require('./Watcher.js');
@@ -9598,7 +10165,7 @@ class VariableMatrix extends HTMLElement {
 }
 module.exports = VariableMatrix;
 
-},{"./Variable.js":28,"./VariableMatrixRow.js":32,"./Watcher.js":33}],32:[function(require,module,exports){
+},{"./Variable.js":30,"./VariableMatrixRow.js":34,"./Watcher.js":35}],34:[function(require,module,exports){
 const VariableController = require('./VariableController.js');
 
 
@@ -9673,7 +10240,7 @@ class VariableMatrixRow{
 
 module.exports = VariableMatrixRow;
 
-},{"./VariableController.js":30}],33:[function(require,module,exports){
+},{"./VariableController.js":32}],35:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 var Variable = require('./Variable.js');
 
@@ -10059,7 +10626,7 @@ class Watcher {
 
 module.exports = Watcher;
 
-},{"./Variable.js":28,"./WebAudioUtils.js":35}],34:[function(require,module,exports){
+},{"./Variable.js":30,"./WebAudioUtils.js":37}],36:[function(require,module,exports){
 /*
 MIT License
 
@@ -10103,16 +10670,15 @@ var MIDIController = require('./MIDIController.js');
 var Inspector = require('./Inspector.js');
 
 
-var VariableMatrix = require('./VariableMatrix.js');
-var VariableController = require('./VariableController.js');
-var PresetController = require('./variable-matrix/PresetController.js');
-var PresetComponent = require('./variable-matrix/PresetComponent.js');
+const VariableMatrix = require('./VariableMatrix.js');
+const VariableController = require('./VariableController.js');
+const SnapshotController = require('./variable-matrix/SnapshotController.js');
+const SnapshotComponent = require('./variable-matrix/SnapshotComponent.js');
 
-var DynamicMixer = require('./dynamic-mixer/Mixer.js');
-var Channel = require('./dynamic-mixer/Channel.js');
-
-
-
+const DynamicMixer = require('./dynamic-mixer/Mixer.js');
+const Channel = require('./dynamic-mixer/Channel.js');
+const OutputMonitor = require('./GUI/OutputMonitor.js');
+const LinearArranger = require('./GUI/LinearArranger.js');
 
 
 
@@ -10167,6 +10733,7 @@ class WebAudio {
 		this.parser = new Parser(this);
 
 		this.inputBusses = new InputBusses(_ctx);
+		this.snapShots = [];
 
 		source = source || src;
 
@@ -10196,6 +10763,8 @@ class WebAudio {
 
 					this.initGUI(this._xml);
 					this.initAudio(this._xml);
+					this.initEvents();
+
 
 					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
@@ -10256,11 +10825,12 @@ class WebAudio {
 
 		customElements.define('waxml-variable-matrix', VariableMatrix);	
 		customElements.define('waxml-variable-controller', VariableController);	
-		customElements.define('waxml-matrix-preset-controller', PresetController);	
-		customElements.define('waxml-matrix-preset-component', PresetComponent);	
+		customElements.define('waxml-snapshot-controller', SnapshotController);	
+		customElements.define('waxml-snapshot-component', SnapshotComponent);	
 		
 		customElements.define('waxml-dynamic-mixer', DynamicMixer);	
-		
+		customElements.define('waxml-output-monitor', OutputMonitor);	
+		customElements.define('waxml-linear-arranger', LinearArranger);
 	}
 
 	init(){
@@ -10374,7 +10944,7 @@ class WebAudio {
 		//webAudioXML = xmlDoc.audioObject;
 		//webAudioXML.touch = touches;
 
-		// snyggare att lyfta ut audio-in till en egen class 
+		// Det skulle vara snyggare att lyfta ut audio-in till en egen class 
 		if(this.parser.allElements.mediastreamaudiosourcenode){
 			navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
 		}
@@ -10410,6 +10980,12 @@ class WebAudio {
 		});
 
 
+	}
+
+	initEvents(){
+
+		// activate child-nodes to pass trig-events to parent
+		this.querySelectorAll("Mixer").forEach(mixer => mixer.addEventsFromChildren());
 	}
 
 
@@ -10477,8 +11053,8 @@ class WebAudio {
 			// special case for keydown:x and keyup:x
 			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}']`).join(",");
 		} else {
-			// select both elements with attribute "start="selector" and class="selector"
-			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+			// select both elements with attribute "start="selector" and class="selector" and id="selector"
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}, #${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
@@ -10734,10 +11310,17 @@ class WebAudio {
 		this.ui.variables = val;
 	}
 
-	recallPreset(selector){
-		this.GUI.HTML.querySelectorAll(`waxml-matrix-preset-component${selector}`).forEach(presetComponent => {
-			presetComponent.sendData();
-			presetComponent.parentElement.selectComponent(presetComponent);
+	addSnapshot(snapshot){
+		this.snapShots.push(snapshot);
+	}
+
+	recallSnapshot(selector){
+		this.GUI.HTML.querySelectorAll(`waxml-snapshot${selector}`).forEach(snapshotComponent => {
+			snapshotComponent.sendData();
+			snapshotComponent.parentElement.selectComponent(snapshotComponent);
+		});
+		this.snapShots.filter(snapShot => snapShot.id == selector).forEach(snapShot => {
+
 		});
 	}
 
@@ -10799,11 +11382,7 @@ class WebAudio {
 			if(val == floatVal){val = floatVal}
 		}
 		
-		let vcsSelector = `waxml-variable-controller[watchedvariable="${key}"]`;
-		[...this.GUI.HTML.querySelectorAll(vcsSelector),
-		...document.querySelectorAll(vcsSelector)].forEach(vc => vc.value = val);
-
-
+		
 		this.ui.setVariable(key, val, transitionTime, fromSequencer);
 
 		this.plugins.forEach(plugin => {
@@ -10811,7 +11390,14 @@ class WebAudio {
 				plugin.setVariable(key, val);
 			}
 		});
-		
+
+
+		// Update
+		let vcsSelector = `waxml-variable-controller[watchedvariable="${key}"]`;
+		[...this.GUI.HTML.querySelectorAll(vcsSelector),
+		...document.querySelectorAll(vcsSelector)].forEach(vc => vc.value = val);
+
+
 	}
 
 	set variablesToStore(varNames){
@@ -10901,7 +11487,6 @@ class WebAudio {
 
 			default:
 			this._xml.querySelectorAll(selector).forEach(xml => {
-				let audioObject = xml.obj;
 				arr.push(xml.obj);
 			});
 			break;
@@ -10944,6 +11529,32 @@ class WebAudio {
 		return this.parser.createObject(xmlNode);
 	}
 
+	initLinearArranger(structure){
+		this.GUI.initLinearArranger(structure);
+	}
+
+	log(message){
+		this.GUI.log(message);
+	}
+
+	toSignificant(floatVal){
+		return WebAudioUtils.toSignificant(floatVal);
+	}
+
+	pathToFileName(path){
+		return WebAudioUtils.pathToFileName(path);
+	}
+
+	visualize(obj){
+		return this.GUI.visualize(obj);
+	}
+	visualFadeOut(data){
+		this.GUI.visualFadeOut(data);
+	}
+
+	scrollArrangeWindow(time){
+		this.GUI.scrollArrangeWindow(time);
+	}
 
 }
 
@@ -11052,7 +11663,7 @@ module.exports = WebAudio;
 
 */
 
-},{"./Connector.js":5,"./ConvolverNodeObject.js":6,"./GUI.js":9,"./HL2.js":11,"./InputBusses.js":12,"./Inspector.js":13,"./InteractionManager.js":14,"./MIDIController.js":17,"./Meter.js":19,"./Parser.js":23,"./Variable.js":28,"./VariableController.js":30,"./VariableMatrix.js":31,"./WebAudioUtils.js":35,"./XY_area.js":36,"./XY_handle.js":37,"./dynamic-mixer/Channel.js":38,"./dynamic-mixer/Mixer.js":39,"./variable-matrix/PresetComponent.js":40,"./variable-matrix/PresetController.js":41}],35:[function(require,module,exports){
+},{"./Connector.js":5,"./ConvolverNodeObject.js":6,"./GUI.js":9,"./GUI/LinearArranger.js":10,"./GUI/OutputMonitor.js":11,"./HL2.js":13,"./InputBusses.js":14,"./Inspector.js":15,"./InteractionManager.js":16,"./MIDIController.js":19,"./Meter.js":21,"./Parser.js":25,"./Variable.js":30,"./VariableController.js":32,"./VariableMatrix.js":33,"./WebAudioUtils.js":37,"./XY_area.js":38,"./XY_handle.js":39,"./dynamic-mixer/Channel.js":40,"./dynamic-mixer/Mixer.js":41,"./variable-matrix/SnapshotComponent.js":42,"./variable-matrix/SnapshotController.js":43}],37:[function(require,module,exports){
 
 class WebAudioUtils {
 
@@ -11163,6 +11774,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "loopStart":
 		case "loopEnd":
 
+
 		// waxml
 		case "transitionTime":
 		v = parseFloat(value);
@@ -11249,6 +11861,11 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		if(!Number.isNaN(floatVal)){
 			value = floatVal;
 		}
+		break;
+
+
+		// iMusic
+		case "pos":
 		break;
 
 		default:
@@ -11735,9 +12352,19 @@ WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
 	return [...targets];
 }
 
+WebAudioUtils.toSignificant = (floatVal, nrOfSignificantFigures = 2) => {
+	let decimals = Math.ceil(Math.max(0, nrOfSignificantFigures - Math.log(floatVal || 1)/Math.log(10)));
+	return floatVal.toFixed(decimals);
+}
+
+WebAudioUtils.pathToFileName = (path) => {
+	let fileName = path.split("/").pop().split(".")[0];
+	return fileName;
+}
+
 module.exports = WebAudioUtils;
 
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 
 
 class XY_area extends HTMLElement {
@@ -11963,7 +12590,7 @@ class XY_area extends HTMLElement {
 
 module.exports = XY_area;
 
-},{}],37:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 class XY_handle extends HTMLElement {
@@ -12347,7 +12974,7 @@ class XY_handle extends HTMLElement {
 
 module.exports = XY_handle;
 
-},{"./WebAudioUtils.js":35}],38:[function(require,module,exports){
+},{"./WebAudioUtils.js":37}],40:[function(require,module,exports){
 var WebAudioUtils = require('./../WebAudioUtils.js');
 
 
@@ -12461,7 +13088,7 @@ class Channel extends EventTarget {
 
 module.exports = Channel;
 
-},{"./../WebAudioUtils.js":35}],39:[function(require,module,exports){
+},{"./../WebAudioUtils.js":37}],41:[function(require,module,exports){
 var Channel = require('./Channel.js');
 var VariableMatrixRow = require('./../VariableMatrixRow.js');
 
@@ -12522,9 +13149,9 @@ class DynamicMixer extends HTMLElement {
 		variables = [];
 		
 		let attributeData = [];
-		attributeData.push({name: "transitionTime", max: 1000});
-		attributeData.push({name: "crossfaderange", max: 1});
-		attributeData.push({name: "selectindex", max: this.channelCount-1});
+		attributeData.push({name: "transitionTime", max: 2000, value: 500});
+		attributeData.push({name: "crossfaderange", max: 1, value: 0});
+		attributeData.push({name: "selectindex", max: this.channelCount-1, value: 0});
 
 		this.variables = {};
 
@@ -12540,7 +13167,7 @@ class DynamicMixer extends HTMLElement {
 				watchedVariable: name,
 				min: 0,
 				max: attribute.max,
-				value: 0
+				value: attribute.value
 			});
 		});
 
@@ -12594,17 +13221,18 @@ class DynamicMixer extends HTMLElement {
 
 module.exports = DynamicMixer;
 
-},{"./../VariableMatrixRow.js":32,"./Channel.js":38}],40:[function(require,module,exports){
+},{"./../VariableMatrixRow.js":34,"./Channel.js":40}],42:[function(require,module,exports){
 
 
-class PresetComponent extends HTMLElement {
+class SnapshotComponent extends HTMLElement {
 
-	constructor(data, waxml=window.waxml){
+	constructor(xmlNode, waxml=window.waxml){
 		super();
 		this.inited = false;
+		this.timeouts = [];
 		this.waxml = waxml;
-		if(data){
-			this.init(data);
+		if(xmlNode){
+			this.init(xmlNode);
 		}
 	}
 
@@ -12621,8 +13249,8 @@ class PresetComponent extends HTMLElement {
 	init(data){
 		this.data = data;
 		
-		let presetTriggerBtn = document.createElement("button");
-		let nameAttribute = data.attributes.name || data.attributes.id;
+		let snapshotTriggerBtn = document.createElement("button");
+		let nameAttribute = data.attributes.id || data.attributes.class;
 		
 		if(data.attributes.id){
 			this.setAttribute("id", data.attributes.id.value);
@@ -12631,40 +13259,58 @@ class PresetComponent extends HTMLElement {
 			this.setAttribute("class", data.attributes.class.value);
 		}
 
-		presetTriggerBtn.innerHTML = nameAttribute.value;
-		presetTriggerBtn.classList.add("preset");
-		presetTriggerBtn.addEventListener("click", e => {
-			this.dispatchEvent(new CustomEvent("recall"));
-			this.sendData();
-		});
+		snapshotTriggerBtn.innerHTML = nameAttribute.value;
+		snapshotTriggerBtn.classList.add("snapshot");
+		snapshotTriggerBtn.addEventListener("click", e => this.trig());
 
-		let presetDeleteBtn = document.createElement("button");
-		presetDeleteBtn.innerHTML = "-";
-		presetDeleteBtn.classList.add("delete");
-		presetDeleteBtn.addEventListener("click", e => {
+		let snapshotDeleteBtn = document.createElement("button");
+		snapshotDeleteBtn.innerHTML = "-";
+		snapshotDeleteBtn.classList.add("delete");
+		snapshotDeleteBtn.addEventListener("click", e => {
 			if(confirm(`Do you want to delete "${nameAttribute.value}"?`)){
 				this.parentElement.removeChild(this);
 			}
 		});
 
-		this.appendChild(presetTriggerBtn);
-		this.appendChild(presetDeleteBtn);
+		this.appendChild(snapshotTriggerBtn);
+		this.appendChild(snapshotDeleteBtn);
 		return this;
+	}
+
+	trig(data = {}){
+		let fn = () => {
+			this.dispatchEvent(new CustomEvent("recall"));
+			this.sendData();
+		}
+		if(data.time){
+			let delay = data.time - this.waxml._ctx.currentTime;
+			this.timeouts.push(setTimeout(fn, delay*1000));
+		} else {
+			fn();
+		}
+		
 	}
 
 	sendData(){
 		[...this.data.children].forEach(option => {
-			let key = option.attributes.key.value;
+			let variable = option.attributes.variable.value;
 			let value = parseFloat(option.attributes.value.value);
-			this.waxml.setVariable(key, value);
+			this.waxml.setVariable(variable, value);
 		});
 		this.dispatchEvent(new CustomEvent("sendData"));
+	}
+
+
+	clear(){
+		while(this.timeouts.length){
+			clearTimeout(this.timeouts.pop());
+		}
 	}
 
 	get variableNames(){
 		let variableNames = [];
 		[...this.data.children].forEach(option => {
-			variableNames.push(option.attributes.key.value);
+			variableNames.push(option.attributes.variable.value);
 		});
 		return variableNames;
 	}
@@ -12676,22 +13322,23 @@ class PresetComponent extends HTMLElement {
 		let classStr = data.attributes.class ? ` class="${data.attributes.class.value}"` : ``;
 		
 		let str = "";
-		str += `<datalist${idStr+nameStr+classStr}>\n`;
+		str += `- - - - - - - - - - - - - -\n`;
+		str += `WAXML:\n`;
+		str += `- - - - - - - - - - - - - -\n\n`;
+		str += `<Snapshot${classStr}>\n`;
 
 		let varArr = [];
-		[...data.children].forEach(option => {
-			str += `  <option key="${option.attributes.key.value}" value="${option.attributes.value.value}" />\n`;
-			varArr.push(`${option.attributes.key.value}=${option.attributes.value.value}`);
+		[...data.children].forEach(command => {
+			str += `  <Command type="set" variable="${command.attributes.variable.value}" value="${command.attributes.value.value}" />\n`;
+			varArr.push(`${command.attributes.variable.value}=${command.attributes.value.value}`);
 		});
-		str += `</datalist>\n\n`;
-
-		str += `<a data-waxml-click-preset="${data.attributes.id.value}">${data.attributes.id.value}</a>`;
-		
-		str += `\n\n- - - - - - - - - - - - - -\n`;
-		str += `OR\n`;
+		str += `</Snapshot>\n\n`;
+		str += `- - - - - - - - - - - - - -\n`;
+		str += `HTML:\n`;
 		str += `- - - - - - - - - - - - - -\n\n`;
-		str += `<a data-waxml-click-set="${varArr.join(";")}">${data.attributes.id.value}</a>`;
-		
+
+		let nameAttribute = data.attributes.id || data.attributes.class;
+		str += `<a data-waxml-click-trig="${nameAttribute.value}">${nameAttribute.value}</a>`;
 		
 		return str;
 	}
@@ -12705,13 +13352,13 @@ class PresetComponent extends HTMLElement {
 	}
 }
 
-module.exports = PresetComponent;
+module.exports = SnapshotComponent;
 
-},{}],41:[function(require,module,exports){
-var PresetComponent = require('./PresetComponent.js');
+},{}],43:[function(require,module,exports){
+var SnapshotComponent = require('./SnapshotComponent.js');
 
 
-class PresetController extends HTMLElement {
+class SnapshotController extends HTMLElement {
 
 	constructor(attributes, waxml=window.waxml){
 		super();
@@ -12737,12 +13384,12 @@ class PresetController extends HTMLElement {
 
 		this.inited = true;
 		this.style.display = "block";
-		this.presetComponents = [];
+		this.snapshotComponents = [];
 
 
-		this.presetContainer = document.createElement("div");
-		this.presetContainer.classList.add("waxml-preset-button-container");
-		this.appendChild(this.presetContainer);
+		this.snapshotContainer = document.createElement("div");
+		this.snapshotContainer.classList.add("waxml-snapshot-button-container");
+		this.appendChild(this.snapshotContainer);
 
 		this.output = document.createElement("textarea");
 		this.output.classList.add("output");
@@ -12751,23 +13398,27 @@ class PresetController extends HTMLElement {
 		this.appendChild(this.output);
 
 		let filter = `.${[...this.classList].join(".")}`;
-		this.presets = document.querySelectorAll(`datalist.waxml-preset${filter}`)
+
+		// I skip the filter function for the moment 2023-09-13
+		// this.snapshots = this.waxml.querySelectorAll(`Snapshot${filter}`)
+		this.snapshots = this.waxml.querySelectorAll(`Snapshot`)
 
 		this.addBtn = document.createElement("button");
 		this.addBtn.classList.add("add");
 		this.addBtn.innerHTML = "+";
-		this.presetContainer.appendChild(this.addBtn);
+		this.snapshotContainer.appendChild(this.addBtn);
 		this.addBtn.addEventListener("click", e => {
 			let data = this.getData();
 			if(data){
-				this.add(data);
+				let snapshotComponent = new SnapshotComponent(data);
+				this.add(snapshotComponent);
 			} else {
 				alert("Please select one or more settings in the mixer.")
 			}
 			
 		});
 
-		this.presets.forEach(data => {
+		this.snapshots.forEach(data => {
 			this.add(data);
 		});
 
@@ -12775,25 +13426,30 @@ class PresetController extends HTMLElement {
 		return this;
 	}
 
-	add(data){
+	add(snapshotComponent){
 		// find numbering in id-name
-		let id = parseInt(data.getAttribute("id").split("-").pop());
+		let id = parseInt(snapshotComponent.getAttribute("class").split("-").pop());
+		
 		if(!isNaN(id)){
 			this.curID = Math.max(this.curID, id);
 		}
-		let presetComponent = new PresetComponent(data);
-		presetComponent.addEventListener("recall", e => {
+		// let snapshotComponent = new SnapshotComponent(data);
+		snapshotComponent.addEventListener("recall", e => {
 			this.output.innerHTML = e.target.toString();
 		});
-		presetComponent.addEventListener("sendData", e => {
+		snapshotComponent.addEventListener("sendData", e => {
 			// select variables in matrix 
-			let selector = `*.${[...this.classList].join(".")} waxml-variable-controller`;
+			// let selector = `*.${[...this.classList].join(".")} waxml-variable-controller`;
+			// let vcs = this.parentElement.querySelectorAll(selector);
+
+			// select all variable controllers
+			let selector = `waxml-variable-controller`;
 			let vcs = this.parentElement.querySelectorAll(selector);
 			
 			// deselect all variable controllers
 			vcs.forEach(vc => vc.selected = false);
 			
-			// select all variable controllers in preset
+			// select all variable controllers in snapshot
 			e.target.variableNames.forEach(vn => {
 				[...vcs].filter(vc => {
 					if(vc.watchedVariable == vn){
@@ -12804,7 +13460,7 @@ class PresetController extends HTMLElement {
 		
 		});
 
-		this.presetContainer.insertBefore(presetComponent, this.addBtn);
+		this.snapshotContainer.insertBefore(snapshotComponent, this.addBtn);
 	}
 
 	getData(){
@@ -12815,17 +13471,19 @@ class PresetController extends HTMLElement {
 			return false;
 		}
 
-		let datalist = document.createElement("datalist");
-		datalist.setAttribute("class", this.attributes.class.value);
-		datalist.setAttribute("id", `preset-${this.newID}`);
+		let snapshot = document.createElement("Snapshot");
+		// snapshot.setAttribute("class", this.attributes.class.value);
+		// snapshot.setAttribute("id", `snapshot-${this.newID}`);
+		snapshot.setAttribute("class", `snapshot-${this.newID}`);
 
 		variables.forEach(variableController => {
-			let option = document.createElement("option");
-			option.setAttribute("key", variableController.watchedVariable);
-			option.setAttribute("value", variableController.value);
-			datalist.appendChild(option);
+			let command = document.createElement("Command");
+			command.setAttribute("type", "set");
+			command.setAttribute("variable", variableController.watchedVariable);
+			command.setAttribute("value", variableController.value);
+			snapshot.appendChild(command);
 		});
-		return datalist;
+		return snapshot;
 	}
 
 	get newID(){
@@ -12841,6 +13499,6 @@ class PresetController extends HTMLElement {
 	}
 }
 
-module.exports = PresetController;
+module.exports = SnapshotController;
 
-},{"./PresetComponent.js":40}]},{},[34]);
+},{"./SnapshotComponent.js":42}]},{},[36]);
