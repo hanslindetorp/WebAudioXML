@@ -169,3 +169,12 @@ p {
 section#mode a {
     color: white;
 }
+
+
+footer {
+    position: absolute;
+    bottom: 10px;
+    color: white;
+    text-align: center;
+    font-size: 80%;
+}
