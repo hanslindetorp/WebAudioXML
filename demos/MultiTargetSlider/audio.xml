@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="0dB">
 
-	<var name="slider1" follow="#slider1 input value"></var>
 
 	<Chain>
 <!-- 
@@ -18,68 +17,58 @@ play at full volume from start and fade out when the slider moves towards 60. Th
 cutoff frequency and the Q-value when the slider moves from 0 to 10.
 -->
 			<Chain id="pad">
-				<GainNode>
-					<gain follow="#slider1 input value" mapin="30,60" mapout="1,0"></gain>
-				</GainNode>
-				<BiquadFilterNode type="highpass">
-					<frequency value="1000" follow="#slider1 input value" mapin="0,10" mapout="1000,0"></frequency>
-					<Q value="15" follow="#slider1 input value" mapin="0,10" mapout="25,0"></Q>
-				</BiquadFilterNode>
+				<var name="gain" default="1" value="$slider1" mapin="30,60" mapout="1,0" />
+				<var name="frequency" default="1000" value="$slider1" mapin="0,10" mapout="1000,0" />
+				<var name="Q" default="25" value="$slider1" mapin="0,10" mapout="25,0" />
+
+				<GainNode gain="$gain" />
+				<BiquadFilterNode type="highpass" frequency="$frequency" Q="$Q" />
 			</Chain>
 
 <!-- 
 The clavinet starts on level "0.5" and fades out towards 10. Later it comes back, fading in between 50 and 60.
--->
-			<GainNode id="clav">
-				<gain value="1" follow="#slider1 input value" mapin="0,10,50,60" mapout="0.5,0,0,1"></gain>
-			</GainNode>
+-->			
+			<var name="clav_gain" default="0.5" value="$slider1" mapin="0,10,50,60" mapout="0.5,0,0,1" />
+			<GainNode id="clav" gain="$clav_gain" />
 
-			<GainNode id="piano">
-				<gain value="0" follow="#slider1 input value" mapin="0,10,30,40" mapout="0,1,1,0"></gain>
-			</GainNode>
+			<var name="piano_gain" default="0" value="$slider1" mapin="0,10,30,40" mapout="0,1,1,0" />
+			<GainNode id="piano" gain="$piano_gain" />
 
-			<GainNode id="rhodes">
-				<gain value="0" follow="#slider1 input value" mapin="10,20" mapout="0,1"></gain>
-			</GainNode>
+			<var name="rhodes_gain" default="0" value="$slider1" mapin="10,20" mapout="0,1" />
+			<GainNode id="rhodes" gain="$rhodes_gain" />
 
-			<GainNode id="organ">
-				<gain value="0" follow="#slider1 input value" mapin="70,80" mapout="0,1"></gain>
-			</GainNode>
+			<var name="organ_gain" default="0" value="$slider1" mapin="70,80" mapout="0,1" />
+			<GainNode id="organ" gain="$organ_gain" />
 
-			<GainNode id="shaker">
-				<gain value="0" follow="#slider1 input value" mapin="20,30" mapout="0,1"></gain>
-			</GainNode>
+			<var name="shaker_gain" default="0" value="$slider1" mapin="20,30" mapout="0,1" />
+			<GainNode id="shaker" gain="$shaker_gain" />
 			
 <!-- There are two different drum loops and bass loops whose gain levels go together. This results in both
 instruments changing from a soft style to a busy when the slider moves from 60 to 61.
 -->
 
-			<GainNode id="bass1">
-				<gain value="0" follow="#slider1 input value" mapin="30,40,60,61" mapout="0,2,2,0"></gain>
-			</GainNode>
+			<var name="bass1_gain" default="0" value="$slider1" mapin="30,40,60,61" mapout="0,2,2,0" />
+			<GainNode id="bass1" gain="$bass1_gain" />
 
-			<GainNode id="bass2">
-				<gain value="0" follow="#slider1 input value" mapin="60,61" mapout="0,1"></gain>
-			</GainNode>
+			<var name="bass2_gain" default="0" value="$slider1" mapin="60,61" mapout="0,1" />
+			<GainNode id="bass2" gain="$bass2_gain" />
 
-			<GainNode id="drums1">
-				<gain value="0" follow="#slider1 input value" mapin="30,40,60,61" mapout="0,1,1,0"></gain>
-			</GainNode>
-			<GainNode id="drums2">
-				<gain value="0" follow="#slider1 input value" mapin="60,61" mapout="0,1"></gain>
-			</GainNode>
+			<var name="drums1_gain" default="0" value="$slider1" mapin="30,40,60,61" mapout="0,1,1,0" />
+			<GainNode id="drums1"  gain="$drums1_gain" />
+			
+			<var name="drums2_gain" default="0" value="$slider1" mapin="60,61" mapout="0,1" />
+			<GainNode id="drums2" gain="$drums2_gain" />
 		</Mixer>
 
 <!-- 
 The output of the mixer is automatically connected to the input of this BiquadFilterNode because they are sequencial inside a 
 "chain"-element. The filter and finally a compresseor act as insert-effects on a master bus in a mixing console. 
 -->
-		<BiquadFilterNode type="lowpass">
-			<frequency value="20000" follow="#slider1 input value" mapin="70,100" mapout="20000,40" curve="easeOutQuad"></frequency>
-			<Q follow="#slider1 input value" value="0" mapin="80, 90" mapout="0,10"></Q>
-		</BiquadFilterNode>
+		<var name="mainLP" default="20000" value="$slider1" mapin="70,100" mapout="20000,40" />
+		<var name="mainQ" default="0" value="$slider1" mapin="80,90" mapout="0,10" />
+		<BiquadFilterNode type="lowpass" frequency="$mainLP" Q="$mainQ" />
 
-		<DynamicsCompressorNode ratio="12" threshold="-35"></DynamicsCompressorNode>
+		<DynamicsCompressorNode ratio="2" threshold="-35" />
 
 	</Chain>
 

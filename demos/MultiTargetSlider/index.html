@@ -24,11 +24,11 @@
 			and download links, please visit <a href="https://github.com/hanslindetorp/WebAudioXML">https://github.com/hanslindetorp/WebAudioXML</a></p>
 			<p>The chords are chosen and the instruments are played by Hans Lindetorp</p>
 
-			<button data-imusic="play">PLAY</button>
-			<button data-imusic="stop">STOP</button>
+			<button data-imusic-click-trig="A">PLAY</button>
+			<button data-imusic-click="stop">STOP</button>
 
 
-			<input id="slider1" type="range" min="0" max="100" value="0" step="0.1" />
+			<input id="slider1" type="range" min="0" max="100" value="0" step="0.1" data-waxml-input-set="slider1=this.value" />
 
 			
 			<img id="graph" src="img/graph.png" />

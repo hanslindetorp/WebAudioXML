@@ -697,6 +697,10 @@
 			this.gainObject.gain.setTargetAtTime(1, startTime-this.fadeTime, this.fadeTime);
 			this.startTime = startTime;
 			this.endTime = endTime;
+			console.log(`Voice(${this.id}).start(${(startTime-audioContext.currentTime).toFixed(2)}, ${(endTime-audioContext.currentTime).toFixed(2)}, ${this.fadeTime.toFixed(2)})`)
+
+			if(endTime == startTime){
+			}
 
 		}
 
@@ -722,7 +726,7 @@
 				} else {
 					startMuteTime = this.startMuteTime;
 				}
-				// delay startMuteTime if fadeTime requires it
+				// delay endMuteTime if fadeTime requires it
 				let endMuteTime;
 				if(this.endMuteTime-this.fadeTime < audioContext.currentTime){
 					endMuteTime = audioContext.currentTime - this.fadeTime;
@@ -732,6 +736,7 @@
 				
 				this.gainObject.gain.setTargetAtTime(0, startMuteTime-this.fadeTime, this.fadeTime);
 				this.gainObject.gain.setTargetAtTime(1, endMuteTime-this.fadeTime, this.fadeTime);
+				console.log(`Voice(${this.id}).mute(${(startMuteTime-this.fadeTime-audioContext.currentTime).toFixed(2)}, ${(endMuteTime-this.fadeTime-audioContext.currentTime).toFixed(2)})`);
 			}
 
 		}
@@ -908,13 +913,14 @@
 				let buttons = [];
 				this.sectionTriggerButtons = buttons;
 
+				row = document.createElement("div");
+				container.appendChild(row);
+
 				if(sectionTags.length){
 					// el = document.createElement("h3");
 					// el.innerHTML = "Class names";
 					// container.appendChild(el);
 	
-					row = document.createElement("div");
-					container.appendChild(row);
 	
 					sectionTags.forEach(tag => {
 						el = document.createElement("button");
@@ -1080,23 +1086,28 @@
 					});
 					iMusic.initSelection(filter);
 				}
-
 				
 				instID++;
-
-				if(inst.missingFiles.length){
-					let errorBox = document.createElement("div");
-					container.appendChild(errorBox);
-					errorBox.innerHTML = "<h3>Missing files:</h3>";
-					errorBox.className = "errorBox";				
-					let ul = document.createElement("ul");
-					errorBox.appendChild(ul);
-					inst.missingFiles.forEach(file => {
-						let li = document.createElement("li");
-						li.innerHTML = file;
-						ul.appendChild(li);
+				inst.missingFiles.forEach(file => {
+					waxml.log({
+						type: "error",
+						data: ["Missing file:", file]
 					});
-				}
+				});
+
+				// if(inst.missingFiles.length){
+				// 	let errorBox = document.createElement("div");
+				// 	container.appendChild(errorBox);
+				// 	errorBox.innerHTML = "<h3>Missing files:</h3>";
+				// 	errorBox.className = "errorBox";				
+				// 	let ul = document.createElement("ul");
+				// 	errorBox.appendChild(ul);
+				// 	inst.missingFiles.forEach(file => {
+				// 		let li = document.createElement("li");
+				// 		li.innerHTML = file;
+				// 		ul.appendChild(li);
+				// 	});
+				// }
 				
 
 			});
@@ -1193,9 +1204,16 @@
 		} else {
 			ts = ts || this.parameters.timeSign;
 			beatDuration = beatDuration || this.getBeatDuration();
+			// barDuration = this.getBarDuration();
 			var div = getTimeSign(div, ts);
 			//return div.nominator * beatDuration * ts.denominator / div.denominator; // detta verkar fel?!? Hur kan jag missat under alla år??
-			return div.nominator * beatDuration * ts.nominator / div.denominator;
+			// return div.nominator * beatDuration * ts.nominator / div.denominator;
+			
+			// Unbelievable!! Even the second try was wrong! 
+			// The idea is to take the provided musical length expression 
+			// eg. 3/8 and find the time of this expression by finding the
+			// relation to the length of a beat.
+			return div.nominator * beatDuration / (div.denominator / ts.denominator);
 		}
 
 
@@ -1624,7 +1642,7 @@
 					let element = waxml.visualize({
 						graphicalTrack: graphicalTrack,
 						pos: time,
-						length: source.buffer.duration,
+						length: source.buffer.duration - crop,
 						label: waxml.pathToFileName(url)
 					});
 					visualElements.push(element);
@@ -1707,17 +1725,17 @@
 
 	function loadFile(obj, callBack, errorCallback){
 
+		
+		if(typeof obj.url != "string"){
+			// this is not a file
+			return;
+		} 
+
 		let body = document.querySelector("body");
 		body.classList.add("imusic-loading");
 		
 		callBack = callBack || loadComplete;
 		var url = this.addSuffix(obj.url);
-
-		if(typeof url != "string"){
-
-			// this is not a file
-			return;
-		}
 
 
 		if(obj.url in buffers){
@@ -2571,15 +2589,17 @@
 				// click
 				let barLength = self.currentSection.getBarDuration();
 				let beatLength = self.currentSection.getBeatDuration();
-				let timeInBeat = musicTime % beatLength;
+				let timeInBeat = (musicTime + beatLength) % beatLength;
 				let curBar = Math.floor(musicTime / barLength);
 				let curBeat = Math.floor(musicTime / beatLength);
 
-				if(beatLength-timeInBeat < timeWindow){
+				if(beatLength-timeInBeat <= timeWindow){
 					if(self.currentSection.curBeat != curBeat){
 						self.currentSection.curBeat = curBeat;
 						let nextClickTime = (curBeat + 1) * beatLength;
 						let nextBarTime = (curBar + 1) * barLength;
+						// console.log(`curBeat: ${curBeat}`);
+
 						if(nextBarTime == nextClickTime){
 							let barTime = nextClickTime + self.sectionStart; 
 							waxml.start("#click_bar", {time:barTime});
@@ -2598,7 +2618,12 @@
 							})
 						}
 
+					} else {
+						// console.log("self.currentSection.curBeat == curBeat");
 					}
+
+				} else {
+					// console.log(musicTime.toFixed(2) , beatLength.toFixed(2), timeInBeat.toFixed(2), (beatLength-timeInBeat).toFixed(2), timeWindow);
 				}
 
 				
@@ -3152,7 +3177,7 @@
 			}
 
 
-			this.play = function(nrOfLoops, trigAfterAWhile, selector){
+			this.play = function(nrOfLoops, nextTime, selector){
 
 
 				// exit if trigged recently or if this section is already playing
@@ -3186,29 +3211,21 @@
 				if(self.currentSection && self.playing) {
 					// set transition if it exists
 
-					var maxUpbeatInThis = this.getMaxUpbeatOffset();
-					var maxFadeTimeInThis = this.getMaxFadeTime();
-					var minLeadInOffset = self.currentSection.getMinLeadInUpbeatOffset(selector);
-					let maxUpbeat = Math.max(maxUpbeatInThis, minLeadInOffset, maxFadeTimeInThis);
+					// var maxUpbeatInThis = this.getMaxUpbeatOffset();
+					// var maxFadeTimeInThis = this.getMaxFadeTime();
+					// var maxLeadInOffset = self.currentSection.getMaxLeadInUpbeatOffset(selector);
+					// let maxUpbeat = Math.max(maxUpbeatInThis, maxLeadInOffset, maxFadeTimeInThis);
 
-		 			var legalBreak = self.currentSection.getNextLegalBreak(maxUpbeat + audioContext.currentTime);
-		 			var nextTime = legalBreak.time;
-		 			//console.log("now: " + round(audioContext.currentTime) + ", next: " + round(self.sectionStart) );
-		 			//console.log("nextTime", nextTime);
-
-		 			var timeToLegalBreak = legalBreak.timeLeft;
-
-
-		 			var maxUpbeatInCurrent = self.currentSection.getMaxUpbeatOffset();
-
-
-		 			var maxFadeTimeInCurrent = self.currentSection.getMaxFadeTime();
-		 			var maxLeadInOffset = self.currentSection.getMaxLeadInUpbeatOffset();
+					// var nextTime = self.currentSection.getNextLegalBreak(maxUpbeat);
 		 			
-					var maxOffset = Math.max(maxUpbeatInThis, maxUpbeatInCurrent, maxFadeTimeInThis, maxFadeTimeInCurrent);
+					nextTime = nextTime || getNextTime(self.currentSection, this, selector);
+
+		 			var timeToLegalBreak = nextTime - audioContext.currentTime;
+					// console.log(`timeToLegalBreak: ${timeToLegalBreak.toFixed(2)}, maxUpbeatInThis: ${maxUpbeatInThis.toFixed(2)}, maxLeadInOffset: ${maxLeadInOffset.toFixed(2)}`);
+
 
 		 			self.currentSection.finishPlaying(timeToLegalBreak);
-		 			self.sectionStart = nextTime;
+		 			// self.sectionStart = nextTime;
 
 
 				} else {
@@ -3217,6 +3234,7 @@
 
 					if(!self.playing){
 						self.musicalStart = nextTime;
+						self.sectionStart = nextTime;
 					}
 
 				}
@@ -3249,19 +3267,21 @@
 
 					// These lines were added to cope with missing files with upbeat
 					// if they are the first start of playback
-					maxOffset = maxOffset || this.getMaxUpbeatOffset();
+					// maxOffset = maxOffset || this.getMaxUpbeatOffset();
+					let maxOffset = this.getMaxUpbeatOffset();
 					timeToLegalBreak = timeToLegalBreak || 0;
 					
-					let preroll = timeWindow * 2;
+					let preroll = timeWindow * 1.5;
 					let delay = timeToLegalBreak - maxOffset;
+					// delay = delay > preroll ? delay - preroll: 0;
 					delay = delay > preroll ? delay - preroll: 0;
-
 					
 
 					// activate event triggers for each listener
 					setTimeout(e => {
 						// stop current trigger intervals
 						self.clearTriggerIntervals();
+						self.sectionStart = nextTime;
 
 						Object.keys(self._listeners).forEach(key => {
 
@@ -3286,7 +3306,11 @@
 						iMus.GUI.indicateTriggerButtons(tag);
 						let pos = this.getPosition(nextTime-self.musicalStart);
 						// pos.bar = self.currentBar;
-						waxml.log(["SECTION", tag, posObjectToString(pos)]);
+						waxml.log(`SECTION, ${tag}, 
+							tempo: ${this.parameters.tempo}, 
+							timeSign: ${this.parameters.timeSign.nominator}/${this.parameters.timeSign.denominator},
+							${posObjectToString(pos)}`);
+						waxml.dispatchEvent(new CustomEvent(tag));
 					}, timeToLegalBreak * 1000);
 
 
@@ -3295,6 +3319,7 @@
 						// timeToLegalBreak
 
 						self.currentSection = this;
+						self.sectionStart = nextTime;
 						let tag = this.tags[0];
 						console.log("currentSection = " + tag);
 						
@@ -3425,7 +3450,6 @@
 
 
 			// den här koden innehåller en del fel som gör att övergångar sker direkt när man använder fadeTime
-			// därför har jag blockerat logiken för tillfället och använder jämna takter så länge
 
 
 			targetTime = targetTime || audioContext.currentTime;
@@ -3435,12 +3459,17 @@
 
 			var segmentDuration = this.divisionToTime(this.parameters.changeOnNext);
 
-			//segmentDuration = this.getBarDuration();
-
+			//segmentDuration = this.getBarDuration();	
+			let nextMusicTime = Math.ceil(musicTime / segmentDuration) * segmentDuration;
+			if(nextMusicTime-musicTime < timeWindow * 2){
+				// if current musicTime is before nextMusicTime but within timeWindow
+				// skip to next segment
+				nextMusicTime += segmentDuration;
+			}
 
 			var returnObj;
 			returnObj = {};
-			returnObj.time = self.sectionStart + Math.ceil(musicTime / segmentDuration) * segmentDuration;
+			returnObj.time = self.sectionStart + nextMusicTime;
 			returnObj.timeLeft = returnObj.time - audioContext.currentTime;
 			returnObj.fadeTime = this.parameters.fadeTime || 0.01;
 			returnObj.fadeTime = Math.min(returnObj.fadeTime, returnObj.timeLeft);
@@ -3536,7 +3565,26 @@
 
 
 
-		Section.prototype.getNextLegalBreak = getNextLegalBreak;
+		Section.prototype.getNextLegalBreak = function(offsets){
+
+			let currentTime = audioContext.currentTime;
+			let Q = this.divisionToTime(this.parameters.changeOnNext);
+			let localTime = currentTime - self.sectionStart;
+			let lastLegalBreak = Math.floor(localTime / Q) * Q;
+			let b = Q;
+			// while(b < offsets){
+			// 	b += Q;
+			// }
+			while(self.sectionStart + lastLegalBreak + b < currentTime + offsets){
+				b += Q;
+			}
+			return self.sectionStart + lastLegalBreak + b;
+
+			while((nextMusicTime - offsets - timeWindow*1.5) <= nextMusicTime + Q){
+				nextMusicTime += Q;
+			}
+			return nextMusicTime;
+		}
 
 		Section.prototype.finishPlaying = function(timeToLegalBreak){
 
@@ -3558,32 +3606,26 @@
 			return leadin;
 		}
 
-		Section.prototype.getMaxLeadInUpbeatOffset = function(){
-			var maxOffset = 0;
-			if(this.leadIns){
-				this.leadIns.forEach(function(leadIn){
-					maxOffset = Math.max(maxOffset, leadIn.getMaxUpbeatOffset());
-				});
-			}
-			return maxOffset;
-		}
+		// Section.prototype.getMaxLeadInUpbeatOffset = function(){
+		// 	var maxOffset = 0;
+		// 	if(this.leadIns){
+		// 		this.leadIns.forEach(function(leadIn){
+		// 			maxOffset = Math.max(maxOffset, leadIn.getMaxUpbeatOffset());
+		// 		});
+		// 	}
+		// 	return maxOffset;
+		// }
 
-		Section.prototype.getMinLeadInUpbeatOffset = function(selector){
-			var minOffset;
+		Section.prototype.getMaxLeadInUpbeatOffset = function(selector){
+			var minOffset = 0;
 			let targetLeadins = this.leadIns.filter(leadIn => leadIn.tags.includes(selector));
 			if(targetLeadins.length){
-				// minimum upbeat. one bar if not specified
-				// 2023-09-03 Hm. No, that should be taken care of somewhere else
-				minOffset = 0; // this.getBarDuration();
 				targetLeadins.forEach(leadIn => {
 					minOffset = Math.min(minOffset, leadIn.getMinUpbeatOffset());
 			   	});
-			} else {
-				// zero if no leadins
-				minOffset = 0;
-			}
+			} 
 			
-			return minOffset;
+			return -minOffset;
 		}
 
 		Section.prototype.setTempo = function(value){
@@ -3787,6 +3829,11 @@
 
 				// make sure a track in fade mode is fading in
 				if(this.parameters.fadeTime){
+
+					// 2023-10-07
+					// This is OK for switching between tracks but will it also
+					// affect fading between different arrangements? If so, it would be 
+					// wrong to use the nextLegalBreak() for the current track
 
 					// add a track output before common bus input
 					// or add a bus for each track
@@ -4211,7 +4258,15 @@
 			o.quantize = getTimeSign(o.quantize || this.parentObj.parameters.quantize || self.parameters.quantize, this.parentObj.parameters.timeSign);
 
 			this.volume = o.volume || 1;
+
+			// a terrible solution where urls CAN be an Array with Command objects
+			// is passed to JSON.parse which is illegal. Terrible.
+			let urls = o.urls;
+			o.urls = undefined;
+
 			this.parameters = this.initParameters(o, self.parameters);
+
+			o.urls = urls;
 
 			this.loop = o.loop || 0;
 			this.loop = this.loop == "off" ?  0 : this.loop;
@@ -4277,8 +4332,10 @@
 					// url with parameters
 					obj = url;
 
-					obj.url = addAudioPath(self.parameters.audioPath, obj.url || obj.src);
-
+					let src = obj.url || obj.src;
+					if(src){
+						obj.url = addAudioPath(self.parameters.audioPath, obj.url || obj.src);
+					}
 					// length
 					if(obj.length){
 						obj.length = this.parentObj.divisionToTime(obj.length);
@@ -4311,7 +4368,7 @@
 
 			me.triggedRecently = false;
 
-			this.play = function(){
+			this.play = function(arg1, nextTime){
 
 				// only play if parent section is playing or if Motif is
 				// not connected to a section
@@ -4330,6 +4387,9 @@
 
 				if(this.active <= 0){return}
 
+				let currentTime = audioContext.currentTime;
+
+				// console.log(`currentTime: ${currentTime.toFixed(2)}, nextTime: ${nextTime.toFixed(2)}`);
 
 				// I'm not sure what this is for. It seems to case problems, making the motifs
 				// staying at zero volume
@@ -4386,16 +4446,23 @@
 						Q  = this.parameters.quantize.nominator * beatDuration * controllingSection.parameters.timeSign.denominator / this.parameters.quantize.denominator;
 					}
 
-					var time = controllingSection.getTime();
+					time = controllingSection.getTime();
 
-					var Qtime = Math.ceil(time / Q) * Q + self.sectionStart;
+					var Qtime, localTime, timeToQ, t;
+
+					if(nextTime){
+						// predefined. merge with the sorting of sounds. this is not enough
+						Qtime = nextTime;
+						localTime = Qtime - self.sectionStart;
+						timeToQ = Qtime - audioContext.currentTime;
+
+					} else {
+						// calculated
+						Qtime = Math.ceil(time / Q) * Q + self.sectionStart;
+						localTime = (time+Q) % Q;
+						timeToQ = Q - localTime;
+					}
 					
-
-					var localTime = (time+Q) % Q;
-
-					var timeToQ = Q - localTime;
-					//console.log(`Q: ${Q}, localTime: ${localTime}, Qtime: ${Qtime}`);
-
 
 					// sort all sounds with the one to be played nearest in the future first
 					this.sounds.sort(function(a, b){
@@ -4443,17 +4510,20 @@
 				}
 				//var targetSound = targetSounds[Math.floor(Math.random()*targetSounds.length)];
 				let crop = 0;
+				let offset = targetSound ? targetSound.offset : this.offset;
 
 				if(this.parameters.quantize != "off"){
+
 					// move to next legal Q if time is to early
-					var t = Qtime + (targetSound ? targetSound.offset : 0);
+					let offset = (targetSound ? targetSound.offset : 0);
+					t = (nextTime ? nextTime : Qtime) + offset;
 
 					if(this.parameters.type != "leadIn"){
 
 						// Motifs are always synchronized with the next section change.
 						// Leadins are only played if they fit BEFORE the 
 						// next Q-time
-						while(t < audioContext.currentTime) {
+						while(t < currentTime) {
 							t+=Q;
 						}
 					} else {
@@ -4462,37 +4532,38 @@
 							return;
 						}
 
-						if(t < audioContext.currentTime){
+						if(t < currentTime){ //} - timeWindow){ 2023-10-17
 							
 							
 							// If a leadin has changeOnNext set, then make a cut-in
 							// t += Q; // next Q-point i.e. bar
 							let ChOn = targetSound.changeOnNext || this.changeOnNext;
-							let offset = targetSound.offset || this.offset;
 							if(ChOn){
 								t += this.getMaxUpbeatOffset();
 								let nrOfChOn = parseInt(timeToQ / ChOn);
 								if(!nrOfChOn){
-									// wait an extra bar								
+									// wait an extra bar
+									if(!nextTime){t += Q}							
 								} else {
 									crop = Math.abs(offset) - nrOfChOn * ChOn;
 									t -= nrOfChOn * ChOn;
 									// timeToQ -= Q;
-	
-									if(iMus.debug){
-										console.log({time: t, Q: Q, nrOfChOn: nrOfChOn, crop: crop})	
-									}
+									// console.log({now:currentTime.toFixed(2), next: t.toFixed(2), Q: Q, nrOfChOn: nrOfChOn, crop: crop})	
+								
 								}
 								
 							} else {
 								// don't play a leadin if it's too late
 								console.log(`Too late: ${t, audioContext.currentTime, targetSound.offset}`);
 								// return;
+
+								// 2023-10-06 update. Play in next bar
+								t += Q;
 							}
 						}
 					}
 				} else {
-					t = audioContext.currentTime;
+					t = currentTime;
 				}
 				//this.url = targetSound.url;
 
@@ -4532,18 +4603,28 @@
 				// This is problematic for various reasons. This.url is set to (potentially) multiple 
 				// sound objects and the random selection is done in the playSound() method. This means 
 				// that the Motif object needs to retrieve which one was set to do clever things depending on it. 
+				
+				// if(nextTime){
+				// 	t = nextTime; // + offset;
+				// }
 				var chosenURL = playSound(this, t, this.callBackOnStart, doOnFinishPlaying, undefined, crop);
 
 				let pos = this.getAbsolutePosition(t);
 
 				let description;
-				if(chosenURL){
+				if(chosenURL && chosenURL.url){
 					description = waxml.pathToFileName(chosenURL.url);
 				} else {
 					description = this.tags[0];
 				}
 				 
 				let label = this.parameters.type == "leadIn" ? "LEAD-IN" : "MOTIF";
+				
+				waxml.log(`SECTION, ${tag}, 
+					tempo: ${this.parameters.tempo}, 
+					timeSign: ${this.parameters.timeSign.nominator}/${this.parameters.timeSign.denominator},
+					${posObjectToString(pos)}`);
+					
 				waxml.log([label, description, posObjectToString(pos)]);
 
 
@@ -4576,6 +4657,12 @@
 					// cmd.trig(timeToQ);
 				});
 
+				if(chosenURL.commands){
+					chosenURL.commands.forEach(cmd => {
+						cmd.trig(t);
+					});
+				}
+
 
 
 				if(this.parameters.voiceObjectID){
@@ -4585,6 +4672,9 @@
 					} else {
 						let length = chosenURL.length || this.parameters.length || this.parentObj.getBeatDuration();
 						endTime = t + length;
+						if(!length){
+							console.log(`No length:`, this);
+						}
 					}
 					iMus.voiceController.playVoiceObject(this.parameters.voiceObjectID, t, endTime, chosenURL.voice);
 				}
@@ -4707,15 +4797,17 @@
 
 		Motif.prototype.getMinUpbeatOffset = function(){
 
-			var minOffset = -this.getBarDuration();
+			var minOffset = -this.changeOnNext; // || sound.offset; // -this.getBarDuration();
+			
 			this.sounds.forEach(sound => {
 				if(sound){
-					let thisOffset = -this.changeOnNext || sound.offset;
-					minOffset = Math.max(minOffset, thisOffset);
+					// let thisOffset = -this.changeOnNext || sound.offset;
+					minOffset = Math.max(minOffset, sound.offset);
 				}
 			});
 
-			return -minOffset;
+			// console.log(`${this.tags[0]}.minUpbeatOffset = ${minOffset}`);
+			return minOffset;
 		}
 
 
@@ -6523,8 +6615,14 @@
 						
 					} else {
 						// If no interlude is found, then play all matches now
+						// This DOES NOT WORK!! xxx
+						// Make sure the real distance to nextLegalBreak is calculated first
+						// then, trigger the leadins and lastly the arrangement.
 						iMus.lastSelectedSectionString = selection.string;
-						returnValues = selection.play(options, arg2, selector).returnVal;
+
+						let time = getNextTime(self.currentSection, newSection, selector);
+						// returnValues = newSection.play(options, time, selector);
+						returnValues = selection.play(options, time, selector).returnVal;
 						
 					}
 				} else {
@@ -6550,8 +6648,8 @@
 		}
 
 		if(returnValues){
-			let delay = waxml.toSignificant(returnValues.delay);
-			waxml.log(`TRIG->${selector}, delay: ${delay}`);
+			// let delay = waxml.toSignificant(returnValues.delay);
+			// waxml.log(`TRIG->${selector}, delay: ${delay}`);
 			return returnValues;
 		}
 
@@ -7302,6 +7400,15 @@
 	  	if(parent instanceof Object){parent[tag] = obj};
   	}
 
+	function getNextTime(fromSection, toSection, selector){
+		let maxUpbeatInThis = toSection.getMaxUpbeatOffset();
+		let maxFadeTimeInThis = toSection.getMaxFadeTime();
+		let maxLeadInOffset = fromSection.getMaxLeadInUpbeatOffset(selector);
+		let maxUpbeat = Math.max(maxUpbeatInThis, maxLeadInOffset, maxFadeTimeInThis);
+		let nextTime = fromSection.getNextLegalBreak(maxUpbeat);
+		return nextTime;
+	}
+
 
 
   	class Data {
@@ -7344,6 +7451,7 @@
 			  	this.parseXML(imusicData, el);
 				if(waxml){
 					waxml.initLinearArranger(self);
+					// xxx better to connect to frame update
 					setInterval(() => {
 						waxml.scrollArrangeWindow();
 					}, 1000/60);
@@ -7358,6 +7466,18 @@
 
 	  	if(root){
 		  	iMus.setParams(root.attributes);
+
+			let schemaLocation = root.attributes["xsi:schemaLocation"];
+			if(schemaLocation){
+				let schemaFile = schemaLocation.value.split(" ").pop();
+				if(schemaFile != expectedSchemaFile){
+					console.warn(`Wrong iMusic XML Schema File. ${expectedSchemaFile} is expected`);
+					waxml.log({
+						type: "error",
+						data: `Wrong iMusic XML Schema File, ${expectedSchemaFile} is expected`
+					});
+				}
+			}
 		  	var defInst = defaultInstance;
 		  	var url, params, part;
 		  	var selectKeys = [];
@@ -7498,6 +7618,14 @@
 					let sources = motif.querySelectorAll("source, option");
 					sources.forEach(source => {
 						var src = attributesToObject(source.attributes);
+						src.commands = [];
+
+						source.querySelectorAll("command").forEach(xmlNode => {
+							let command = waxml.createObject(xmlNode);
+							// xxx stupid conversion from string value = "-1/4"
+							command.offset = section.divisionToTime(command.pos);
+							src.commands.push(command);
+						});
 						//var src = source.getAttribute("src");
 						if(src){urls.push(src)}
 					});
@@ -7508,13 +7636,13 @@
 					} else {
 
 						// leadin default values
-						if(typeof params.upbeat == "undefined"){
+						if(typeof params.upbeat == "undefined" && typeof params.pos == "undefined"){
 							// set leadin default to one bar
 							// and changeOnNext to 1/8 so default
 							// behaviour will be to auto crop leadin at next Q value
 							params.upbeat = "bar";
-							params.quantize = "bar";
-							params.changeOnNext = "1/8";
+							params.quantize = params.quantize || "bar";
+							params.changeOnNext = params.changeOnNext || "1/8";
 						}
 						motifObj = section.addLeadIn(params, urls);
 					}
@@ -7556,15 +7684,18 @@
 						motifObj.addEnvelopes(envelopes);
 
 
-						let commandNodes = motif.querySelectorAll("command");
-						let commands = [];
-						commandNodes.forEach(xmlNode => {
-							let command = waxml.createObject(xmlNode);
-							// stupid conversion from string value = "-1/4"
-							command.offset = section.divisionToTime(command.pos);
-							commands.push(command);
+						commands = [];
+						[...motif.children].forEach(childNode => {
+							if(childNode.localName.toLowerCase() == "command"){
+
+								let command = waxml.createObject(childNode);
+								// stupid conversion from string value = "-1/4"
+								command.offset = section.divisionToTime(command.pos);
+								commands.push(command);
+							}
 						});
 						motifObj.commands = commands;
+
 					}
 				});
 			});
@@ -8266,6 +8397,7 @@
 	}
 
 	console.log("iMusicXML is installed. Version 0.91.14");
+	var expectedSchemaFile = "https://momdev.se/lindetorp/imusic/scheme_1.1.21.xsd";
 
 
 

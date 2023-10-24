@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <imusic version="1.0" tempo="100" timeSign="4/4" loopLength="8" showGUI="false">
-  <arrangement>
+  <arrangement class="A">
     <track src="pad.mp3" output="#pad"></track>
     <track src="piano.mp3" output="#piano"></track>
     <track src="rhodes.mp3" output="#rhodes"></track>
