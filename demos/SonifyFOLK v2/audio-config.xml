@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+	xmlns="https://www.w3schools.com"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.16.xsd"
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="0dB"
+	controls="false">
+
+
+	<var name="shoulder" default="0" value="1-($pose11y+$pose12y)/2" mapin="0.7,0.9" />
+	<var name="hip" default="0" value="1-($pose23y+$pose24y)/2" mapin="0,1" />
+	<var name="foot" default="0" value="$pose29y.speed" mapin="0,0.01" mapout="0,1" />
+	<var name="hipspeed" default="0" value="$hip.speed" mapin="0,0.01" mapout="0,1" />
+
+	<var name="arm" default="0" value="dist([$pose20x, $pose20y], [$pose24x, $pose24y])" />
+	<var name="torso" default="0" value="dist([$pose24x, $pose24y], [$pose12x, $pose12y])" />
+	<var name="relArm" default="0" value="$arm/$torso" />
+
+	<var name="shoulder_filter" default="0" />
+	<var name="hip_filter" default="0" />
+	<var name="foot_filter" default="0" />
+	<var name="arm_filter" default="0" />
+
+	<var name="shoulder_gain" default="0" />
+	<var name="hip_gain" default="0" />
+	<var name="foot_gain" default="0" />
+	<var name="arm_gain" default="0" />
+
+	<var name="f1" default="0" value="$shoulder_filter*$shoulder" mapin="0,1" />
+	<var name="f2" default="0" value="$hip_filter*$hipspeed" mapin="0,1" />
+	<var name="f3" default="0" value="$foot_filter*$foot" mapin="0,1" />
+	<var name="f4" default="0" value="$arm_filter*$relArm" mapin="0,1" />
+
+	<var name="g1" default="0" value="$shoulder_gain*$shoulder" mapin="0,1" />
+	<var name="g2" default="0" value="$hip_gain*$hip" mapin="0,1" />
+	<var name="g3" default="0" value="$foot_gain*$foot" mapin="0,1" />
+	<var name="g4" default="0" value="$arm_gain*$relArm" mapin="0,1" />
+
+	<var name="g" default="0" value="$g0+$g1+$g2+$g4" mapin="0,1" mapout="-40,0" convert="dB->power" />
+	<var name="f" default="0" value="$f0+$f1+$f2+$f3+$f4" mapin="0,1" mapout="0,7200" />
+
+	<Chain>
+		<Noise />
+		<BiquadFilterNode type="lowpass" frequency="20" detune="$f" />
+		<GainNode gain="$g"/>
+	</Chain>
+	
+</Audio>
