@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+	xmlns="https://www.w3schools.com"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.16.xsd"
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="0dB"
+	controls="false">
+	
+	<!-- calculate dist1 & dist2 (relative distance between hands and shoulders) -->
+	<var name="ref" default="0" value="dist([$pose24x, $pose24y], [$pose12x, $pose12y])" />
+	
+	<var name="dist1" default="0" value="dist([$pose20x, $pose20y], [$pose24x, $pose24y])" />
+	<var name="relDist1" default="0" value="$dist1/$ref" />
+
+	<var name="dist2" default="0" value="dist([$pose19x, $pose19y], [$pose23x, $pose23y])" />
+	<var name="relDist2" default="0" value="$dist2/$ref" />
+
+	<!-- Map to 3 pitches in a scale -->
+	<var name="key1" default="-5" value="$relDist1" mapin="0.1, 1" mapout="-5, -3, 0, 2, 4, 5, 7" curve="step" />
+	<var name="key2" default="0" value="$relDist1" mapin="0.1, 1" mapout="0, 2, 4, 5, 7, 9, 12" curve="step" />
+	<var name="key3" default="4" value="$relDist1" mapin="0.1, 1" mapout="4, 5, 7, 9, 12, 14, 16" curve="step" />
+
+	<var name="f" default="0" value="$relDist2" mapin="0.1, 1" mapout="0,7200" />
+	<var name="g" default="0" value="$relDist2" mapin="0.1, 1" mapout="-40,0" convert="dB->power" />
+
+	
+
+
+	<Chain>
+		<Mixer gain="$g">
+			<AmbientAudio 
+			  src="audio/granular.mp3" 
+			  start="auto"
+			  loopStart="1000"
+			  loopLength="500"
+			  fadeTime="300"
+			  detune="$key1*100"
+			  randomPosition="2000"
+			  randomDuration="0"
+			  randomDetune="0"/>
+	
+		</Mixer>
+
+		
+		<!-- <BiquadFilterNode type="lowpass" frequency="20" detune="$f" /> -->
+		<Send outputBus="#reverb" gain="$g"/>
+	</Chain>
+	
+	<ConvolverNode src="audio/convolution1.wav" />
+</Audio>

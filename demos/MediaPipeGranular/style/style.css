@@ -1,0 +1,283 @@
+
+html, body {
+  font-family: sans-serif;
+  background-color: rgb(0, 0, 0);
+}
+
+body {
+  background-color: black;
+}
+
+section {
+  padding-top: 40px;
+  background-color: white;
+}
+
+a {
+  text-decoration: none;
+}
+
+h1 {
+  text-align: center;
+}
+
+main {
+  width: 1000px;
+  height: 567.5px;
+}
+
+.input_video {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: auto;
+  top: 32px;
+  left: 0;
+
+}
+
+
+.output_canvas, waxml-xy-area#grid {
+  /*
+  max-width: 100% ;
+  display: block;
+  position: relative;
+  left: 0;
+  top: 0;
+  */
+
+  display: block;
+  position: absolute;
+  width: 100vw;
+  height: 56.75vw;
+}
+
+navigation {
+  position: absolute;
+  display: none;
+  width: 100%;
+  height: 31px;
+  background-color: #363636;
+  color: white;
+  height: 4em;
+}
+
+navigation > h1 {
+  margin: 0.2em auto;
+  font-size: 1.6em;
+  display: inline-block;
+  padding: 0;
+}
+
+navigation > a,
+navigation > #musicControl,
+navigation > select {
+  position: relative;
+  display: inline-block;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  margin: 0px;
+  width: 90px;
+  padding: 5px;
+  border-radius: 3px;
+  border: 1px solid #333;
+  text-decoration: none;
+}
+
+navigation > #xmusicControl {
+  position: absolute;
+  height: 100%;
+  left: 1em;
+  top: 1em;
+}
+
+
+#edit {
+  padding: 10px; 
+  padding-top: 50px;
+}
+
+#edit input {
+  width: 30em;
+  padding: 3px;
+  margin: 3px;
+}
+
+.block {
+  display: block;
+}
+
+textarea {
+  margin: 0px;
+  width: 100%;
+  height: 480px;
+  box-sizing: border-box;
+  overflow: scroll;
+}
+
+#help {
+  padding-top: 75px;
+  padding-left: 10px;
+  padding-right: 10px;
+  overflow-y: auto;
+}
+
+
+#help  img {
+  width: 300px;
+  height: auto;
+  display: block;
+}
+
+#edit #statistics-container {
+  float: right;
+  column-count: 3;
+}
+
+#edit #statistics {
+  right: 1em;
+  font-size: 0.6em;
+}
+
+#edit #statistics tr {
+  border: 1px solid #999;
+}
+
+
+#edit #statistics thead, 
+#edit #statistics tfoot {
+  font-weight: bold;
+}
+
+#edit #statistics th:first-child {
+  text-align: left;
+}
+#edit #statistics tr > *:nth-child(2) {
+  text-align: right;
+}
+
+
+.controllers {
+  position: absolute;
+  top: 40vh;
+  left: 9vw;
+  z-index: 0;
+  opacity: 0;
+}
+
+.sliders {
+  position: relative;
+  display: inline-block;
+}
+
+.sliders .container {
+  display: inline-block;
+  margin-right: 2vw;
+  width: 4vw;
+  height: 50vh;
+}
+
+.sliders waxml-xy-area {
+  position: relative;
+  display: inline-block;
+  background-color: rgba(51, 51, 51, 0.303);
+  height: 40vh;
+}
+
+.sliders waxml-xy-handle {
+  width: 100%;
+}
+
+waxml-xy-handle.remoteOver {
+  background-color: rgb(255, 201, 84) !important;
+}
+waxml-xy-handle.remoteControl {
+  background-color: rgb(0, 255, 13) !important;
+}
+
+.sliders h3, .sliders waxml-xy-area {
+  border: 1px solid black;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+.sliders h3, .XY h3 {
+  font-size: 1vw;
+  text-align: center;
+  background-color: rgba(51, 51, 51, 0.7);
+  border: 1px solid black;
+  border-radius: 5px;
+  color: white;
+  margin-bottom: 0.5vh;    
+  padding: 0.3vw;
+  box-sizing: border-box;
+}
+
+
+.XY {
+  position: relative;
+  display: inline-block;
+}
+.XY .container {
+  display: inline-block;
+}
+
+.XY waxml-xy-area {
+  font-size: 1vw;
+  padding: 0.3vw;
+  box-sizing: border-box;
+  background-color: rgba(51, 51, 51, 0.303);
+  border: 1px solid black;
+  border-radius: 5px;
+  height: 40vh;
+  width: 30vw;
+}
+.XY waxml-xy-handle {
+  width: 4vw;
+  height: 2vw;
+  border-radius: 20px !important;
+  color: white;
+}
+
+
+/* HIDE UNUSED ELEMENTS */
+
+navigation > select, 
+navigation > #shareBtn, 
+navigation > #playBtn, 
+navigation > #editBtn {
+
+  display: none;
+}
+
+
+.slider-container {
+  width: 250px;
+  top: 10px;
+  position: absolute;
+  background-color: #999999b3;
+}
+.slider-container > div {
+  width: 100%;
+  display: inline-block;
+  box-sizing: border-box;
+}
+.slider-container h3 {
+  margin: 0px;
+  padding: 6px;
+  width: 100%;
+  background-color: #ffffff55;
+  box-sizing: border-box;
+}
+
+.slider-container > div > label {
+  display: block;
+  padding: 6px;
+}
+.slider-container input {
+  position: absolute;
+  right: 0px;
+}
