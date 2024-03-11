@@ -1,50 +1,26 @@
-# WebAudioXML v1.0
-## An XML abstraction for Web Audio API
-WebAudioXML makes it possible to build a WebAudio application with HTML and XML without writing a single line of javascript. It aims at making it easy to get started with WebAudio and also contributes with a syntax that gives a clear overview of the audio connections and configurations.
+# WebAudioXML
+### Web Audio Made Easy
+WebAudioXML is a plugin that helps content creators without any programming experience to prototype web audio applications with ease. It reduces the time spent on development radically compared to traditional technologies and distributes to all smartphones, tablets, and computers through a single web page.
 
-This WebAudioXML snippet...
-```XML
-<?xml version="1.0" encoding="UTF-8"?>
-<audio version="1.0" gain="-6dB">
- <OscillatorNode type="sawtooth" frequency="880"></OscillatorNode>
-</audio>
-```
 
-...makes you not having to write these javascript lines:
+### DEMOs
+https://hanslindetorp.github.io/WebAudioXML/demos/
 
-```javascript
-var ctx = new AudioContext();
-var osc = ctx.createOscillator();
-osc.type = "sawtooth";
-osc.frequency.value = 880;
-osc.start();
+### Tutorials
+* https://www.youtube.com/playlist?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ
+* https://www.youtube.com/playlist?list=PLQ9EtICrzxGrSvOLUT9Ibgrd07ColSu8m
+* https://www.youtube.com/playlist?list=PLQ9EtICrzxGqf97kn5OX5lpy-rIwx58qQ
 
-var mixer = ctx.createGain();
-mixer.gain.value = Math.pow(2, -6 / 3);
 
-osc.connect(mixer);
-mixer.connect(ctx.destination);
+### [Documentation](https://github.com/hanslindetorp/WebAudioXML/wiki)
+A detailed documentation covering the different elements, attributes, variable mapping and audio signal routing methods.
 
-```
 WebAudioXML is both a specification and a parser library. It defines how to structure Audio objects in a hierarchical, modular way using XML. The integration in a web-based application requires WebAudioXML.js - a free JavaScript library that parses the XML and creates and connects all Web Audio nodes into a tree-like structure, called an Audio Graph.
 
 WebAudioXML is a PhD research project invented and maintained by Hans Lindetorp. It's free for anyone to use, but comes with no guarantees or support. Please don't hesitate to contact me if you find the project interesting.
 
 Best wishes,
 Hans
-
-### DEMOs
-Basic example with a touch controlled synth:
-https://hanslindetorp.github.io/WebAudioXML/demos
-
-Interactive examples on CodePen:
-https://codepen.io/collection/DjaYkE
-
-### [Tutorial](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
-[![WebAudioXML tutorials](https://img.youtube.com/vi/ZcA9O8_4LQ8/0.jpg)](https://www.youtube.com/embed/videoseries?list=PLQ9EtICrzxGrR-x6MWhTl7ci2orezvjtQ)
-
-### [Documentation](https://github.com/hanslindetorp/WebAudioXML/wiki)
-A detailed documentation covering the different elements, attributes, variable mapping and audio signal routing methods.
 
 ### Installation
 WebAudioXML is added to a web page using one line of HTML-code added to the <head>-element or at the end of the <body>. The ‘data-source’ attribute specifies the path to a WebAudioXML document.
