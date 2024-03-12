@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.0.7";
+var version = "1.2";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -36,8 +36,21 @@ var InputBusses = require('./InputBusses.js');
 
 var XY_area = require('./XY_area.js');
 var XY_handle = require('./XY_handle.js');
-var Display = require('./Display.js');
+var Meter = require('./Meter.js');
 var MIDIController = require('./MIDIController.js');
+var Inspector = require('./Inspector.js');
+
+
+const VariableMatrix = require('./VariableMatrix.js');
+const VariableController = require('./VariableController.js');
+const SnapshotController = require('./variable-matrix/SnapshotController.js');
+const SnapshotComponent = require('./variable-matrix/SnapshotComponent.js');
+
+const DynamicMixer = require('./dynamic-mixer/Mixer.js');
+const Channel = require('./dynamic-mixer/Channel.js');
+const OutputMonitor = require('./GUI/OutputMonitor.js');
+const LinearArranger = require('./GUI/LinearArranger.js');
+
 
 
 
@@ -85,11 +98,13 @@ class WebAudio {
 		this._listeners = [];
 		this.plugins = [];
 		this.reset();
+		this._muteState = false;
 
 		this.audioInited = false;
 		this.parser = new Parser(this);
 
 		this.inputBusses = new InputBusses(_ctx);
+		this.snapShots = [];
 
 		source = source || src;
 
@@ -119,6 +134,8 @@ class WebAudio {
 
 					this.initGUI(this._xml);
 					this.initAudio(this._xml);
+					this.initEvents();
+
 
 					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
@@ -142,6 +159,9 @@ class WebAudio {
 
 		this.ui = new InteractionManager(this);
 
+		this.addEventListener("init", e => {
+			this.stop("Envelope");
+		});
 
 	}
 
@@ -170,8 +190,18 @@ class WebAudio {
 	defineCustomElements(){
 		customElements.define('waxml-xy-area', XY_area);
 		customElements.define('waxml-xy-handle', XY_handle);
-		customElements.define('waxml-display', Display);
-		customElements.define('waxml-midi-controller', MIDIController);		
+		customElements.define('waxml-meter', Meter);
+		customElements.define('waxml-midi-controller', MIDIController);	
+		customElements.define('waxml-inspector', Inspector);	
+
+		customElements.define('waxml-variable-matrix', VariableMatrix);	
+		customElements.define('waxml-variable-controller', VariableController);	
+		customElements.define('waxml-snapshot-controller', SnapshotController);	
+		customElements.define('waxml-snapshot-component', SnapshotComponent);	
+		
+		customElements.define('waxml-dynamic-mixer', DynamicMixer);	
+		customElements.define('waxml-output-monitor', OutputMonitor);	
+		customElements.define('waxml-linear-arranger', LinearArranger);
 	}
 
 	init(){
@@ -179,6 +209,7 @@ class WebAudio {
 			this._ctx.resume().then(result => {
 				this.audioInited = true;
 				this.start("*[trig='auto'], *[start='auto']");
+				
 				setInterval(e => {
 				//this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
 				}, 1000/this.fps);
@@ -191,11 +222,17 @@ class WebAudio {
 	}
 
 	mute(){
+		this._muteState = true;
 		this.master.fadeOut(0.1);
 	}
 
 	unmute(){
+		this._muteState = false;
 		this.master.fadeIn(0.1);
+	}
+
+	get muted(){
+		return this._muteState;
 	}
 
 	get XMLstring(){
@@ -278,7 +315,7 @@ class WebAudio {
 		//webAudioXML = xmlDoc.audioObject;
 		//webAudioXML.touch = touches;
 
-		// snyggare att lyfta ut audio-in till en egen class 
+		// Det skulle vara snyggare att lyfta ut audio-in till en egen class 
 		if(this.parser.allElements.mediastreamaudiosourcenode){
 			navigator.getUserMedia({audio: true}, stream => this.onStream(stream), error => this.onStreamError(error));
 		}
@@ -287,6 +324,13 @@ class WebAudio {
 		new Connector(xmlDoc, this._ctx);
 		this.plugins.forEach(plugin => {
 			plugin.init();
+			if(plugin.connect){
+				let destination = this.getInputBus("#music").input;
+				if(destination){
+					plugin.connect(destination);
+				}
+				
+			}
 		});
 
 		// make all variable elements broadcast their init values
@@ -312,6 +356,12 @@ class WebAudio {
 
 	}
 
+	initEvents(){
+
+		// activate child-nodes to pass trig-events to parent
+		this.querySelectorAll("Mixer").forEach(mixer => mixer.addEventsFromChildren());
+	}
+
 
 	onStream(stream){
 		this.parser.allElements.mediastreamaudiosourcenode.forEach(inputNode => inputNode.obj.initStream(stream));
@@ -329,9 +379,10 @@ class WebAudio {
 		return this.inputBusses.getBus(selector, destinations);
 	}
 
-	start(selector, options){
+	start(selector="", options){
 		
 		if(!this._xml){return}
+
 		let selectStr;
 		if(!selector){
 			selectStr = "*";
@@ -356,21 +407,33 @@ class WebAudio {
 			}
 		});
 
-		this.callPlugins("start", selector, options);
+		return this.callPlugins("start", selector, options);
 		
 		
 	}
 
-	trig(selector, options){
+	trig(selector="", options){
+		
+		
 		if(!this._xml){return}
-		let selectStr = `*[trig='${selector}'], *[noteon='${selector}'], *[start='${selector}']`;
-		if(!selector.includes(":")){
-			if(selector.substr(0,1) != "."){
-				// support for class selection without the dod syntax
-				selector = "." + selector;
-			}
-			selectStr += `,${selector}`;
+
+		let selectStr;
+		if(!selector){
+			selectStr = "*";
+		} else if(selector.includes("[") || selector.includes("#") || selector.includes(".") ){
+			// complex and correct selector expected
+			selectStr = selector;
+		} else if(selector.includes(":")){
+			// special case for keydown:x and keyup:x
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}']`).join(",");
+		} else {
+			// select both elements with attribute "start="selector" and class="selector" and id="selector"
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}, #${sel.trim()}`).join(",");
 		}
+		if(this._ctx.state != "running"){
+			this.init();
+		}
+		
 		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
 			if(XMLnode.obj.start){
 				XMLnode.obj.start(options);
@@ -380,68 +443,77 @@ class WebAudio {
 				XMLnode.obj.trig(options);
 			}
 		});
-		this.callPlugins("trig", selector, options);
+		return this.callPlugins("trig", selector, options);
 	}
 
-	continue(selector){
+	continue(selector=""){
 		if(!this._xml){return}
 
-		let selectStr = `*[start='${selector}']`;
-		if(!selector){
-			selectStr = "*";
-		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
-			// select both elements with attribute "start="selector" and class="selector"
-			selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+		if(selector){
+			let selectStr = `*[start='${selector}']`;
+			if(!selector){
+				selectStr = "*";
+			} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+				// select both elements with attribute "start="selector" and class="selector"
+				selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+			}
+			if(this._ctx.state != "running"){
+				this.init();
+			}
+			this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+				if(XMLnode.obj.continue){
+					XMLnode.obj.continue();
+				} 
+			});
 		}
-		if(this._ctx.state != "running"){
-			this.init();
-		}
-		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-			if(XMLnode.obj.continue){
-				XMLnode.obj.continue();
-			} 
-		});
+		this.callPlugins("continue", selector, options);
 
 	}
 
-	resume(selector){
+	resume(selector=""){
 		if(!this._xml){return}
 
-		let selectStr = `*[start='${selector}']`;
-		if(!selector){
-			selectStr = "*";
-		} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
-			// select both elements with attribute "start="selector" and class="selector"
-			selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+		if(selector){
+			let selectStr = `*[start='${selector}']`;
+			if(!selector){
+				selectStr = "*";
+			} else if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+				// select both elements with attribute "start="selector" and class="selector"
+				selectStr = selector.split(",").map(sel => `*[start='${sel.trim()}'], .${sel.trim()}`).join(",");
+			}
+			if(this._ctx.state != "running"){
+				this.init();
+			}
+			this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+				if(XMLnode.obj.resume){
+					XMLnode.obj.resume();
+				} 
+			});
 		}
-		if(this._ctx.state != "running"){
-			this.init();
-		}
-		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-			if(XMLnode.obj.resume){
-				XMLnode.obj.resume();
-			} 
-		});
+		this.callPlugins("resume", selector, options);
 	}
 	
 
-	release(selector, options){
+	release(selector="", options){
 		if(!this._xml){return}
-		let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
-		if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
-			// select both elements with attribute "stop="selector" and class="selector"
-			selectStr += ", " + selector.split(",").map(sel => `*[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
-		}
-		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-			if(XMLnode.obj.stop){
-				XMLnode.obj.stop(options);
-			} else if(XMLnode.obj.noteOff){
-				XMLnode.obj.noteOff(options);
+		if(selector){
+			let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
+			if(!(selector.includes("#") || selector.includes(".") || selector.includes("[") || selector.includes(":"))){
+				// select both elements with attribute "stop="selector" and class="selector"
+				selectStr += ", " + selector.split(",").map(sel => `*[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
 			}
-		});
+			this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+				if(XMLnode.obj.stop){
+					XMLnode.obj.stop(options);
+				} else if(XMLnode.obj.noteOff){
+					XMLnode.obj.noteOff(options);
+				}
+			});
+		}
+		this.callPlugins("release", selector, options);
 	}
 
-	stop(selector, options){
+	stop(selector="", options){
 		this.release(selector, options);
 		this.callPlugins("stop", selector, options);
 	}
@@ -463,13 +535,15 @@ class WebAudio {
 	}
 
 	callPlugins(fn, arg1, arg2, arg3){
-		
+		let returnVal;
 		this.plugins.forEach(plugin => {
-			console.log("callPlugins", fn, arg1, arg2, arg3)
+			// console.log("callPlugins", fn, arg1, arg2, arg3)
 			if(plugin.call){
-				plugin.call(fn, arg1, arg2, arg3);
+				let v = plugin.call(fn, arg1, arg2, arg3);
+				returnVal = returnVal || v;
 			}
 		});
+		return returnVal;
 	}
 
 	addEventListener(name, fn){
@@ -477,6 +551,11 @@ class WebAudio {
 		if(typeof fn !== "function"){return}
 		this._listeners[name] = this._listeners[name] || [];
 		this._listeners[name].push(fn);
+	}
+	removeEventListener(name, fn){
+		if(this._listeners[name]){
+			this._listeners[name] = this._listeners[name].filter(item => item != fn);
+		}
 	}
 
 	dispatchEvent(e){
@@ -610,6 +689,20 @@ class WebAudio {
 		this.ui.variables = val;
 	}
 
+	addSnapshot(snapshot){
+		this.snapShots.push(snapshot);
+	}
+
+	recallSnapshot(selector){
+		this.GUI.HTML.querySelectorAll(`waxml-snapshot${selector}`).forEach(snapshotComponent => {
+			snapshotComponent.sendData();
+			snapshotComponent.parentElement.selectComponent(snapshotComponent);
+		});
+		this.snapShots.filter(snapShot => snapShot.id == selector).forEach(snapShot => {
+
+		});
+	}
+
 	setVariable(key, val, transitionTime, fromSequencer){
 
 		// move to a separate object
@@ -668,20 +761,25 @@ class WebAudio {
 			if(val == floatVal){val = floatVal}
 		}
 		
+		
 		this.ui.setVariable(key, val, transitionTime, fromSequencer);
 
-		// this REALLY need to be worked through
-		// at the moment I just pass the variable "hand_r8y"
-		// to make it possible to control intensity in iMusic on 
-		// my 50% seminar ;-)
-		if(key == "hand_r8y"){
-			this.plugins.forEach(plugin => {
-				if(plugin.setVariable){
-					plugin.setVariable(key, val);
-				}
-			});
+		this.plugins.forEach(plugin => {
+			if(plugin.setVariable){
+				plugin.setVariable(key, val);
+			}
+		});
+
+
+		// Update
+		if(this.GUI){
+			let vcsSelector = `waxml-variable-controller[watchedvariable="${key}"]`;
+			[...this.GUI.HTML.querySelectorAll(vcsSelector),
+			...document.querySelectorAll(vcsSelector)].forEach(vc => vc.value = val);
+	
 		}
 		
+
 	}
 
 	set variablesToStore(varNames){
@@ -771,7 +869,6 @@ class WebAudio {
 
 			default:
 			this._xml.querySelectorAll(selector).forEach(xml => {
-				let audioObject = xml.obj;
 				arr.push(xml.obj);
 			});
 			break;
@@ -794,7 +891,7 @@ class WebAudio {
 			}
 			break;
 		}
-		return -1;
+		return undefined;
 	}
 
 	getConvolver(path){
@@ -814,12 +911,37 @@ class WebAudio {
 		return this.parser.createObject(xmlNode);
 	}
 
+	initLinearArranger(structure){
+		this.GUI.initLinearArranger(structure);
+	}
+
+	log(message){
+		this.GUI.log(message);
+	}
+
+	toSignificant(floatVal){
+		return WebAudioUtils.toSignificant(floatVal);
+	}
+
+	pathToFileName(path){
+		return WebAudioUtils.pathToFileName(path);
+	}
+
+	visualize(obj){
+		return this.GUI.visualize(obj);
+	}
+	visualFadeOut(data){
+		this.GUI.visualFadeOut(data);
+	}
+
+	scrollArrangeWindow(time){
+		this.GUI.scrollArrangeWindow(time);
+	}
 
 }
 
 WebAudio.prototype.noteOn = WebAudio.prototype.trig;
 WebAudio.prototype.noteOff = WebAudio.prototype.release;
-WebAudio.prototype.stop = WebAudio.prototype.release;
 
 
 
