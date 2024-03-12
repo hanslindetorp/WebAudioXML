@@ -10869,7 +10869,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.1.0";
+var version = "1.2";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
