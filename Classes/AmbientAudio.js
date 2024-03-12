@@ -9,6 +9,7 @@ class AmbientAudio {
         // ambient sounds are always looped through 
         // overlayering two buffers with crossfade.
         params.loop = false;
+        params.mono = true;
     
         this._ctx = obj._ctx;
 		this._parentAudioObj = obj;
@@ -20,10 +21,15 @@ class AmbientAudio {
         this.fade = new GainNode(this._ctx);
         this.fade1 = new GainNode(this._ctx);
         this.fade2 = new GainNode(this._ctx);
+
+        this.fades = [this.fade1, this.fade2];
         this.send = new GainNode(this._ctx);
         this.output = new GainNode(this._ctx);
 
-        this.input.connect(this.fade).connect(this.send).connect(this.output);
+        this.input.connect(this.fade);
+        this.fade.connect(this.send);
+        this.send.connect(this.output);
+
         this.fade1.connect(this.fade);
         this.fade2.connect(this.fade);
 
@@ -269,7 +275,8 @@ class AmbientAudio {
         let randomDetune = this.getParameter("randomDetune") || 0;
         let randomDetuneValue = (Math.random() * 2 - 1) * randomDetune;
 
-        let playbackRate = this._params.playbackRate;
+        
+        let playbackRate = typeof this._params.playbackRate == "undefined" ? 1 : this._params.playbackRate;
         let randomPlaybackRate = WebAudioUtils.centToPlaybackRate(randomDetuneValue);
         playbackRate *= randomPlaybackRate;
         let factor = 1 / playbackRate;
@@ -307,17 +314,39 @@ class AmbientAudio {
 
         // Evaluate if setTargetAtTime is the best method. It might not give equal power.
         // fade in or out
-        this.fade1.gain.setTargetAtTime((this.cnt+1) % 2, this.nextTime, fadeTime / 5);
+        this.fade1.gain.setTargetAtTime((this.cnt+1) % 2, this.nextTime, fadeTime / 3);
         // this.fade1.gain.linearRampToValueAtTime((this.cnt+1) % 2, this._ctx.currentTime + fadeTime / 2);
-        //this.fade1.gain.exponentialRampToValueAtTime((this.cnt+1) % 2 + (10 ** -10), fadeTime);
+        // this.fade1.gain.exponentialRampToValueAtTime((this.cnt+1) % 2 + (10 ** -10), fadeTime);
+
+        // let val1 = (this.cnt+1) % 2;
+        // let val2 = this.cnt % 2;
+
+
+        let nrOfValues = 50;
+        let curve1Values = [];
+        let curve2Values = [];
+
+        // equal power curve
+        for(let j=0; j<=nrOfValues; j++){
+            let x = j/nrOfValues;
+            let val1 = Math.cos(x * 0.5*Math.PI);
+            let val2 = Math.cos((1.0 - x) * 0.5*Math.PI);
+            curve1Values.push(val1);
+            curve2Values.push(val2);
+        }
+        // this.fades[1].gain.cancelScheduledValues(this.nextTime);
+        // this.fades[0].gain.cancelScheduledValues(this.nextTime);
+        // this.fades[1].gain.setValueCurveAtTime(curve1Values, this.nextTime, fadeTime);
+        // this.fades[0].gain.setValueCurveAtTime(curve2Values, this.nextTime, fadeTime);
         
         // fade in or out
-        this.fade2.gain.setTargetAtTime(this.cnt % 2, this.nextTime, fadeTime / 5);
-        //this.fade2.gain.linearRampToValueAtTime(this.cnt % 2, this._ctx.currentTime + fadeTime / 2);
-        //this.fade2.gain.exponentialRampToValueAtTime(this.cnt % 2 + (10 ** -10), fadeTime);
+        this.fade2.gain.setTargetAtTime(this.cnt % 2, this.nextTime, fadeTime / 3);
+        // this.fade2.gain.linearRampToValueAtTime(this.cnt % 2, this._ctx.currentTime + fadeTime / 2);
+        // this.fade2.gain.exponentialRampToValueAtTime(this.cnt % 2 + (10 ** -10), fadeTime);
 
         this.nextTime += delay;
         this.cnt++;
+        this.fades.push(this.fades.shift()); // toggle order
         let timeToNextTrig = this.nextTime - this._ctx.currentTime - 0;
         setTimeout(e => this.trigSample(), timeToNextTrig * 1000);
     }
