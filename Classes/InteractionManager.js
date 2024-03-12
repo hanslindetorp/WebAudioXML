@@ -13,12 +13,19 @@ class InteractionManager {
 	constructor(waxml){
 
 		
+		// Super interesting:
+		// On MAC iOS, it doesn't work if I attach a stored function to the event
+		// I Have to make the call directly. ?!?!
+		// Unfortunately, this makes it tricky to remove the event listener
+		// after it has been used.
 
-		let initCall = e => {
-			this.waxml.init();
-			window.removeEventListener("pointerdown", initCall);
-		}
-		window.addEventListener("pointerdown", initCall);
+		// let initCall = e => {
+			// this.waxml.init();
+			// window.removeEventListener("pointerdown", initCall);
+		// }
+		// window.addEventListener("pointerdown", initCall);
+
+		window.addEventListener("pointerdown", () => this.waxml.init());
 
 		this.eventTracker = new EventTracker(waxml);
 		this.waxml = waxml;
@@ -129,8 +136,10 @@ class InteractionManager {
 
 	connectToHTMLelements(){
 
-		// init display elements
-		document.querySelectorAll("waxml-display").forEach( el => {
+		// init meter elements
+		let documentMeters = document.querySelectorAll("waxml-meter");
+		let GUImeters = this.waxml.GUI.HTML.querySelectorAll("waxml-meter");
+		[...documentMeters, ...GUImeters].forEach( el => {
 			let inputSelector = el.inputSelector || "master";
 			if(inputSelector){
 				el.init(this.waxml._ctx);
@@ -138,6 +147,31 @@ class InteractionManager {
 					el.inputFrom(obj.output);
 				});
 			}
+		});
+
+		// init inspector elements
+		document.querySelectorAll("waxml-inspector").forEach( el => {
+			let selectors;
+
+			if(el.inputSelector){
+				selectors = el.inputSelector.split(",").map(sel => sel.trim()).map(sel => {
+					if(!sel.includes("[name=")){
+						return `Audio > var[name='${sel}']`;
+					} else {
+						return sel;
+					}
+				});
+			} else {
+				selectors = ["Audio > var"];
+			}
+
+			selectors.forEach(sel => {
+				this.waxml.querySelectorAll(sel).forEach(variable => {
+					el.addVariable(variable);
+				});
+			});
+			
+			el.init(this.waxml);
 		});
 
 		document.querySelectorAll("waxml-midi-controller").forEach( el => {
@@ -180,7 +214,6 @@ class InteractionManager {
 							});
 
 						});
-	
 					} else {
 	
 						commandName = attrNameArr[3];
@@ -216,9 +249,15 @@ class InteractionManager {
 								switch(commandName){
 									case "start":
 									case "play":
+									case "trig":
 										fn = e => {
-											this.waxml.start(val);
-											this.waxml.setVariable(val, 1);
+											this.waxml.trig(val);
+
+											// do we need this line?
+											// would it be better to build proper and transparant
+											// solutions for mapping events to variables
+											// and vice versa.
+											// this.waxml.setVariable(val, 1);
 										}
 										break;
 			
@@ -270,11 +309,24 @@ class InteractionManager {
 											
 										} 
 	
-	
-	
-	
 										break;
-			
+
+									case "wait":
+										val.split(";").forEach(binding => {
+											let tag, cmd;
+											[tag, cmd] = binding.split("->").map(str => str.trim());
+											let fn = () => {
+												eval(cmd);
+												this.waxml.removeEventListener(tag, fn);
+											}
+											el.addEventListener(eventName, () => {
+												this.waxml.addEventListener(tag, fn);
+											});
+											
+										});
+										break;	
+
+
 									default:
 										fn = e => {
 											this.waxml.setVariable(commandName, val.valueOf());
