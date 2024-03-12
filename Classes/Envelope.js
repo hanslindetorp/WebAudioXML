@@ -24,7 +24,7 @@ class Envelope {
 		
 		this._parentAudioObj = parentAudioObj;
 		this.timeScale = this.getParameter("timescale") || 1;
-		this.mono = this.getParameter("mode") == "mono";
+		this.mono = this.getParameter("legato") == "true";
 
 
 		// convert ADSR attribute to times and values
