@@ -1,5 +1,6 @@
 var BufferSourceObject = require('./BufferSourceObject.js');
 var ConvolverNodeObject = require('./ConvolverNodeObject.js');
+var Watcher = require('./Watcher.js');
 
 
 class ObjectBasedAudio {
@@ -11,7 +12,21 @@ class ObjectBasedAudio {
 		this._parentAudioObj = obj;
 
         this.input = new GainNode(this._ctx);
-        this.pannerNode = new PannerNode(this._ctx, params);
+
+
+        // make sure all attributes have OK values
+        // We have a problem here when attributes are set to 
+        // follow a variable. The watcher object is not ready to return an evaluated value yet.
+
+        let checkedParams = {}
+        Object.entries(params).forEach(([key, value]) => {
+            if(value instanceof Watcher && typeof value.valueOf() == "undefined"){
+                value = 0;
+            }
+            checkedParams[key] = value;
+        });
+
+        this.pannerNode = new PannerNode(this._ctx, checkedParams);
         this.gainNode = new GainNode(this._ctx);
         this.send = new GainNode(this._ctx);
         this.output = new GainNode(this._ctx);
