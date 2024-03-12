@@ -5,9 +5,9 @@
 
     <Chain>
         <Mixer>
-            <AudioBufferSourceNode trig="MIDI:NoteOn:10:36" src="audio/bd.mp3"/>
-            <AudioBufferSourceNode trig="MIDI:NoteOn:10:38" src="audio/sn.mp3"/>
-            <AudioBufferSourceNode trig="MIDI:NoteOn:10:42" src="audio/hh.mp3"/>
+            <AudioBufferSourceNode start="MIDI:NoteOn:10:36" src="audio/bd.mp3"/>
+            <AudioBufferSourceNode start="MIDI:NoteOn:10:38" src="audio/sn.mp3"/>
+            <AudioBufferSourceNode start="MIDI:NoteOn:10:42" src="audio/hh.mp3"/>
         </Mixer>
         <Send outputbus="#reverb" gain="$reverb"/>
     </Chain>

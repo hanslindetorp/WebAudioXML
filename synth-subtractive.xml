@@ -8,7 +8,7 @@
     <var name="test2" value="$test2" mapin="0,1000" mapout="0,1,0.5,0.8,0.3,4"/>
 
     
-    <var name="frequency" trig="MIDI:NoteOn:1" value="keyNum" convert="MIDI->frequency"/>
+    <var name="frequency" start="MIDI:NoteOn:1" value="keyNum" convert="MIDI->frequency"/>
     <var name="LFO" default="0" value="$MIDI:ControlChange:1:1"/>
     <var name="mixOSC" default="0" value="$MIDI:ControlChange:1:13" />
     <var name="cutoff" default="0.5" value="$MIDI:ControlChange:1:11" mapin="0,1" mapout="-4800, 4800" />
@@ -16,8 +16,8 @@
 
     <var name="LFOspeed" default="5" value="$LFOspeed"/>
 
-    <Envelope default="0" name="env1" trig="MIDI:NoteOn:1" stop="MIDI:NoteOff:1" ADSR="0,200,20,200" legato="true" />
-    <Envelope default="0" name="env2" trig="MIDI:NoteOn:1" stop="MIDI:NoteOff:1" ADSR="10,200,20,200" legato="true" />
+    <Envelope default="0" name="env1" start="MIDI:NoteOn:1" stop="MIDI:NoteOff:1" ADSR="0,200,20,200" legato="true" />
+    <Envelope default="0" name="env2" start="MIDI:NoteOn:1" stop="MIDI:NoteOff:1" ADSR="10,200,20,200" legato="true" />
 
     
     <!-- LFO -->

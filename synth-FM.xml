@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="0dB">
     
-    <var name="frequency" trig="MIDI:NoteOn:3" value="keyNum" convert="MIDI->frequency"/>
+    <var name="frequency" start="MIDI:NoteOn:3" value="keyNum" convert="MIDI->frequency"/>
     <var name="LFO" default="0" value="$MIDI:ControlChange:3:1"/>
     <var name="amount" default="0.5" value="$MIDI:ControlChange:3:11" />
     <var name="FMOctave" default="0" value="$switch" mapin="-2,-1,0,1,2,3,4" mapout="0.25,0.5,1,2,4,8,16" />
 
 
-    <Envelope default="0" name="env1" trig="MIDI:NoteOn:3" stop="MIDI:NoteOff:3" ADSR="1,100,10,100" legato="true" />
+    <Envelope default="0" name="env1" start="MIDI:NoteOn:3" stop="MIDI:NoteOff:3" ADSR="1,100,10,100" legato="true" />
 
     
     
