@@ -1,6 +1,6 @@
 // var Watcher = require('./Watcher.js');
 var Mapper = require('./Mapper.js');
-var WebAudioUtils = require('./WebAudioUtils.js');
+// var WebAudioUtils = require('./WebAudioUtils.js');
 
 
 class Variable {
@@ -52,7 +52,7 @@ class Variable {
 		// 	});
 		// }
 
-		if(params.trig){
+		if(params.trig || params.start){
 			//this.argumentIndex = parseInt((params.value || "").split("[").pop()) || 0;
 			this.targetParameter = params.value;
 		}	
@@ -65,6 +65,8 @@ class Variable {
 		// setInterval(e => {
 		// 	console.log(this.name, this.mappedValue, this.derivative, this.derivative2);
 		// }, 500);
+
+		this.start = this.trig;
 		
 	}
 
@@ -81,11 +83,33 @@ class Variable {
 		this.setValue(arguments[0][this.targetParameter]);
 	}
 
+	getMappingPoints(steps = 1000){
+
+		let points = [];
+		let minIn = typeof this.minIn == "undefined" ? 0 : this.minIn;
+		let maxIn = typeof this.maxIn == "undefined" ? 1 : this.maxIn;
+
+		let inputRange = maxIn - minIn;
+
+		for(let i = 0; i <= steps; i++){
+			let x = minIn + i / steps * inputRange;
+			let y = this._mapper.getValue(x);
+			points.push({x: x, y: y});
+		}
+		return points;
+	}
+
 	valueOf(){
 		return this.value;
 	}
 
 	setValue(val = this._value, transistionTime = 0, autoTrigger = false){
+
+		this.lastInputValue = val;
+		
+		if(this.autoInputRange){
+			this.autoAdjustInputRange(val);
+		}
 
 		// clear autoTrigger (no matter if the function is triggered manually or automatically)
 		// the autoTrigger makes sure derivatas are reset even if no data is updated
@@ -157,8 +181,9 @@ class Variable {
 				}
 				
 				// this._derivative = newDerivative;
-				this.doCallBacks(transistionTime);
+				
 			}
+			this.doCallBacks(transistionTime);
 			this.lastUpdate = curFrame;
 			this.lastMappedValue = this.mappedValue;
 
@@ -173,9 +198,13 @@ class Variable {
 				this.autoTriggerTimeout = setTimeout(e => this.setValue(val, transistionTime, true), delay * 2000);
 			}
 
-
 		}
 		
+	}
+
+	autoAdjustInputRange(val){
+		this.minIn = Math.min(this.minIn, val);
+		this.maxIn = Math.max(this.maxIn, val);
 	}
 
 	get value() {
@@ -190,6 +219,10 @@ class Variable {
 
 	set value(val) {
 		this.setValue(val);
+	}
+
+	get valuePairs(){
+		return {input: this.lastInputValue, output: this.lastMappedValue};
 	}
 
 	setTargetAtTime(param, val=0, delay=0, time=0){
@@ -426,6 +459,18 @@ class Variable {
 
 	getVariable(key){
 		return this[key];
+	}
+
+	get watchedVariableNames(){
+		if(typeof this._params.value == "object" && this._params.value.type == "watcher"){
+			return Object.entries(this._params.value._variables).map(([key]) => key);
+		} else {
+			return [];
+		}
+	}
+
+	get unMappedValue(){
+		return this._mapper.unMappedValue;
 	}
 
 	getWAXMLparameters(){
