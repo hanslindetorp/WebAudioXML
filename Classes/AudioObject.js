@@ -14,16 +14,18 @@ const Noise = require('./Noise.js');
 
 
 
-class AudioObject{
+class AudioObject extends EventTarget{
 
   	constructor(xmlNode, waxml, localPath, params){
-
+      super();
 	  	this.waxml = waxml;
 	  	let _ctx = this.waxml._ctx;
       let parentAudioObj = xmlNode.parentNode.audioObject;
       this._parentAudioObj = parentAudioObj;
+      this.childIndex = [...xmlNode.parentNode.children].indexOf(xmlNode);
 
       if(parentAudioObj){
+        // stupid!
         parentAudioObj.addChildObj(this);
       }
       
@@ -294,20 +296,37 @@ class AudioObject{
         break;
 
         case "channelmergernode":
+        // this._node = new ChannelMergerNode(this._ctx, {
+        //   numberOfInputs: this._ctx.destination.maxChannelCount,
+        //   channelCount: 1,
+        //   channelCountMode: "explicit",
+        //   channelInterpretation: "discrete"
+        // });
         this._node = new ChannelMergerNode(this._ctx, {
           numberOfInputs: this._ctx.destination.maxChannelCount,
-          channelCount: 1,
-          channelCountMode: "explicit",
           channelInterpretation: "discrete"
         });
-        this.inputs = [];
-        while(this.inputs.length < this._ctx.destination.maxChannelCount){
+
+        this.channels = [];
+        while(this.channels.length < this._ctx.destination.maxChannelCount){
           let gainNode = new GainNode(this._ctx, {
             channelCount: 1,
             channelCountMode: "explicit",
             channelInterpretation: "discrete"
           });
-          gainNode.connect(this._node, 0, this.inputs.length);
+          gainNode.connect(this._node, 0, this.channels.length);
+          this.channels.push(gainNode);
+        }
+
+        this.inputs = [];
+        while(this.inputs.length < xmlNode.childElementCount){
+          let gainNode = new GainNode(this._ctx, {
+            channelCount: 1,
+            channelCountMode: "explicit",
+            channelInterpretation: "discrete"
+          });
+          
+          //gainNode.connect(this._node, 0, this.inputs.length);
           this.inputs.push(gainNode);
         }
         break;
@@ -609,6 +628,18 @@ class AudioObject{
     }
 
 
+    getControllingVariableName(parameterName){
+
+      // NOTE!
+      // This assumes there is only one controlling variable
+			let parameter = this.parameters[parameterName];
+      if(parameter){
+        return parameter.variableNames[0];
+      }
+			
+    }
+
+
   	get connection(){
 	  	return this._node;
   	}
@@ -716,8 +747,11 @@ class AudioObject{
       input.connect(this._node);
     }
 
-  	start(data){
+  	start(data = {}){
+      this.dispatchEvent(new CustomEvent("start"));
       this._playing = true;
+      let time = data.time || this._ctx.currentTime;
+      //console.log(time - this._ctx.currentTime);
 	  	switch(this._nodeType){
 
 		  	case "oscillatornode":
@@ -749,7 +783,7 @@ class AudioObject{
 
         // sort this out!!
         if(this._node._buffer){
-          this._node.start();
+          this._node.start(time);
         } else {
           let fn = () => this.start();
           this._node.addCallBack(fn);
@@ -953,8 +987,9 @@ class AudioObject{
         }
 
   	  	if(transitionTime && param.setTargetAtTime){
-  		  	param.setTargetAtTime(value, startTime, transitionTime);
-  	  	} else if(param.setValueAtTime){
+  		  	param.setTargetAtTime(value, startTime, transitionTime / 2);
+          // console.log(`transitionTime: ${transitionTime}`);
+        } else if(param.setValueAtTime){
   		  	param.setValueAtTime(value, startTime);
   	  	}
 
@@ -1284,6 +1319,15 @@ class AudioObject{
       return this._node.playing;
     }
 
+    // get selectindex(){
+    //   return this.mix * (this.childObjects.length - 1);
+    // }
+
+    set selectindex(val){
+      console.log(`selectIndex(${val})`);
+      val = val / (this.childObjects.length - 1);
+      this.mix = val;
+    }
 
     set mix(val){
 
@@ -1291,7 +1335,7 @@ class AudioObject{
       this._params.mix = val;
       let targets = this.childObjects; //.length ? this.childObjects : this.inputs;
         
-      val *= targets.length; // 0 - nr of children or channelCount
+      val *= (targets.length-1); // 0 - nr of children or channelCount
 
       let crossFadeRange = this._params.crossfaderange;
       if(typeof crossFadeRange != "undefined"){
@@ -1314,7 +1358,7 @@ class AudioObject{
           fw = max-min;
           peak = (min + max) / 2;
         } else {
-          peak = i + 0.5;
+          peak = i; // + 0.5;
           fw = frameWidth;
         }
         let dist;
@@ -1323,7 +1367,7 @@ class AudioObject{
         // no reduction far left or far right
         // if not specified with peak range
         let toTheLeft = i == 0 && val <= peak;
-        let toTheRight = i == targets.length-1 && val >= peak;
+        let toTheRight = i == (targets.length-1) && val >= peak;
         if((toTheLeft || toTheRight) && !peakRange){
           reduction = 0;
         } else {
@@ -1350,6 +1394,7 @@ class AudioObject{
         }
         let time = this.getParameter("transitionTime");
         input.gain.setTargetAtTime(gain, input.context.currentTime, time);
+        target.dispatchEvent(new CustomEvent("change", {detail: {time: time, value: gain}}));
       });
     }
 
@@ -1582,7 +1627,7 @@ class AudioObject{
       if(typeof this._params.positionX == "undefined"){
         this._params.positionX = this._node.positionX;
       }
-      return this._params.positionX;
+      return this._params.positionX.valueOf() || 0;
     }
     set positionX(val){
       this._params.positionX = val;
@@ -1599,7 +1644,7 @@ class AudioObject{
       if(typeof this._params.positionY == "undefined"){
         this._params.positionY = this._node.positionY;
       }
-      return this._params.positionY;
+      return this._params.positionY.valueOf() || 0;
     }
     set positionY(val){
       this._params.positionY = val;
@@ -1616,7 +1661,7 @@ class AudioObject{
       if(typeof this._params.positionZ == "undefined"){
         this._params.positionZ = this._node.positionZ;
       }
-      return this._params.positionZ;
+      return this._params.positionZ.valueOf() || 0;
     }
     set positionZ(val){
       this._params.positionZ = val;
@@ -1633,7 +1678,7 @@ class AudioObject{
       if(typeof this._params.refDistance == "undefined"){
         this._params.refDistance = this._node.refDistance;
       }
-      return this._params.refDistance;
+      return this._params.refDistance.valueOf() || 0;
     }
     set refDistance(val){
       this._params.refDistance = val;
@@ -1645,7 +1690,7 @@ class AudioObject{
       if(typeof this._params.rolloffFactor == "undefined"){
         this._params.rolloffFactor = this._node.rolloffFactor;
       }
-      return this._params.rolloffFactor;
+      return this._params.rolloffFactor.valueOf() || 0;
     }
     set rolloffFactor(val){
       this._params.rolloffFactor = val;
@@ -1705,6 +1750,20 @@ class AudioObject{
     getVariable(key){
   		return this._variables[key];
   	}
+
+    // for dynamic mixer
+    addEventsFromChildren(){
+      let variableName = this.getControllingVariableName("selectindex");
+      if(variableName){
+        this.childObjects.forEach(obj => {
+
+          obj.addEventListener("start", e => {
+            this.waxml.setVariable(variableName, e.target.childIndex);
+          });
+        });
+      }
+      
+    }
 
 
 }
