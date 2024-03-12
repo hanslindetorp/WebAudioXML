@@ -10,22 +10,27 @@ class VariableMatrixRow{
 		let tr = document.createElement("tr");
 		this._element = tr;
 
+		// is this a valid selector (=audio source)
 		let td = document.createElement("td");
 		td.innerHTML = id;
-		let meter = document.createElement("waxml-meter");
-		meter.setAttribute("type", "loudness");
-		meter.setAttribute("width", "100px");
-		meter.setAttribute("height", "10px");
-		meter.setAttribute("timeframe", "2s");
-		meter.setAttribute("maxDecibels", "0");
-		meter.setAttribute("minDecibels", "-40");
 
-		meter.setAttribute("colors", "green, yellow, red");
-		meter.setAttribute("segments", "60,20,20");
+		if(waxml.querySelector(`#${id}`)){
+			let meter = document.createElement("waxml-meter");
+			meter.setAttribute("type", "loudness");
+			meter.setAttribute("width", "100px");
+			meter.setAttribute("height", "10px");
+			meter.setAttribute("timeframe", "2s");
+			meter.setAttribute("maxDecibels", "0");
+			meter.setAttribute("minDecibels", "-40");
+	
+			meter.setAttribute("colors", "green, yellow, red");
+			meter.setAttribute("segments", "60,20,20");
+			
+			meter.setAttribute("input", `#${id}`);
+			
+			td.appendChild(meter);
+		}
 		
-		meter.setAttribute("input", `#${id}`);
-		
-		td.appendChild(meter);
 		// meter.init(this.waxml._ctx);
 
 		tr.appendChild(td);
