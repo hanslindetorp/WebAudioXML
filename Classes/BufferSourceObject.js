@@ -10,6 +10,7 @@ class BufferSourceObject {
 		this._params = {...params};
 		this._parentAudioObj = obj;
 		this.callBackList = [];
+		this.playingNodes = [];
 	}
 
 	connect(destination){
@@ -20,24 +21,35 @@ class BufferSourceObject {
 	
 	start(time = this._ctx.currentTime, offset = 0, duration){
 		if(this._playing) {
-			return;
+			//return;
 		}
-		if(this.autoStopTimer){
-			clearTimeout(this.autoStopTimer);
-			this.autoStopTimer = 0;
-		}
+		// if(this.autoStopTimer){
+		// 	clearTimeout(this.autoStopTimer);
+		// 	this.autoStopTimer = 0;
+		// }
 		let params = {}
 		if(typeof this._params.offset != "undefined"){params.offset = this._params.offset}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
 		if(typeof this._params.loopStart != "undefined"){params.loopStart = this._params.loopStart * this._params.timescale}
 		if(typeof this._params.loopEnd != "undefined"){params.loopEnd = this._params.loopEnd * this._params.timescale}
-		if(typeof this._params.playbackRate != "undefined"){params.playbackRate = this._params.playbackRate}
+		if(typeof this._params.playbackRate != "undefined"){
+			params.playbackRate = this._params.playbackRate;
+		} else {
+			params.playbackRate = 1;
+		}
 		if(typeof this._params.randomDetune != "undefined"){params.playbackRate *= WebAudioUtils.centToPlaybackRate(this._params.randomDetune)}
 
-		this._node.disconnect();
-		this._node = new AudioBufferSourceNode(this._ctx, params);
-		this._node.buffer = this._buffer;
-		this._node.loopEnd = this._buffer.duration;
+		if(this.currentNode && this._params.mono == true){
+			let oldNode = this.currentNode;
+			setTimeout(() => oldNode.disconnect(), 10);
+		}
+		
+		let node = new AudioBufferSourceNode(this._ctx, params);
+		this.currentNode = node;
+		this.playingNodes.push(node);
+
+		node.buffer = this._buffer;
+		node.loopEnd = this._buffer.duration;
 
 		offset = offset || this._params.offset * this._params.timescale || 0;
 
@@ -48,25 +60,33 @@ class BufferSourceObject {
 		let factor = Math.abs(this._params.playbackRate || 1);
 		duration = duration || this._buffer.duration;
 
-		this._node.connect(this.destination);
+		node.connect(this.destination);
 		this.lastStarted = time;
 		this.offset = offset;
 		// important to set this._playing to true AFTER setting this.offset (otherwise it will make an endless call stack via resume)
 		this._playing = true;
 
 		if(params.loop){
-			this._node.start(time, offset * factor);
+			node.start(time, offset * factor);
 		} else {
-			this._node.start(time, offset * factor, duration * factor);
+			node.start(time, offset * factor, duration * factor);
 
 			factor = factor || 0.0001;
 
 			this.autoStopTimer = setTimeout(() => {
-				this._offset = 0;
-				this._relOffset = 0;
-				this._playing = false;
+				let lastNode = this.playingNodes.shift();
+				if(lastNode){lastNode.disconnect(0)}
+
+				if(!this.playingNodes.length){
+					// reset when all samples are quiet
+					this._offset = 0;
+					this._relOffset = 0;
+					this._playing = false;
+				}
+				
 			}, (duration - offset) / Math.abs(factor) * 1000);
 		}
+		this._node = node;
 		
 	}
 
@@ -234,9 +254,11 @@ class BufferSourceObject {
 			return;
 		  }
 		this._params.playbackRate = val;
-		//this._node.setTargetAtTime("playbackRate", val, 0);
-		this._node.playbackRate.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
+		
+		this.playingNodes.forEach(node => {
+			node.playbackRate.setTargetAtTime(val, 0, this.getParameter("transitionTime"));
 
+		});
 	}
 
 	set randomDetune(val){
