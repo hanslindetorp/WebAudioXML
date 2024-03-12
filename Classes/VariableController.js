@@ -32,7 +32,7 @@ class VariableController extends HTMLElement {
 
 		data.step = data.steps ||0.01;
 		let range = data.max - data.min;
-		this.decimals = Math.ceil(Math.max(0, 2 - Math.log(range)/Math.log(10)));
+		this.decimals = Math.ceil(Math.max(0, 2 - Math.log(range || 1)/Math.log(10)));
 
 		this.waxml = waxml;
 		this.targetVariable = data.targetVariable;
@@ -53,6 +53,7 @@ class VariableController extends HTMLElement {
 		this.setAttributes(this, {
 			watchedVariable: data.watchedVariable
 		});
+		data["data-default"] = data.value;
 		this.setAttributes(interactionElement, data);
 		// interactionElement.style.position = "absolute";
 		// interactionElement.style.width = "100%";
@@ -64,6 +65,13 @@ class VariableController extends HTMLElement {
 		});
 		interactionElement.addEventListener("click", e => {
 			e.stopPropagation();
+		});
+		interactionElement.addEventListener("dblclick", e => {
+			e.stopPropagation();
+			let val = parseFloat(e.target.dataset.default);
+			this.value = val;
+			this.targetVariable.value = val;
+			this.textElement.value = val.toFixed(this.decimals);
 		});
 
 		let meter = document.createElement("meter");
