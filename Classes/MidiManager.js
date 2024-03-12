@@ -143,7 +143,7 @@ class MidiManager {
 		}
 	}
 
-	noteOff(ch, key, vel = 127){
+	noteOff(ch, key, vel = 0){
 
 		if(this.keysPressed[ch][key]){
 
