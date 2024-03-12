@@ -23,6 +23,7 @@ class Watcher {
 		this._variables = this.strToVariables(arr, xmlNode, Variable, params);
 		if(Object.keys(this._variables).length > 0){
 			this.callBack = params.callBack;
+			arr = WebAudioUtils.replaceVectorDistMethod(arr);
 			this.value = WebAudioUtils.replaceVariableNames(arr);
 			this.update(this.value, 0.001);
 			return;
@@ -171,8 +172,12 @@ class Watcher {
 
 			Object.defineProperty(obj, variable, {
 				get() {
-					return variableObj.value;
-					return this._props[variable].value;
+					if(typeof variableObj.value != "undefined"){
+						return variableObj.value;
+					} else {
+						return this._props[variable].value;
+					}
+					
 				},
 				set(val) {
 					variableObj.value = val;
@@ -281,6 +286,24 @@ class Watcher {
 
 	}
 
+	getVectorDist(v1, v2){
+
+		// fill with zeros to match length (and make the vectors a minimum two dimentional)
+		v1 = [...v1];
+		v2 = [...v2];
+		let l = Math.max(v1.length, v2.length, 2);
+		while(v1.length < l)v1.push(0);
+		while(v2.length < l)v2.push(0);
+
+		// calculate hypothenuses
+		let d2s = v1.map((el, i) => (v2[i] - el) ** 2);
+		return d2s.reduce((a,b) => a + b) ** 0.5;
+	}
+
+	get variableNames(){
+		return Object.entries(this._variables).map(([key]) => key);
+	}
+
 	replaceVariableNames(str) {
 		// regExp
 		// ${x} || var(x) -> this.getVariable(x)
@@ -343,21 +366,32 @@ class Watcher {
 				let values = [];
 				try {
 	
-					// support comma separated array
 					let me = this; // this is undefined inside forEach:eval
-					this.value.split(",").forEach(v => {
-						// if(v.includes("getVariable")){
-						// 	// add the default property "value"
-						// 	// if not specified (like "derivative")
-						
-						// 	if(v.substr(-1) == ")"){
-						// 		v += ".value";
-						// 	}
-						// }
-						let v1 = eval(v);
-						v1 = (Number.isNaN(v1) ? val : v1) || 0;
+
+					
+					if(this.value.includes(",") && !this.value.includes("[")){
+						// support comma separated values
+						this.value.split(",").forEach(v => {
+							// if(v.includes("getVariable")){
+							// 	// add the default property "value"
+							// 	// if not specified (like "derivative")
+							
+							// 	if(v.substr(-1) == ")"){
+							// 		v += ".value";
+							// 	}
+							// }
+							let v1 = eval(v);
+							v1 = (Number.isNaN(v1) ? val : v1) || 0;
+							values.push(v1);
+						});
+					} else {
+						// multiple arrays like dist([$x1,$y1], [$x2,$y2])
+
+						let v1 = eval(this.value);
+						v1 = Number.isNaN(v1) ? 0 : v1;
 						values.push(v1);
-					});
+					}
+					
 	
 				} catch {
 	
