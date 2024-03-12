@@ -2,7 +2,7 @@
 <Audio 
 	xmlns="https://www.w3schools.com"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.16.xsd"
+	xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.18.xsd"
 
 	version="1.0" 
 	timeUnit="ms" 
