@@ -4,8 +4,10 @@ var Loader = require('./Loader.js');
 var AudioObject = require('./AudioObject.js');
 var Variable = require('./Variable.js');
 var Envelope = require('./Envelope.js');
+var Command = require('./Command.js');
 var Watcher = require('./Watcher.js');
 var Synth = require('./Synth.js');
+const SnapshotComponent = require('./variable-matrix/SnapshotComponent.js');
 
 
 
@@ -75,9 +77,11 @@ class Parser {
 
 
 				if(this._xml){
-					// embedded <XML> element inside HTML
-					this.parseXML(this._xml);
-					this._xml.style.display = "none";
+					// embedded <XML> element inside HTML or already initialized
+					this.parseXML(this._xml.firstElementChild);
+					if(this._xml.style){
+						this._xml.style.display = "none";
+					}
 					//Loader.checkLoadComplete();
 				} else {
 					// external file(s)
@@ -176,6 +180,10 @@ class Parser {
 							let matches = [...attr.value.matchAll(/\(([^\)]+)\)/g)];
 							fileName = matches[0][1];
 							args = matches[1][1];
+							let argsValue = eval(args);
+							if(typeof argsValue != "undefined"){
+								args = argsValue;
+							}
 						} else {
 							fileName = attr.value;
 						}
@@ -185,7 +193,7 @@ class Parser {
 								if(fnCallIncluded){
 									// execution of external function is included in the 
 									// attribute (including (optional) arguments)
-									attr.value = eval(`(${txt})(${args})`);
+									attr.value = eval(txt)(args);
 								} else {
 									let fn = eval(txt);
 									attr.value = fn instanceof Function ? fn() : "";
@@ -247,6 +255,7 @@ class Parser {
 			if(typeof param == "string"){
 				if(WebAudioUtils.nrOfVariableNames(param)){
 					//variableObj = new Variable(xmlNode, {waxml: this.waxml});
+					
 					params[key] = new Watcher(xmlNode, param, {
 						waxml: this.waxml,
 						callBack: (val, time) => {
@@ -268,6 +277,7 @@ class Parser {
 									}
 									switch(key){
 										case "mix":
+										case "selectindex":
 										xmlNode.obj[key] = val;
 										break;
 
@@ -365,7 +375,6 @@ class Parser {
 					}
 				});
 			} else if (WebAudioUtils.nrOfVariableNames(params.value)) {
-
 				this.watcher = new Watcher(xmlNode, params.value, {
 					waxml: this.waxml,
 					variableObj: variableObj,
@@ -385,6 +394,11 @@ class Parser {
 			// }
 			target = parentNode.obj;
 			target.setVariable(params.name, variableObj);
+			break;
+
+			case "snapshot":
+			xmlNode.obj = new SnapshotComponent(xmlNode);
+			this.waxml.addSnapshot(xmlNode.obj);
 			break;
 
 			case "envelope":
@@ -425,6 +439,10 @@ class Parser {
 		switch(xmlNode.nodeName.toLowerCase()){
 			case "envelope":
 			obj = new Envelope(xmlNode, this.waxml, params);
+			break;
+
+			case "command":
+			obj = new Command(params, this.waxml);
 			break;
 
 			default:
