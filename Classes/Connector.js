@@ -150,6 +150,10 @@ class Connector {
 					xmlNode.obj.connect(this._ctx.destination);
 				break;
 
+				case "none":
+					console.log(xmlNode);
+				break;
+
 				case "next":
 					let nextElement = xmlNode.nextElementSibling;
 					if(nextElement){
@@ -201,6 +205,8 @@ class Connector {
 			switch (xmlNode.nodeName.toLowerCase()) {
 				case "var":
 				case "envelope":
+				case "command":
+				case "snapshot":
 					// don't connect
 					break;
 				default:
@@ -227,10 +233,21 @@ class Connector {
 
 					case "channelmergernode":
 					let trgCh = xmlNode.obj.getParameter("channel") || [[...xmlNode.parentNode.children].indexOf(xmlNode)];
+					let nodeIndex = [...xmlNode.parentNode.children].indexOf(xmlNode);
+					let targetInput = xmlNode.parentNode.obj.inputs[nodeIndex];
+					xmlNode.obj.connect(targetInput);
+
 					let channelCount = this._ctx.destination.channelCount; //xmlNode.parentNode.obj.inputs.length;
+					
 					trgCh.forEach((outputCh, i) => {
 						let inputCh = i % xmlNode.obj._node.channelCount;
-						xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh % channelCount], inputCh, 0);
+						outputCh = outputCh % channelCount;
+						//xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[outputCh % channelCount], inputCh, 0);
+						//xmlNode.obj.connect(xmlNode.parentNode.obj.inputs[targetInput], inputCh, outputCh);
+						let targetChannel = xmlNode.parentNode.obj.channels[outputCh];
+						targetInput.connect(targetChannel, inputCh, 0);
+
+						console.log(`childIndex: ${targetInput}, inputCh: ${inputCh}, output: ${outputCh}`);
 					});
 					break;
 
@@ -329,7 +346,12 @@ class Connector {
 	getTargetElements(curNode, selector){
 		let targetElements = [];
 		while(!targetElements.length && curNode != this._xml.parentNode){
-			targetElements = curNode.querySelectorAll(selector);
+			try{
+				targetElements = curNode.querySelectorAll(selector);
+			} catch {
+
+			}
+			
 			curNode = curNode.parentNode;
 		}
 		return targetElements;
