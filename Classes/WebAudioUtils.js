@@ -108,6 +108,7 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		case "loopStart":
 		case "loopEnd":
 
+
 		// waxml
 		case "transitionTime":
 		v = parseFloat(value);
@@ -194,6 +195,11 @@ WebAudioUtils.typeFixParam = (param, value) => {
 		if(!Number.isNaN(floatVal)){
 			value = floatVal;
 		}
+		break;
+
+
+		// iMusic
+		case "pos":
 		break;
 
 		default:
@@ -428,6 +434,12 @@ WebAudioUtils.playbackRateToCent = val => {
 WebAudioUtils.dbToPower = value => {
 	return Math.pow(2, parseFloat(value) / 3);
 }
+
+WebAudioUtils.powerTodB = (power=Number.MIN_VALUE, referencePower=1) => {
+	return 10 * Math.log10(power / referencePower);
+}
+
+
 WebAudioUtils.split = (str, separator) => {
 	if(typeof str != "string"){
 		console.log(str);
@@ -622,6 +634,12 @@ WebAudioUtils.replaceVariableNames = (str = "", q = "") => {
 	});
 }
 
+WebAudioUtils.replaceVectorDistMethod = (str = "") => {
+	if(typeof str != "string"){return 0};
+
+	return str.replaceAll("dist(", "me.getVectorDist(");
+}
+
 WebAudioUtils.wrapExpression = (str = "", q = '"') => {
 	if(typeof str != "string"){return 0};	
 
@@ -631,6 +649,8 @@ WebAudioUtils.wrapExpression = (str = "", q = '"') => {
 WebAudioUtils.strToVariables = (str = "", callerNode, variableType) => {
 	// regExp
 	// ${x} || var(x) -> this.getVariable(x)
+	// This is not the right place for this function. It should rather be an inherited function fraom 
+	// a base class.
 	if(typeof str != "string"){return {}};
 	let variables = {};
 
@@ -673,5 +693,29 @@ WebAudioUtils.findXMLnodes = (callerNode, attrName, str) => {
 	}
 	return [...targets];
 }
+
+WebAudioUtils.toSignificant = (floatVal, nrOfSignificantFigures = 2) => {
+	let decimals = Math.ceil(Math.max(0, nrOfSignificantFigures - Math.log(floatVal || 1)/Math.log(10)));
+	return floatVal.toFixed(decimals);
+}
+
+WebAudioUtils.pathToFileName = (path) => {
+	let fileName = path.split("/").pop().split(".")[0];
+	return fileName;
+}
+
+
+// Function to calculate the distance from point C to the line formed by points A and B
+// Made by ChatGPT. But is it correct?
+WebAudioUtils.distanceFromPointToLine = (pointA, pointB, pointC) => {
+  const numerator = Math.abs(
+    (pointB.y - pointA.y) * pointC.x - (pointB.x - pointA.x) * pointC.y + pointB.x * pointA.y - pointB.y * pointA.x
+  );
+  const denominator = Math.sqrt(Math.pow(pointB.y - pointA.y, 2) + Math.pow(pointB.x - pointA.x, 2));
+
+  return numerator / denominator;
+}
+
+
 
 module.exports = WebAudioUtils;
