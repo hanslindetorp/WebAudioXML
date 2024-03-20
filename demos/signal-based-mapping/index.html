@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Signal-based Variable</title>
+		<style>
+			label {
+				display: block;
+				width: 60%;
+				margin: 1em 20%;
+			}
+			input {
+				display: block;
+				width: 100%;
+			}
+		</style>
+	</head>
+
+
+	<body>
+		<h1>Signal-based Variable</h1>
+		<ul>
+			<li>Move the pointer on the X-axis to change the pitch.</li>
+			<li>Move the pointer on the Y-axis to change the filter cutoff.</li>
+			<li>Set the lower limit and the range for the filter with the sliders.</li>
+
+		</ul>
+		<button id="initBtn">Init</button>
+		<label>Cutoff Min: <span class="value">0</span><input id="mapOutMin" type="range" min="0" max="10000" value="20"/></label>
+		<label>Cutoff Amount: <span class="value">1000</span><input id="mapOutRange" type="range" min="0" max="10000" value="1000" /></label>
+		<h3>OSC Frequency: <span id="pitch">0</span>Hz</h3>
+		<h3>Filter Cutoff: <span id="cutoff">0</span>Hz</h3>
+		<script src="script.js"></script>
+	</body>
+</html>
