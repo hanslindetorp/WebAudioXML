@@ -1188,8 +1188,12 @@ class AudioObject extends EventTarget{
       // get gain returnera ett objekt, men jag har ingen aning om var det kan gå fel...
       // Jag vågar nog ändå inte...
       // return this._node.gain;
-      let gainParam = this._node.gain;
-	  	return gainParam ? this._node.gain.value : false;
+      if(this._node){
+        this._node.gain.value;
+      } else {
+        return 0;
+      }
+	  	 
   	}
 
   	set frequency(val){
