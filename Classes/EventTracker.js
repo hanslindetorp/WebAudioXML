@@ -1,5 +1,5 @@
 
-var Sequence = require('./Sequence.js');
+var EventSequence = require('./EventSequence.js');
 
 
 class EventTracker {
@@ -23,7 +23,7 @@ class EventTracker {
 		if(seq){
 			seq.update(events);
 		} else {
-			seq = new Sequence(this, name, events);
+			seq = new EventSequence(this, name, events);
 			this._sequences.push(seq);
 		}
 		return seq;
@@ -31,7 +31,7 @@ class EventTracker {
 
 	addSequenceFromLastGesture(name){
 		let events = this.lastGesture;
-		let seq = new Sequence(this, name, events);
+		let seq = new EventSequence(this, name, events);
 		return seq;
 	}
 
@@ -135,14 +135,14 @@ class EventTracker {
 		let seq = this.getSequence("default");
 		let name = seq.name;
 		let events = seq.filterEvents("touchstart", "touchend", ["touchstart", "touchmove", "touchend"], ["relX", "relY"]);
-		return new Sequence(this, name, events);
+		return new EventSequence(this, name, events);
 	}
 
 	get lastGesture(){
 		let seq = this.getSequence("default");
 		let name = seq.name;
 		let events = seq.filterEvents("pointerdown", "pointerup", ["pointerdown", "pointermove", "pointerup"], ["relX", "relY"]);
-		return new Sequence(this, name, events);
+		return new EventSequence(this, name, events);
 	}
 
 	set playing(state){

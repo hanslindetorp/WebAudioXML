@@ -1,10 +1,11 @@
 const InteractionManager = require("./InteractionManager");
 
-
+var audioBufferList = {};
 
 	
 class Loader {
 	init(src){
+		// console.log(src);
 		return new Promise((resolve, reject) => {
 			if(src){
 				this.complete = false;
@@ -65,10 +66,15 @@ Loader.loadAudio = (src, ctx) => {
 		// Här verkar det som att loadAudio förväntar sig relativa 
 		// URLs i förhållande till server root istället för XML den lokala
 		// document root vilket borde gå fel.
-		new Loader().init(src)
+
+		if(audioBufferList[src]){
+			resolve(audioBufferList[src]);
+		} else {
+			new Loader().init(src)
 			.then(response => response.arrayBuffer())
 			.then(arrayBuffer => ctx.decodeAudioData(arrayBuffer,
 				audioBuffer => {
+					audioBufferList[src] = audioBuffer;
 					resolve(audioBuffer);
 				},
 				e => {
@@ -77,6 +83,8 @@ Loader.loadAudio = (src, ctx) => {
 					reject(errMess);
 				}
 			));
+		}
+		
 	});
 }
 

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.2";
+var version = "1.5";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -50,6 +50,9 @@ const DynamicMixer = require('./dynamic-mixer/Mixer.js');
 const Channel = require('./dynamic-mixer/Channel.js');
 const OutputMonitor = require('./GUI/OutputMonitor.js');
 const LinearArranger = require('./GUI/LinearArranger.js');
+
+
+const MusicalStructure = require('./musical-structure/Music.js');
 
 
 
@@ -84,7 +87,7 @@ class WebAudio {
 					_ctx = new AudioContext();
 					_ctx.destination.channelCount = _ctx.destination.maxChannelCount || 2;
 
-					console.log("WebAudioXML is installed. Version " + version);
+					console.log("WAXML is installed. Version " + version + " - Made by Hans Lindetorp - waxml.org");
 			} else {
 				console.error("This browser does not support Web Audio API");
 			}
@@ -379,7 +382,7 @@ class WebAudio {
 		return this.inputBusses.getBus(selector, destinations);
 	}
 
-	start(selector="", options){
+	start(selector="", options={}){
 		
 		if(!this._xml){return}
 
@@ -412,7 +415,7 @@ class WebAudio {
 		
 	}
 
-	trig(selector="", options){
+	trig(selector="", options={}){
 		
 		
 		if(!this._xml){return}
@@ -425,10 +428,10 @@ class WebAudio {
 			selectStr = selector;
 		} else if(selector.includes(":")){
 			// special case for keydown:x and keyup:x
-			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}']`).join(",");
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], *[trig='${sel.trim()}']`).join(",");
 		} else {
-			// select both elements with attribute "start="selector" and class="selector" and id="selector"
-			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}, #${sel.trim()}`).join(",");
+			// select both elements with attribute "start="selector", "trig="selector" and class="selector" and id="selector"
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], *[trig='${sel.trim()}'], .${sel.trim()}, #${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
@@ -446,7 +449,7 @@ class WebAudio {
 		return this.callPlugins("trig", selector, options);
 	}
 
-	continue(selector=""){
+	continue(selector="", options={}){
 		if(!this._xml){return}
 
 		if(selector){
@@ -470,7 +473,7 @@ class WebAudio {
 
 	}
 
-	resume(selector=""){
+	resume(selector="", options={}){
 		if(!this._xml){return}
 
 		if(selector){
@@ -493,8 +496,8 @@ class WebAudio {
 		this.callPlugins("resume", selector, options);
 	}
 	
-
-	release(selector="", options){
+	// check if "release" is used anywhere. Otherwise - remove it completely
+	release(selector="", options={}){
 		if(!this._xml){return}
 		if(selector){
 			let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
@@ -513,8 +516,36 @@ class WebAudio {
 		this.callPlugins("release", selector, options);
 	}
 
-	stop(selector="", options){
-		this.release(selector, options);
+
+
+	stop(selector="", options={}){
+		
+
+		if(!this._xml){return}
+
+		let selectStr;
+		if(!selector){
+			selectStr = "*";
+		} else if(selector.includes("[") || selector.includes("#") || selector.includes(".") ){
+			// complex and correct selector expected
+			selectStr = selector;
+		} else if(selector.includes(":")){
+			// special case for keydown:x and keyup:x
+			selectStr = selector.split(",").map(sel => `*[noteoff='${sel.trim()}'], *[stop='${sel.trim()}']`).join(",");
+		} else {
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = selector.split(",").map(sel => `*[noteoff='${sel.trim()}'], *[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
+		}
+
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+			if(XMLnode.obj.stop){
+				XMLnode.obj.stop(options);
+			} else if(XMLnode.obj.noteOff){
+				XMLnode.obj.noteOff(options);
+			}
+		});
+
+
 		this.callPlugins("stop", selector, options);
 	}
 	
@@ -909,6 +940,13 @@ class WebAudio {
 	// a way to create WAXML objects from iMusicXML
 	createObject(xmlNode){
 		return this.parser.createObject(xmlNode);
+	}
+
+
+	// returns the current value for an (imagined) oscillator with 
+	// the frequency of 1 starting at audioContext init
+	OSC(freq = 1){
+		return Math.sin(this._ctx.currentTime / 2 * freq * Math.PI);
 	}
 
 	initLinearArranger(structure){

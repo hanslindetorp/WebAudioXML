@@ -124,6 +124,7 @@ class MidiManager {
 
 	noteOn(ch, key, vel){
 		//console.log(ch, key, vel);)
+		vel = vel / 127; // MIDI 1.0
 
 		if(!this.keysPressed[ch][key]){
 
@@ -144,6 +145,7 @@ class MidiManager {
 	}
 
 	noteOff(ch, key, vel = 0){
+		vel = vel / 127; // MIDI 1.0
 
 		if(this.keysPressed[ch][key]){
 
@@ -151,13 +153,25 @@ class MidiManager {
 			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 	
 			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
-			let ev = `MIDI:NoteOff`;
+			let NOff = `MIDI:NoteOff`;
+			let NoteOffEvents = [NOff, `${NOff}:${ch}`, `${NOff}:${ch}:${key}`, `${NOff}:${ch}:${key}:${vel}`];
+			
+			let NOn = `MIDI:NoteOn`;
+			let NoteOnEvents = [NOn, `${NOn}:${ch}`, `${NOn}:${ch}:${key}`, `${NOn}:${ch}:${key}:${vel}`];
 
 			fnNames.forEach(fn => {
-				[ev, `${ev}:${ch}`, `${ev}:${ch}:${key}`, `${ev}:${ch}:${key}:${vel}`].forEach(targetEv => {
+				NoteOffEvents.forEach(targetEv => {
 					this.waxml[fn](targetEv, data);
+
+					// extra call to variables that need to reset value from NoteOn with 0 velocity
+					if(fn == "trig" && vel == 0){
+						NoteOnEvents.forEach(noteOnEvent => {
+							this.waxml[fn](noteOnEvent, data);
+						});
+					}
 				});
 			});
+
 			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
 
 		}

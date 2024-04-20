@@ -12,6 +12,7 @@ var ENVrxp = /[€]([a-z0-9:_.]*)/gi;
 
 WebAudioUtils.rxp = rxp;
 WebAudioUtils.rxpVal = rxpVal;
+WebAudioUtils.timeWindow = 10;
 
 WebAudioUtils.typeFixParam = (param, value) => {
 
@@ -240,6 +241,10 @@ WebAudioUtils.attributesToObject = attributes => {
 
 	[...attributes].forEach(attribute => {
 		param = WebAudioUtils.caseFixParameter(attribute.name);
+		
+		if(param == "sync-points"){
+			console.log(param);
+		}
 		let value = WebAudioUtils.typeFixParam(param, attribute.value);
 		obj[param] = value;
 	});
@@ -262,6 +267,8 @@ WebAudioUtils.attributesToObject = attributes => {
 	// }
 	return obj;
 }
+
+
 
 WebAudioUtils.caseFixParameter = param => {
 
@@ -715,6 +722,25 @@ WebAudioUtils.distanceFromPointToLine = (pointA, pointB, pointC) => {
 
   return numerator / denominator;
 }
+
+WebAudioUtils.crossFadeIn = (length = 10) => {
+	let float32 = new Float32Array(length+1);
+	for(let i = 0; i<=length; i++){
+		float32[i] = Math.cos((1.0 - i / length) * 0.5*Math.PI);
+	}
+	return float32; 
+}
+
+WebAudioUtils.crossFadeOut = (length = 10) => {
+	let float32 = new Float32Array(length+1);
+	for(let i = 0; i<=length; i++){
+		float32[i] = Math.cos(i / length * 0.5*Math.PI);
+	}
+	return float32;
+}
+
+
+
 
 
 

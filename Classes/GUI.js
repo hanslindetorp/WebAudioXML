@@ -621,9 +621,12 @@ class GUI {
 		// openbtn.style.display = allNodes.length ? "block": "none";
 
 
-		if(xmlNode.firstChild.getAttribute("controls") == "show"){
+		let controlSetting = xmlNode.firstChild.getAttribute("controls");
+		
+		if(controlSetting == "show" || controlSetting == "false"){
 			openbtn.classList.add("hide");
-		} else {
+		} 
+		if(controlSetting != "show") {
 			shadowContainer.classList.add("hide");
 		}
 

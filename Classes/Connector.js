@@ -231,6 +231,15 @@ class Connector {
 					break;
 
 
+					// I implement "input" for all new objects
+					// that inherits from the BaseAudioObject class
+					case "select":
+					case "sequence":
+					case "wave":
+					xmlNode.obj.connect(xmlNode.obj.parent.input);
+					break;
+					
+
 					case "channelmergernode":
 					let trgCh = xmlNode.obj.getParameter("channel") || [[...xmlNode.parentNode.children].indexOf(xmlNode)];
 					let nodeIndex = [...xmlNode.parentNode.children].indexOf(xmlNode);

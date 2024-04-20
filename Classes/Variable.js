@@ -52,7 +52,7 @@ class Variable {
 		// 	});
 		// }
 
-		if(params.trig || params.start){
+		if(params.trig){
 			//this.argumentIndex = parseInt((params.value || "").split("[").pop()) || 0;
 			this.targetParameter = params.value;
 		}	
@@ -66,7 +66,7 @@ class Variable {
 		// 	console.log(this.name, this.mappedValue, this.derivative, this.derivative2);
 		// }, 500);
 
-		this.start = this.trig;
+		this.trig;
 		
 	}
 

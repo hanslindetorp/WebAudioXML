@@ -134,6 +134,8 @@ class MIDIController extends HTMLElement {
 				height: 100%;
 				background-color: white;
 				z-index: 0;
+				color: black;
+				padding-bottom: 0.2em;
 			}
 			.key.black {
 				height: 100%;
@@ -141,6 +143,8 @@ class MIDIController extends HTMLElement {
 				z-index: 1;
 				color: white;
 				font-size: 70%;
+				padding-bottom: 0.3em;
+				box-sizing: border-box;
 			}
 			.key:hover, .pad:hover {
 				background-color: ${hoverColor};

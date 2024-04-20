@@ -99,7 +99,7 @@ class BufferSourceObject {
 		this.resume();
 	}
 
-	stop(p = {}){
+	stop(params = {}){
 		clearTimeout(this.autoStopTimer);
 		this.autoStopTimer = 0;
 		if(this._playing){
