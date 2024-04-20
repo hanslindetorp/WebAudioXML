@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Horizontal Reorchestration - By Hans Lindetorp</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    
+  </head>
+
+  <body>
+    <button data-waxml-click-start="#music">Play</button>
+    <button data-waxml-click-stop="#music">Stop</button>
+
+    <div id="positionPointers" class="sliderContainer">
+      <div>
+        <button onclick="waxml.querySelector('select').selectedIndex = 0;">1</button>
+        Intensity 1 - <span class="timeOutput">0:00:00</span>
+        <input type="range" value="0" min="0" max="1" step="0.001" disabled="true" />
+        <img src="img/vocal1.png" />
+        <img src="img/fiddle1.png" />
+        <img src="img/accordion1.png" />
+      </div>
+
+      <div>
+        <button onclick="waxml.querySelector('select').selectedIndex = 1;">2</button>
+        Intensity 2 - <span class="timeOutput">0:00:00</span>
+        <input type="range" value="0" min="0" max="1" step="0.001" disabled="true" />
+        <img src="img/vocal2.png" />
+        <img src="img/fiddle2.png" />
+        <img src="img/accordion2.png" />
+      </div>
+
+      <div>
+        <button onclick="waxml.querySelector('select').selectedIndex = 2;">3</button>
+        Intensity 3 - <span class="timeOutput">0:00:00</span>
+        <input type="range" value="0" min="0" max="1" step="0.001" disabled="true" />
+        <img src="img/vocal3.png" />
+        <img src="img/fiddle3.png" />
+        <img src="img/accordion3.png" />
+      </div>
+    </div>
+
+
+    <div class="sliderContainer">
+      <div>
+        <h3><input type="checkbox" checked data-waxml-change-set="$vocalGain=this.checked" />Vocal</h3>
+        <label>Fade Time: <span class="value"></span>
+          <input type="range" min="0" max="0.5" step="0.001" value="0" data-waxml-input-set="$vocalFadeTime=this.value" />
+        </label>
+      </div>
+      <div>
+        <h3><input type="checkbox" checked data-waxml-change-set="$fiddleGain=this.checked" />Fiddle</h3>
+        <label>Fade Time: <span class="value"></span>
+          <input type="range" min="0" max="0.5" step="0.001" value="0" data-waxml-input-set="$fiddleFadeTime=this.value" />
+        </label>
+      </div>
+      <div>
+        <h3><input type="checkbox" checked data-waxml-change-set="$accordionGain=this.checked" />Accordion</h3>
+        <label>Fade Offset: <span class="value"></span>
+          <input type="range" min="-0.5" max="0.5" step="0.001" data-waxml-input-set="$accordionFadeOffset=this.value" />
+        </label>
+        <label>Fade Time: <span class="value"></span>
+          <input type="range" min="0" max="0.5" step="0.001" value="0" data-waxml-input-set="$accordionFadeTime=this.value" />
+        </label>
+      </div>
+    </div>
+    
+
+    <script src="script/WebAudioXML.js" data-source="audio.xml"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+  </body>
+</html>

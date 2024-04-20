@@ -1,0 +1,49 @@
+
+html, body {
+  font-family: sans-serif;
+  background-color: #333;
+}
+
+.sliderContainer label {
+  display: block;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+button {
+  background-color: white;
+  padding: 0.5em;
+  margin: 0.5em;
+  min-width: 5em; 
+  border-radius: 0.2em;
+}
+
+div {
+  margin: 1em 0;
+}
+
+label {
+  min-width: 5em; 
+  border-radius: 0.2em;
+  font-size: 0.8em;
+}
+
+#positionPointers > div,
+.sliderContainer > div {
+  background-color: #ccc;
+  border-radius: 0.2em;
+  border: 1px solid #ccc;
+  padding: 0.5em;
+}
+
+#positionPointers img {
+  width: 100%;
+  height: 3em;
+}
+h3 {
+  margin: 0;
+  margin-bottom: 0.5em;
+  padding: 0;
+}
