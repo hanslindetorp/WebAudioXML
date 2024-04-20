@@ -48,7 +48,7 @@
 				<slice from="0.342" to="7.305" />
 				<slice from="7.750" to="14.440" />
 
-				<slice from="15.000" to="21.500" />
+				<slice from="15.000" to="21.300" />
 				<slice from="21.920" to="28.800" />
 
 				<slice from="29.320" to="35.760" />
@@ -61,7 +61,7 @@
 				<slice from="0.01" to="7.300" />
 				<slice from="7.750" to="14.440" />
 
-				<slice from="15.027" to="22.000" />
+				<slice from="15.027" to="21.800" />
 				<slice from="22.226" to="29.100" />
 
 				<slice from="29.342" to="35.900" />
