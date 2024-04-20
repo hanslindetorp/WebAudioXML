@@ -1,7 +1,7 @@
 
 
 
-class Sequence {
+class EventSequence {
 
 	constructor(eventTracker, name, events = []){
 		this._eventTracker = eventTracker;
@@ -157,4 +157,4 @@ class Sequence {
 }
 
 
-module.exports = Sequence;
+module.exports = EventSequence;
