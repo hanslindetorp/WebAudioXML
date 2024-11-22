@@ -2,7 +2,7 @@
 <Audio version="1.0" timeUnit="ms" gain="0dB">
     
     <!-- map MIDI KeyNum 55 (g) to detune="0" -->
-    <var name="detune" start="MIDI:NoteOn:4" value="keyNum" convert="(x-55)*100"/>
+    <var name="detune" trig="MIDI:NoteOn:4" value="keyNum" convert="(x-55)*100"/>
     
     <var name="loopStart" default="1" value="$MIDI:ControlChange:4:11" mapin="0,1" mapout="0,10000" />
     <var name="loopLength" default="500" value="$MIDI:ControlChange:4:12" mapin="0,1" mapout="100,1000" />
