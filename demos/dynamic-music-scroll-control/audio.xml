@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+
+    xmlns="https://www.w3schools.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.16.xsd"
+
+    version="1.0" 
+    timeUnit="ms" 
+    gain="0dB"
+    controls="false">
+
+
+    <!-- Do not change - #mix controls maps the scrolling to control the mixer -->
+    <var name="mix" default="0" mapin="0,1" />
+
+    <!-- How much the layers will blend when mix is between two layers 
+         0 = no blend = one layer or the other 
+         1 = max blend = always two layers playing, crossfading between the layers when
+         #mix is betwee two layers -->
+    <var name="mix_blend" default="0.5"/>
+
+
+    <!-- A dynamix mixer with a number of GainNodes, each representing a musical layer
+         The variable #mix is used to control the fade between the layers. -->
+    <Mixer mix="$mix" crossFadeRange="$mix_blend">       
+        <GainNode id="mix1" />
+        <GainNode id="mix2" />
+        <GainNode id="mix3" />
+        <GainNode id="mix4" />
+    </Mixer> 
+
+    <GainNode id="music"/>
+    
+</Audio>

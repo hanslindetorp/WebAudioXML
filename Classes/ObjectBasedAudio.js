@@ -3,9 +3,10 @@ var ConvolverNodeObject = require('./ConvolverNodeObject.js');
 var Watcher = require('./Watcher.js');
 
 
-class ObjectBasedAudio {
+class ObjectBasedAudio extends EventTarget{
 
 	constructor(obj, params, waxml){
+        super();
         params.panningModel = params.panningModel || "HRTF";
         this._params = params;
         this._ctx = obj._ctx;
@@ -38,6 +39,18 @@ class ObjectBasedAudio {
 
         this.bufferSource = new BufferSourceObject(this, params);
         this.bufferSource.connect(this.pannerNode);
+
+        this.bufferSource.addEventListener("ended", e => {
+            this.dispatchEvent(new CustomEvent("ended"));
+        });
+
+        this.bufferSource.addEventListener("loadComplete", e => {
+            this.dispatchEvent(new CustomEvent("loadComplete", {
+                detail: e.detail
+            }));
+        });
+
+        
 
         if(params.convolution){
             this.convolverNode = waxml.getConvolver(params.convolution).node;

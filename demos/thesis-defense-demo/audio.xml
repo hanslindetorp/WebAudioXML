@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="-3dB"
+	controls="false">
+
+	<var name="filter" default="0" />
+	<var name="f1" value="$key" mapin="0,128" mapout="0,128" convert="MIDI->frequency" />
+	<var name="d1" value="$expression" default="0.5" mapin="0,1" mapout="-50, 50" />
+	<var name="d2" value="$filter" default="0.5" mapin="0,1" mapout="0, 2400" />
+	<var name="solo" default="0" />
+	<var name="pad" default="1" />
+	<var name="padGate" default="0" />
+	<var name="soloGate" default="0" />
+	
+
+	<Mixer class="LFO" gain="10" output="none">
+		<OscillatorNode frequency="0.75"/>
+	</Mixer>
+
+	<Mixer>
+		<Chain gain="$pad">
+			<OscillatorNode type="sawtooth" frequency="$f1" detune="$d1" transitionTime="1" />
+			<BiquadFilterNode type="lowpass" frequency="$f1" detune="$d2" transitionTime="300" />
+			<BiquadFilterNode type="lowpass" frequency="$f1" detune="$d2" transitionTime="300" />
+			<GainNode gain="$padGate" transitionTime="400"/>
+			<GainNode gain="0.5" />
+		</Chain>
+
+		<Chain gain="$solo">
+			<OscillatorNode type="square" frequency="$f1*2" detune=".LFO" transitionTime="10"/>
+			<BiquadFilterNode type="lowpass" frequency="$f1*4" />
+			<BiquadFilterNode type="lowpass" frequency="$f1*4" />
+			<GainNode gain="$soloGate" transitionTime="100"/>
+			<GainNode gain="1"/>
+		</Chain>
+	</Mixer>
+
+</Audio>

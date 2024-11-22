@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="-3dB"
+	controls="false">
+
+
+
+    <ChannelMergerNode>
+        <GainNode class="ch-1" />
+        <GainNode class="ch-2" />
+        <GainNode class="ch-3" />
+        <GainNode class="ch-4" />
+        <GainNode class="ch-5" />
+        <GainNode class="ch-6" />
+        <GainNode class="ch-7" />
+        <GainNode class="ch-8" />
+        <GainNode class="ch-9" />
+        <GainNode class="ch-10" />
+        <GainNode class="ch-11" />
+        <GainNode class="ch-12" />
+        <GainNode class="ch-13" />
+        <GainNode class="ch-14" />
+        <GainNode class="ch-15" />
+        <GainNode class="ch-16" />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode />
+        <GainNode class="ch-30" />
+    </ChannelMergerNode>
+
+</Audio>

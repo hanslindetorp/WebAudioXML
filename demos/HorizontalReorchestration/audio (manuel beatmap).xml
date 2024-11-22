@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="-3dB"
+	controls="false">
+
+
+	<Mixer gain="0dB">
+		<ObjectBasedAudio id="vocal" gain="$vocalGain" />
+	</Mixer>
+	<Mixer gain="-3dB">
+		<ObjectBasedAudio positionX="-0.5" positionZ="-0.5" id="fiddle" gain="$fiddleGain" />
+	</Mixer>
+	
+	<Mixer gain="-3dB">
+		<GainNode id="accordion" gain="$accordionGain" />
+	</Mixer>
+	
+	
+
+
+	<select id="music" strategy="sync-points" selected-index="0">
+
+
+		<sequence id="intens-1" sync-points="audio/intens-1/beatmap.txt" repeat="true" repeat-length="42.8">
+			<wave priority="1" src="audio/intens-1/vocal.wav" fade="$vocalFadeTime" pos="-0.141" output="#vocal" />
+			<wave voice="fiddle" src="audio/intens-1/fiddle.wav" pos="-0.141" fadeinout="$fiddleFadeTime" fade-offset="$fiddleFadeOffset" output="#fiddle">
+
+				<slice from="0.010" to="7.000" />
+				<slice from="7.160" to="14.200" />
+
+				<slice from="14.390" to="21.300" />
+				<slice from="21.515" to="28.500" />
+
+				<slice from="28.842" to="35.700" />
+				<slice from="35.936" to="43.125" />
+
+			</wave>
+			<wave src="audio/intens-1/accordion.wav" pos="-0.141" fadeinout="$accordionFadeTime" fade-offset="$accordionFadeOffset" output="#accordion" />
+		</sequence>
+
+		<sequence id="intens-2" sync-points="audio/intens-2/beatmap.txt" repeat="true" repeat-length="43.2">
+			<wave voice="vocal" priority="1" src="audio/intens-2/vocal.wav" fade="$vocalFadeTime" pos="-0.375" output="#vocal" >
+
+
+				<slice from="0.342" to="7.305" />
+				<slice from="7.750" to="14.440" />
+
+				<slice from="15.000" to="21.300" />
+				<slice from="21.920" to="28.800" />
+
+				<slice from="29.320" to="35.760" />
+				<slice from="36.200" to="43.000" />
+
+
+			</wave>
+			<wave voice="fiddle" src="audio/intens-2/fiddle.wav" pos="-0.375" fadeinout="$fiddleFadeTime" fade-offset="$fiddleFadeOffset" output="#fiddle">
+
+				<slice from="0.01" to="7.300" />
+				<slice from="7.750" to="14.440" />
+
+				<slice from="15.027" to="21.800" />
+				<slice from="22.226" to="29.100" />
+
+				<slice from="29.342" to="35.900" />
+				<slice from="36.160" to="43.309" />
+
+			</wave>
+			<wave src="audio/intens-2/accordion.wav" pos="-0.375" fadeinout="$accordionFadeTime" fade-offset="$accordionFadeOffset" output="#accordion" />
+		</sequence>
+
+		<sequence id="intens-3" sync-points="audio/intens-3/beatmap.txt" repeat="true" repeat-length="41.4">
+			<wave voice="vocal" priority="1" src="audio/intens-3/vocal.wav" fade="$vocalFadeTime" pos="-0.208" output="#vocal" >
+
+				<slice from="0.125" to="7.000" />
+				<slice from="7.120" to="13.470" />
+
+				<slice from="13.974" to="20.320" />
+				<slice from="20.680" to="27.320" />
+
+				<slice from="27.750" to="34.089" />
+				<slice from="34.469" to="42.000" />
+
+			</wave>
+			<wave voice="fiddle" src="audio/intens-3/fiddle.wav" pos="-0.208" fadeinout="$fiddleFadeTime" fade-offset="$fiddleFadeOffset" output="#fiddle">
+
+				<slice from="0.01" to="6.500" />
+				<slice from="6.780" to="13.400" />
+
+				<slice from="13.687" to="20.300" />
+				<slice from="20.630" to="27.500" />
+
+				<slice from="27.777" to="34.200" />
+				<slice from="34.417" to="42.000" />
+
+			</wave>
+			<wave src="audio/intens-3/accordion.wav" pos="-0.208" fadeinout="$accordionFadeTime" fade-offset="$accordionFadeOffset" output="#accordion" />
+		</sequence>
+
+	</select>
+</Audio>

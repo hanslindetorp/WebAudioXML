@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-var version = "1.2";
+var version = "1.5";
 
 
 var WebAudioUtils = require('./WebAudioUtils.js');
@@ -52,6 +52,9 @@ const OutputMonitor = require('./GUI/OutputMonitor.js');
 const LinearArranger = require('./GUI/LinearArranger.js');
 
 
+// const MusicalStructure = require('./musical-structure/Music.js');
+
+
 
 
 
@@ -61,6 +64,8 @@ var HL2 = require("./HL2.js");
 
 
 var source = document.currentScript.dataset.src || document.currentScript.dataset.source;
+var musicStructure = document.currentScript.dataset.musicStructure;
+
 
 navigator.getUserMedia = (
 	navigator.getUserMedia ||
@@ -71,10 +76,11 @@ navigator.getUserMedia = (
 
 
 
-class WebAudio {
+class WebAudio extends EventTarget {
 
 	constructor(_ctx, src){
 		
+		super();
 
 		if(!_ctx){
 
@@ -84,7 +90,7 @@ class WebAudio {
 					_ctx = new AudioContext();
 					_ctx.destination.channelCount = _ctx.destination.maxChannelCount || 2;
 
-					console.log("WebAudioXML is installed. Version " + version);
+					console.log("WAXML is installed. Version " + version + " - Made by Hans Lindetorp - waxml.org");
 			} else {
 				console.error("This browser does not support Web Audio API");
 			}
@@ -137,8 +143,8 @@ class WebAudio {
 					this.initEvents();
 
 
-					this.dispatchEvent(new CustomEvent("inited"));
 					this.dispatchEvent(new CustomEvent("init"));
+					this.dispatchEvent(new CustomEvent("inited"));
 
 					// ugly workaround to make it make sure the variables are initing depending audio parameters
 					this.setVariable("pointerdown", 0);
@@ -161,6 +167,7 @@ class WebAudio {
 
 		this.addEventListener("init", e => {
 			this.stop("Envelope");
+			// window.initIMUS(musicStructure);
 		});
 
 	}
@@ -209,10 +216,11 @@ class WebAudio {
 			this._ctx.resume().then(result => {
 				this.audioInited = true;
 				this.start("*[trig='auto'], *[start='auto']");
+				// alert("Web Audio Inited");
 				
-				setInterval(e => {
+				//setInterval(e => {
 				//this.setVariable("currentTime", this._ctx.currentTime/this._xml.obj.parameters.timescale);
-				}, 1000/this.fps);
+				//}, 1000/this.fps);
 			}, result => {
 				// failure
 				console.log("Web Audio API cannot be inited");
@@ -253,8 +261,8 @@ class WebAudio {
 				this.initGUI(xml);
 				this.initAudio(xml);
 
-				this.dispatchEvent(new CustomEvent("inited"));
 				this.dispatchEvent(new CustomEvent("init"));
+				this.dispatchEvent(new CustomEvent("inited"));
 				resolve(xml);
 			});
 		});
@@ -270,8 +278,8 @@ class WebAudio {
 				this.initGUI(xml);
 				this.initAudio(xml);
 
-				this.dispatchEvent(new CustomEvent("inited"));
 				this.dispatchEvent(new CustomEvent("init"));
+				this.dispatchEvent(new CustomEvent("inited"));
 				resolve(xml);
 			});
 
@@ -379,7 +387,7 @@ class WebAudio {
 		return this.inputBusses.getBus(selector, destinations);
 	}
 
-	start(selector="", options){
+	start(selector="", options={}){
 		
 		if(!this._xml){return}
 
@@ -400,11 +408,14 @@ class WebAudio {
 			this.init();
 		}
 		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-			if(XMLnode.obj.start){
-				XMLnode.obj.start(options);
-			} else if(XMLnode.obj.noteOn){
-				XMLnode.obj.noteOn(options);
+			if(XMLnode.obj){
+				if(XMLnode.obj.start){
+					XMLnode.obj.start(options);
+				} else if(XMLnode.obj.noteOn){
+					XMLnode.obj.noteOn(options);
+				}
 			}
+			
 		});
 
 		return this.callPlugins("start", selector, options);
@@ -412,7 +423,7 @@ class WebAudio {
 		
 	}
 
-	trig(selector="", options){
+	trig(selector="", options={}){
 		
 		
 		if(!this._xml){return}
@@ -425,28 +436,31 @@ class WebAudio {
 			selectStr = selector;
 		} else if(selector.includes(":")){
 			// special case for keydown:x and keyup:x
-			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}']`).join(",");
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], *[trig='${sel.trim()}']`).join(",");
 		} else {
-			// select both elements with attribute "start="selector" and class="selector" and id="selector"
-			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], .${sel.trim()}, #${sel.trim()}`).join(",");
+			// select both elements with attribute "start="selector", "trig="selector" and class="selector" and id="selector"
+			selectStr = selector.split(",").map(sel => `*[noteon='${sel.trim()}'], *[start='${sel.trim()}'], *[trig='${sel.trim()}'], .${sel.trim()}, #${sel.trim()}`).join(",");
 		}
 		if(this._ctx.state != "running"){
 			this.init();
 		}
 		
 		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-			if(XMLnode.obj.start){
-				XMLnode.obj.start(options);
-			} else if(XMLnode.obj.noteOn){
-				XMLnode.obj.noteOn(options);
-			} else if(XMLnode.obj.trig){
-				XMLnode.obj.trig(options);
+			if(XMLnode.obj){
+				if(XMLnode.obj.start){
+					XMLnode.obj.start(options);
+				} else if(XMLnode.obj.noteOn){
+					XMLnode.obj.noteOn(options);
+				} else if(XMLnode.obj.trig){
+					XMLnode.obj.trig(options);
+				}
 			}
+			
 		});
 		return this.callPlugins("trig", selector, options);
 	}
 
-	continue(selector=""){
+	continue(selector="", options={}){
 		if(!this._xml){return}
 
 		if(selector){
@@ -461,16 +475,19 @@ class WebAudio {
 				this.init();
 			}
 			this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-				if(XMLnode.obj.continue){
-					XMLnode.obj.continue();
-				} 
+				if(XMLnode.obj){
+					if(XMLnode.obj.continue){
+						XMLnode.obj.continue();
+					} 
+				}
+				
 			});
 		}
 		this.callPlugins("continue", selector, options);
 
 	}
 
-	resume(selector=""){
+	resume(selector="", options={}){
 		if(!this._xml){return}
 
 		if(selector){
@@ -485,16 +502,19 @@ class WebAudio {
 				this.init();
 			}
 			this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-				if(XMLnode.obj.resume){
-					XMLnode.obj.resume();
-				} 
+				if(XMLnode.obj){
+					if(XMLnode.obj.resume){
+						XMLnode.obj.resume();
+					} 
+				}
+				
 			});
 		}
 		this.callPlugins("resume", selector, options);
 	}
 	
-
-	release(selector="", options){
+	// check if "release" is used anywhere. Otherwise - remove it completely
+	release(selector="", options={}){
 		if(!this._xml){return}
 		if(selector){
 			let selectStr = `*[noteoff='${selector}'], *[stop='${selector}']`;
@@ -503,19 +523,55 @@ class WebAudio {
 				selectStr += ", " + selector.split(",").map(sel => `*[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
 			}
 			this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
-				if(XMLnode.obj.stop){
-					XMLnode.obj.stop(options);
-				} else if(XMLnode.obj.noteOff){
-					XMLnode.obj.noteOff(options);
+				if(XMLnode.obj){
+					if(XMLnode.obj.stop){
+						XMLnode.obj.stop(options);
+					} else if(XMLnode.obj.noteOff){
+						XMLnode.obj.noteOff(options);
+					}
 				}
+				
 			});
 		}
 		this.callPlugins("release", selector, options);
 	}
 
-	stop(selector="", options){
-		this.release(selector, options);
-		this.callPlugins("stop", selector, options);
+
+
+	stop(selector="", options={}){
+		
+
+		if(!this._xml){return}
+
+		let selectStr;
+		if(!selector || selector == "*" || selector == "all"){
+		// if(!selector){
+			selectStr = "*";
+		} else if(selector.includes("[") || selector.includes("#") || selector.includes(".") ){
+			// complex and correct selector expected
+			selectStr = selector;
+		} else if(selector.includes(":")){
+			// special case for keydown:x and keyup:x
+			selectStr = selector.split(",").map(sel => `*[noteoff='${sel.trim()}'], *[stop='${sel.trim()}']`).join(",");
+		} else {
+			// select both elements with attribute "start="selector" and class="selector"
+			selectStr = selector.split(",").map(sel => `*[noteoff='${sel.trim()}'], *[stop='${sel.trim()}'], .${sel.trim()}`).join(",");
+		}
+
+		this._xml.querySelectorAll(selectStr).forEach(XMLnode => {
+			if(XMLnode.obj){
+				if(XMLnode.obj.stop){
+					XMLnode.obj.stop(options);
+				} else if(XMLnode.obj.noteOff){
+					XMLnode.obj.noteOff(options);
+				}
+			}
+			
+		});
+
+
+		// this.callPlugins("stop", selector, options);
+		this.callPlugins("stop", selectStr, options);
 	}
 	
 
@@ -530,6 +586,7 @@ class WebAudio {
 	registerPlugin(plugin){
 
 		this.plugins.push(plugin);
+		// plugin.init();
 		// consider returning an interface to
 		// variables here
 	}
@@ -546,22 +603,22 @@ class WebAudio {
 		return returnVal;
 	}
 
-	addEventListener(name, fn){
-		if(typeof name !== "string"){return}
-		if(typeof fn !== "function"){return}
-		this._listeners[name] = this._listeners[name] || [];
-		this._listeners[name].push(fn);
-	}
-	removeEventListener(name, fn){
-		if(this._listeners[name]){
-			this._listeners[name] = this._listeners[name].filter(item => item != fn);
-		}
-	}
+	// addEventListener(name, fn){
+	// 	if(typeof name !== "string"){return}
+	// 	if(typeof fn !== "function"){return}
+	// 	this._listeners[name] = this._listeners[name] || [];
+	// 	this._listeners[name].push(fn);
+	// }
+	// removeEventListener(name, fn){
+	// 	if(this._listeners[name]){
+	// 		this._listeners[name] = this._listeners[name].filter(item => item != fn);
+	// 	}
+	// }
 
-	dispatchEvent(e){
-		this._listeners[e.type] = this._listeners[e.type] || [];
-		this._listeners[e.type].forEach(fn => fn(e));
-	}
+	// dispatchEvent(e){
+	// 	this._listeners[e.type] = this._listeners[e.type] || [];
+	// 	this._listeners[e.type].forEach(fn => fn(e));
+	// }
 
 	get statistics(){
 		return {
@@ -909,6 +966,13 @@ class WebAudio {
 	// a way to create WAXML objects from iMusicXML
 	createObject(xmlNode){
 		return this.parser.createObject(xmlNode);
+	}
+
+
+	// returns the current value for an (imagined) oscillator with 
+	// the frequency of 1 starting at audioContext init
+	OSC(freq = 1){
+		return Math.sin(this._ctx.currentTime / 2 * freq * Math.PI);
 	}
 
 	initLinearArranger(structure){

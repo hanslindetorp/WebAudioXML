@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Thesis - Defense - DEMO</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    
+  </head>
+
+  <body>
+
+		<main class="max-size">
+			<section id="start" class="dark">
+        <h1>Turn sound on</h1>
+        <a class="button" href="#volumePage">OK</a>
+			</section>
+			<section id="volumePage" class="dark">
+        <h1>Set volume to max!</h1>
+        <a id="initBtn" class="button" href="#pad">OK</a>
+			</section>
+
+			<section id="pad">
+        <img src="img/qr.png" />
+        <div class="giant output"></div>
+        <div class="note-name"></div>
+        <waxml-xy-area width="600" height="100">
+          <waxml-xy-handle size="100px" width="200px" direction="x" x="0.5" sources="x" targets="expression" initOnRelease="true">&lt; &nbsp; &gt;</waxml-xy-handle>
+        </waxml-xy-area>
+        <!-- <input type="range" /> -->
+			</section>
+
+			<section id="solo">
+        <div class="buttonContainer"></div>
+			</section>
+
+    </main>
+
+    <script src="script/max.size.js"></script>
+    <script src="script/NoSleep.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script/WebAudioXML.js" data-source="audio.xml"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+
+html, body {
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+}
+
+body {
+	background-color: black;
+}
+
+img {
+	width: 100vW;
+	height: auto;
+	display: block;
+	margin-top: 15vh;
+	margin-bottom: 30vh;
+}
+.scrollY {
+	background-color: aquamarine;
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 5em;
+	height: 2em;
+}

@@ -30,6 +30,16 @@ label {
   font-size: 0.8em;
 }
 
+#positionPointers {
+  display: block;
+  width: 100%;
+}
+#positionPointers > div {
+  display: inline-block;
+  width: 33%;
+  box-sizing: border-box;
+}
+
 #positionPointers > div,
 .sliderContainer > div {
   background-color: #ccc;
@@ -42,6 +52,8 @@ label {
   width: 100%;
   height: 3em;
 }
+
+
 h3 {
   margin: 0;
   margin-bottom: 0.5em;

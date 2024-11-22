@@ -1,7 +1,8 @@
-
+          
 
 class LinearArranger extends HTMLElement {
 
+    
     constructor(waxml){
         super();
 		this.inited = false;
@@ -43,22 +44,6 @@ class LinearArranger extends HTMLElement {
         content.dataset.width = 100;
         frame.appendChild(content);
 
-        // zoom buttons
-        let btn = document.createElement("button");
-        btn.classList.add("zoom");
-        btn.innerHTML = "+";
-        btn.addEventListener("click", e => {
-            this.zoomFactor(1.25);
-        });
-        this.appendChild(btn);
-
-        btn = document.createElement("button");
-        btn.classList.add("zoom");
-        btn.innerHTML = "-";
-        btn.addEventListener("click", e => {
-            this.zoomFactor(0.8);
-        });
-        this.appendChild(btn);
 
 
         let positionPointer = document.createElement("div");
@@ -147,14 +132,34 @@ class LinearArranger extends HTMLElement {
             content.appendChild(div)
         });
 
-        this.querySelectorAll(".track").forEach(obj => {
-            obj.style.height = `${100/this.nrOfTracks}%`;
-        });
-
         // only append if music is used
         if(content.children){
             this.appendChild(frame);
+
+            // zoom buttons
+            let btn = document.createElement("button");
+            btn.classList.add("zoom");
+            btn.innerHTML = "+";
+            btn.addEventListener("click", e => {
+                this.zoomFactor(1.25);
+            });
+            this.appendChild(btn);
+
+            btn = document.createElement("button");
+            btn.classList.add("zoom");
+            btn.innerHTML = "-";
+            btn.addEventListener("click", e => {
+                this.zoomFactor(0.8);
+            });
+            this.appendChild(btn);
+
+
+            this.querySelectorAll(".track").forEach(obj => {
+                obj.style.height = `${100/this.nrOfTracks}%`;
+            });
         }
+
+
 
     }
 
@@ -246,5 +251,6 @@ class LinearArranger extends HTMLElement {
         this.content.style.width = `${w}%`;
     }
 }
+
 
 module.exports = LinearArranger;

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<imusic
+
+  xmlns="https://www.w3schools.com"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/imusic/scheme_1.1.21.xsd"
+  
+  version="1.0" 
+  tempo="94" 
+  timeSign="4/4"
+  
+  changeOnNext="bar" 
+  fadeTime="10"
+  showGUI="false">
+
+
+  <arrangement class="A">
+    <track loopLength="16" src="audio/layer1.mp3" output="#mix1"/>
+    <track loopLength="16" src="audio/layer2.mp3" output="#mix2"/>
+    <track loopLength="16" src="audio/layer3.mp3" output="#mix3"/>
+    <track loopLength="16" src="audio/layer4.mp3" output="#mix4"/>
+  </arrangement>
+
+
+</imusic>

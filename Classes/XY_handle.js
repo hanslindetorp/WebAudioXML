@@ -74,9 +74,12 @@ class XY_handle extends HTMLElement {
 		let type = this.parentElement.getAttribute("type") || "square";
 		let x =  this.getAttribute("x") || (type == "circle" ? 0.5 : 0);
 		let y = this.getAttribute("y") || (type == "circle" ? 0.5 : 0);
+		this.initOnRelease = this.getAttribute("initOnRelease") == "true" ? true : false;
 
 		this.x = parseFloat(x);
 		this.y = parseFloat(y);
+		this.initX = this.x;
+		this.initY = this.y;
 		this._angle = this.XYtoAngle();
 		this._radius = this.XYtoRadius();
 
@@ -220,12 +223,12 @@ class XY_handle extends HTMLElement {
 	update(key, val){
 		
 		if(key == "x" && this.direction.x){
-			this.x = x;
-			this.style.left = `${x * this.boundRect.width}px`;
+			this.x = val;
+			this.style.left = `${this.x * this.effectiveArea.width}px`;
 		}
 		if(key == "y" && this.direction.y){
-			this.y = y;
-			this.style.top = `${y * this.boundRect.height}px`;
+			this.y = val;
+			this.style.top = `${this.y * this.effectiveArea.height}px`;
 		}
 		this.dispatchEvent(new CustomEvent("input"));
 
@@ -242,6 +245,11 @@ class XY_handle extends HTMLElement {
 			this.classList.add("dragged");
 		} else {
 			this.classList.remove("dragged");
+			if(this.initOnRelease){
+				this.update("x", this.initX);
+				this.update("y", this.initY);
+				// this.move();
+			}
 		}
 	}
 

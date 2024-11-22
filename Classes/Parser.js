@@ -9,6 +9,11 @@ var Watcher = require('./Watcher.js');
 var Synth = require('./Synth.js');
 const SnapshotComponent = require('./variable-matrix/SnapshotComponent.js');
 
+const Select = require('./Select.js');
+const Sequence = require('./musical-structure/Sequence.js');
+const Wave = require('./musical-structure/Wave.js');
+const Slice = require('./musical-structure/Slice.js');
+
 
 
 class Parser {
@@ -126,7 +131,125 @@ class Parser {
 
 	}
 
+
+	linkExternalAttributes(parentNode, curNode, localPath){
+
+		return new Promise((resolve, reject) => {
+
+
+			let linkedAttributes = [];
+			switch(curNode.localName.toLowerCase()){
+				case "audioworkletnode":
+				// let the AudioObject handle linking
+				break;
+
+				default:
+				linkedAttributes = [...curNode.attributes]
+				.filter(attr => attr.value.includes(".txt") 
+					|| attr.value.includes(".csv")
+					|| attr.value.includes(".js"));
+
+				
+				break;
+			}
+			let cnt = linkedAttributes.length;
+			if(cnt){
+				linkedAttributes.forEach(attr => {
+					let fileName, args;
+					let fnCallIncluded =  attr.value.substr(-1) == ")";
+					if(fnCallIncluded){	
+						let matches = [...attr.value.matchAll(/\(([^\)]+)\)/g)];
+						fileName = matches[0][1];
+						args = matches[1][1];
+						let argsValue = eval(args);
+						if(typeof argsValue != "undefined"){
+							args = argsValue;
+						}
+					} else {
+						fileName = attr.value;
+					}
+					Loader.loadText(localPath + fileName)
+					.then(txt => {
+						if(attr.value.includes(".js")){
+							if(fnCallIncluded){
+								// execution of external function is included in the 
+								// attribute (including (optional) arguments)
+								attr.value = eval(txt)(args);
+							} else {
+								let fn = eval(txt);
+								attr.value = fn instanceof Function ? fn() : "";
+							}
+						} else {
+							attr.value = txt;
+						}
+						
+						if(!--cnt){
+							// count down to see if all linked attributes are 
+							// loaded
+							return resolve(curNode);
+						}
+						
+					});
+				});
+			} else {
+				return resolve(curNode);
+			}
+
+		});
+	}
+
+
+
 	appendXMLnode(parentNode, curNode, localPath){
+
+		parentNode = parentNode.appendChild(curNode);
+
+		return new Promise((resolve, reject) => {
+
+
+
+			// FIRST LINK ATTRIBUTES (if external)
+			this.linkExternalAttributes(parentNode, curNode, localPath)
+			
+			.then(xmlNode => {
+			
+				// THEN LINK THE WHOLE NODE (if external)
+
+				if(curNode.localName == "include"){
+					let href = curNode.getAttribute("href");
+					this.linkExternalXMLFile(curNode, href, localPath)
+					.then(xmlNode => {
+						return resolve(xmlNode);
+					});
+				} else if(curNode.children.length){
+
+					// APPEND CHILDREN (if any)
+					let cnt = curNode.children.length;
+					Array.from(curNode.children).forEach(childNode => {
+
+						if(childNode.nodeName.toLowerCase() != "parsererror"){
+							this.appendXMLnode(parentNode, childNode, localPath)
+							.then(xmlNode => {
+								// countdown to see if all children are linked before 
+								// resolving promise
+								if(!--cnt){return resolve(xmlNode);}
+							});
+						}
+					});
+				} else {
+
+					// IF NO CHILDREN -> resolve
+					return resolve(xmlNode);
+				}
+
+			});
+
+		});
+	}
+
+
+
+	appendXMLnode_Backup(parentNode, curNode, localPath){
 
 		parentNode = parentNode.appendChild(curNode);
 
@@ -140,7 +263,7 @@ class Parser {
 				.then(xmlNode => {
 					return resolve(xmlNode);
 				});
-			} else if(cnt){
+			} else if(curNode.children.length){
 
 				
 				Array.from(curNode.children).forEach(childNode => {
@@ -203,6 +326,8 @@ class Parser {
 							}
 							
 							if(!--cnt){
+								// count down to see if all linked attributes are 
+								// loaded
 								return resolve(curNode);
 							}
 							
@@ -217,6 +342,14 @@ class Parser {
 		});
 		// console.log(`curNode: ${curNode.localName}, waitForExternalFile = ${waitForExternalFile}`);
 	}
+
+
+
+
+
+
+
+
 
 
 
@@ -269,9 +402,14 @@ class Parser {
 									break;
 
 									default:
-									// Det är ganska dumt att den här kopplingen 
+									// Det är dumt att den här kopplingen 
 									// är skriven i parsern
 									// Det borde ligga i object-klassen
+
+									// Sort out the differences between setting an audio parameter directly
+									// or silently referring to a javascript value stored in the Watcher
+									// The current system (per 2024-04-17) is really a mixture of various 
+									// tryouts.
 									if(typeof time == "undefined"){
 										time = xmlNode.obj.getParameter("transitionTime");
 									}
@@ -282,7 +420,10 @@ class Parser {
 										break;
 
 										default:
-										xmlNode.obj.setTargetAtTime(key, val, 0, time);
+										// double check that the target can be set using setTargetAtTime()
+										if(xmlNode.obj.setTargetAtTime){
+											xmlNode.obj.setTargetAtTime(key, val, 0, time);
+										}
 										break;
 									}
 									
@@ -403,6 +544,25 @@ class Parser {
 
 			case "envelope":
 			xmlNode.obj = new Envelope(xmlNode, this.waxml, params);
+			break;
+
+			case "select":
+			xmlNode.obj = new Select(xmlNode, this.waxml, params);
+			Array.from(xmlNode.children).forEach(node => this.parseXML(node, localPath));
+			break;
+
+			case "sequence":
+			xmlNode.obj = new Sequence(xmlNode, this.waxml, params);
+			Array.from(xmlNode.children).forEach(node => this.parseXML(node, localPath));
+			break;
+
+			case "wave":
+			xmlNode.obj = new Wave(xmlNode, this.waxml, params);
+			Array.from(xmlNode.children).forEach(node => this.parseXML(node, localPath));
+			break;
+
+			case "slice":
+			xmlNode.obj = new Slice(xmlNode, this.waxml, params);
 			break;
 
 			default:

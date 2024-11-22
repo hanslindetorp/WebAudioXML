@@ -82,11 +82,16 @@ class GUI {
 				min-width: 5em;
 				margin-right: 0.5em;
 			}
+			#waxml-GUI button.interlude,
+			#iMusic-GUI button.interlude {
+				opacity: 0.3;
+			}
 
 			.waxml-open-button {
 				position: absolute;
 				right: 5px;
 				top: 5px;
+				
 			}
 
 
@@ -480,7 +485,7 @@ class GUI {
 			
 
 			waxml-linear-arranger > .main {
-				width: 80%;
+				width: 79%;
 				overflow-y: hidden;
 				overflow-x: scroll;
 			}
@@ -621,9 +626,12 @@ class GUI {
 		// openbtn.style.display = allNodes.length ? "block": "none";
 
 
-		if(xmlNode.firstChild.getAttribute("controls") == "show"){
+		let controlSetting = xmlNode.firstChild.getAttribute("controls");
+		
+		if(controlSetting == "show" || controlSetting == "false"){
 			openbtn.classList.add("hide");
-		} else {
+		} 
+		if(controlSetting != "show") {
 			shadowContainer.classList.add("hide");
 		}
 
@@ -742,7 +750,7 @@ class GUI {
 		let header = document.createElement("h1");
 		header.innerHTML = "Mixer";
 		container.appendChild(header);
-		returnArray = [];
+		let returnArray = [];
 
 		objects.forEach(obj => {
 			// add a matrix for each object with controls="waxml-variable-matrix"

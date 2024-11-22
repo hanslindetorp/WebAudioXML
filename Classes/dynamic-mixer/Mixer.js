@@ -58,7 +58,7 @@ class DynamicMixer extends HTMLElement {
 		variables = [];
 		
 		let attributeData = [];
-		attributeData.push({name: "transitionTime", max: 2000, value: 500});
+		attributeData.push({name: "transitionTime", max: 4000, value: 1000});
 		attributeData.push({name: "crossfaderange", max: 1, value: 0});
 		attributeData.push({name: "selectindex", max: this.channelCount-1, value: 0});
 

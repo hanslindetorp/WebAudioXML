@@ -1,10 +1,16 @@
 const InteractionManager = require("./InteractionManager");
 
-
-
+var audioBufferList = {};
+var waxml;
 	
-class Loader {
+class Loader extends EventTarget{
+
+	constructor(){
+		super();
+	}
+
 	init(src){
+		// console.log(src);
 		return new Promise((resolve, reject) => {
 			if(src){
 				this.complete = false;
@@ -65,10 +71,15 @@ Loader.loadAudio = (src, ctx) => {
 		// Här verkar det som att loadAudio förväntar sig relativa 
 		// URLs i förhållande till server root istället för XML den lokala
 		// document root vilket borde gå fel.
-		new Loader().init(src)
+
+		if(audioBufferList[src]){
+			resolve(audioBufferList[src]);
+		} else {
+			new Loader().init(src)
 			.then(response => response.arrayBuffer())
 			.then(arrayBuffer => ctx.decodeAudioData(arrayBuffer,
 				audioBuffer => {
+					audioBufferList[src] = audioBuffer;
 					resolve(audioBuffer);
 				},
 				e => {
@@ -77,6 +88,8 @@ Loader.loadAudio = (src, ctx) => {
 					reject(errMess);
 				}
 			));
+		}
+		
 	});
 }
 
@@ -92,7 +105,7 @@ Loader.loadXML = (url) => {
 				resolve(xmlDoc.firstElementChild);
 			},
 			e => {
-					let errMess = "WebAudioXML error. File not found: " + src;
+					let errMess = "WebAudioXML error. File not found: " + url;
 					console.error(errMess);
 					reject(errMess);
 				}
@@ -116,18 +129,18 @@ Loader.loadComplete = loader => {
 	if(loader){
 		loader.complete = true;
 	}
-	Loader.checkLoadComplete();
+	if(Loader.checkLoadComplete()){
+		document.body.classList.remove("waxml-loading");
+	}
 }
 
 
 Loader.checkLoadComplete = () => {
 	let stillLoading = Loader.filesLoading.filter(file => file.complete == false);
-		
-	if(!stillLoading.length){
-		document.body.classList.remove("waxml-loading");
-		return true;
-	}
+	return !stillLoading.length;
 }
+
+
 
 Loader.addLoader = obj => {
 	document.body.classList.add("waxml-loading");
@@ -135,6 +148,5 @@ Loader.addLoader = obj => {
 }
 
 Loader.filesLoading = [];
-
 
 module.exports = Loader;

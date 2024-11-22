@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>Thesis - Defense - DEMO - Master</title>
+	<link href="style/backend.css" rel="stylesheet" type="text/css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.3/hands.js" crossorigin="anonymous"></script>
+	
+</head>
+
+
+<body>
+	<main>
+		<div id="video-container">
+			<video class="input_video" width="1000" height="567.5"></video>
+			<canvas class="output_canvas" width="1000" height="567.5"></canvas>
+		</div>
+
+		<div>
+			<button id="number">Generate number</button>
+			<button id="solo">Set Solo</button>
+			<button id="chord">Chord</button>
+			<button id="play">PLAY</button>
+		</div>
+		
+		<waxml-midi-controller type="keyboard" width="1086" height="150" min="24" max="72" keyCommands="zsxdcvgbhnjmq2w3er5t6y7ui" labels="c,c#,d,d#,e,f,f#,g,g#,a,a#,b"  channel="1" midiIn="true"></waxml-midi-controller>
+	</main>
+	<!-- <script src="script/socket.io.min.js"></script> -->
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
+	<script src="script/WebAudioXML.js" data-source="backend-audio.xml" data-music-structure="backend-music.xml"></script>
+	<script type="module" src="script/backend.js"></script>
+</body>
+
+</html>

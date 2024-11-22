@@ -79,6 +79,10 @@ class AudioObject extends EventTarget{
 
 		  	case "audiobuffersourcenode":
         this._node = new BufferSourceObject(this, params);
+        this._node.addEventListener("ended", e => {
+          this.dispatchEvent(new CustomEvent("ended"));
+        });
+        this.dispatchEvent(new CustomEvent("loadComplete"));
         // this.bufferSource = new BufferSourceObject(this._ctx, params);
         // creates a living connection with the current active buffernode
 		  	// this._node = this.bufferSource._node;
@@ -263,6 +267,14 @@ class AudioObject extends EventTarget{
 
         case "objectbasedaudio":
         this._node = new ObjectBasedAudio(this, this._params, waxml);
+        this._node.addEventListener("ended", e => {
+          this.dispatchEvent(new CustomEvent("ended"));
+        });
+        this._node.addEventListener("loadComplete", e => {
+          this.dispatchEvent(new CustomEvent("loadComplete", {
+            detail: e.detail
+          }));
+        });
         break;
 
         case "ambientaudio":
@@ -538,7 +550,11 @@ class AudioObject extends EventTarget{
    
             let v = this._params[key].valueOf();
             // if(typeof v !== "undefined")this[key] = v;
-            if(typeof v == typeof this[key] || typeof this[key] == "undefined")this[key] = v;
+            if(typeof v != "undefined"){
+              if(typeof v == typeof this[key] || typeof this[key] == "undefined"){
+                this[key] = v;
+              }
+            }
           }
 
   			});
@@ -987,7 +1003,7 @@ class AudioObject extends EventTarget{
         }
 
   	  	if(transitionTime && param.setTargetAtTime){
-  		  	param.setTargetAtTime(value, startTime, transitionTime / 2);
+  		  	param.setTargetAtTime(value, startTime, transitionTime);
           // console.log(`transitionTime: ${transitionTime}`);
         } else if(param.setValueAtTime){
   		  	param.setValueAtTime(value, startTime);
@@ -1188,8 +1204,12 @@ class AudioObject extends EventTarget{
       // get gain returnera ett objekt, men jag har ingen aning om var det kan gå fel...
       // Jag vågar nog ändå inte...
       // return this._node.gain;
-      let gainParam = this._node.gain;
-	  	return gainParam ? this._node.gain.value : false;
+      if(this._node){
+        this._node.gain.value;
+      } else {
+        return 0;
+      }
+	  	 
   	}
 
   	set frequency(val){

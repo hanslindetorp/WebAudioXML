@@ -223,7 +223,7 @@ class Meter extends HTMLElement {
 		} else {
 			// slow fall-off to lower value
 			let diff = relPeak - this.relPeak;
-			this.relPeak += diff / 100;
+			this.relPeak += diff / 10;
 		}
 
 	
