@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<imusic 
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="-3dB"
+	controls="false"
+	tempo="120" timeSign="4/4"
+	loopLength="2">
+
+	<arrangement class="A">
+		<track src="audio/bounce-50.wav" />
+		<track src="audio/bounce-51.wav" />
+		<track src="audio/bounce-52.wav" />
+		<track src="audio/bounce-53.wav" />
+		<track src="audio/bounce-54.wav" />
+		<track src="audio/bounce-55.wav" />
+		<track src="audio/bounce-56.wav" />
+		<track src="audio/bounce-57.wav" />
+		<track src="audio/bounce-58.wav" />
+		<track src="audio/bounce-59.wav" />
+		<track src="audio/bounce-60.wav" />
+		<track src="audio/bounce-61.wav" />
+		<track src="audio/bounce-62.wav" />
+		<track src="audio/bounce-63.wav" />
+		<track src="audio/bounce-64.wav" />
+		<track src="audio/bounce-65.wav" />
+		<track src="audio/bounce-66.wav" />
+		<track src="audio/bounce-67.wav" />
+		<track upbeat="1/32" src="audio/marcato-36.wav" />
+		<track upbeat="1/32" src="audio/marcato-37.wav" />
+		<track upbeat="1/32" src="audio/marcato-38.wav" />
+		<track upbeat="1/32" src="audio/marcato-39.wav" />
+		<track upbeat="1/32" src="audio/marcato-40.wav" />
+		<track upbeat="1/32" src="audio/marcato-41.wav" />
+		<track upbeat="1/32" src="audio/marcato-42.wav" />
+		<track upbeat="1/32" src="audio/marcato-43.wav" />
+		<track upbeat="1/32" src="audio/marcato-44.wav" />
+		<track upbeat="1/32" src="audio/marcato-45.wav" />
+		<track upbeat="1/32" src="audio/marcato-46.wav" />
+		<track upbeat="1/32" src="audio/marcato-47.wav" />
+		<track upbeat="1/32" src="audio/marcato-48.wav" />
+		<track src="audio/synth-24.wav" />
+		<track src="audio/synth-25.wav" />
+		<track src="audio/synth-26.wav" />
+		<track src="audio/synth-27.wav" />
+		<track src="audio/synth-28.wav" />
+		<track src="audio/synth-29.wav" />
+		<track src="audio/synth-30.wav" />
+		<track src="audio/synth-31.wav" />
+		<track src="audio/synth-32.wav" />
+		<track src="audio/synth-33.wav" />
+		<track src="audio/synth-34.wav" />
+		<track src="audio/synth-35.wav" />
+		<track src="audio/synth-36.wav" />
+		<track src="audio/synth-37.wav" />
+		<track src="audio/synth-38.wav" />
+		<track src="audio/synth-39.wav" />
+		<track src="audio/synth-40.wav" />
+		<track src="audio/synth-41.wav" />
+		<track src="audio/synth-42.wav" />
+		<track src="audio/synth-43.wav" />
+		<track src="audio/synth-44.wav" />
+		<track src="audio/synth-45.wav" />
+		<track src="audio/synth-46.wav" />
+		<track src="audio/synth-47.wav" />
+		<track src="audio/synth-48.wav" />
+		<track src="audio/synth-49.wav" />
+		<track src="audio/synth-50.wav" />
+		<track src="audio/synth-51.wav" />
+		<track src="audio/synth-52.wav" />
+		<track src="audio/synth-53.wav" />
+		<track src="audio/synth-54.wav" />
+		<track src="audio/synth-55.wav" />
+		<track src="audio/synth-56.wav" />
+		<track src="audio/synth-57.wav" />
+		<track src="audio/synth-58.wav" />
+		<track src="audio/synth-59.wav" />
+		<track src="audio/synth-60.wav" />
+		<track src="audio/synth-61.wav" />
+		<track src="audio/synth-62.wav" />
+		<track src="audio/synth-63.wav" />
+		<track src="audio/synth-64.wav" />
+		<track src="audio/synth-65.wav" />
+		<track src="audio/synth-66.wav" />
+		<track src="audio/synth-67.wav" />
+		<track src="audio/synth-68.wav" />
+		<track src="audio/synth-69.wav" />
+		<track src="audio/synth-70.wav" />
+		<track src="audio/synth-71.wav" />
+		<track src="audio/synth-72.wav" />
+	</arrangement>
+
+</imusic>
