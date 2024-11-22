@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Audio version="1.0" timeUnit="ms" gain="0dB">
     
-    <var name="frequency" start="MIDI:NoteOn:2" value="keyNum" convert="MIDI->frequency"/>
+    <var name="frequency" trig="MIDI:NoteOn:2" value="keyNum" convert="MIDI->frequency"/>
     <var name="modulation" default="0" value="$MIDI:ControlChange:2:1"/>
     <var name="spread" default="0" value="$MIDI:ControlChange:2:11" mapin="0,1" mapout="1, 1.5, 2, 2.5, 3" curve="step" />
 
