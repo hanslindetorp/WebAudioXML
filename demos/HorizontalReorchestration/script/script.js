@@ -42,6 +42,8 @@ waxml.addEventListener("inited", () => {
             });
             
         }, 20);
+
+
         
     });
     
@@ -59,6 +61,18 @@ waxml.addEventListener("inited", () => {
         }
        
     });
+
+
+    document.addEventListener("keydown", e => {
+        let index = parseInt(e.key);
+        if(index >= 1 && index <= 3){
+            waxml.querySelector('select').selectedIndex = index - 1;
+        }
+        if(e.key == " "){
+            waxml.stop();
+        }
+        
+    })
 
 });
 

@@ -1,4 +1,4 @@
-(function ($) {
+window.initIMUS = (musicStructure) => {
 
 
 	var defaultSectionName = "default";
@@ -969,16 +969,16 @@
 
 
 				// tillfällig regel
-				el = document.createElement("input");
-				el.setAttribute("type", "range");
-				el.setAttribute("min", "0");
-				el.setAttribute("max", "100");
-				el.addEventListener("input", e => {
-					["BD-SN", "HH", "Fill", "Bass", "Sine", "Chord"].forEach(tr => {
-						iMusic(tr).setActive(e.target.value / 100);
-					});
-				});
-				row.appendChild(el);
+				// el = document.createElement("input");
+				// el.setAttribute("type", "range");
+				// el.setAttribute("min", "0");
+				// el.setAttribute("max", "100");
+				// el.addEventListener("input", e => {
+				// 	["BD-SN", "HH", "Fill", "Bass", "Sine", "Chord"].forEach(tr => {
+				// 		iMusic(tr).setActive(e.target.value / 100);
+				// 	});
+				// });
+				// row.appendChild(el);
 				
 
 				if(motifTags.length){
@@ -5054,7 +5054,8 @@
 	function setVolume(val, dontStore){
 
 		if(!this.bus){return}
-		this.bus.input.gain.linearRampToValueAtTime(val, audioContext.currentTime + 0.1);
+		// this.bus.input.gain.linearRampToValueAtTime(val, audioContext.currentTime + 0.1);
+		this.bus.input.gain.setTargetAtTime(val, audioContext.currentTime, 0.01);
 
 		if(!this.parameters || dontStore){return}
 		this.parameters.volume = val;
@@ -7743,7 +7744,7 @@
 
 
 	var XMLtimeStamp;
-	var musicStructure = document.currentScript.dataset.musicStructure;
+	// var musicStructure = document.currentScript.dataset.musicStructure;
 
 
 
@@ -8411,7 +8412,7 @@
 
 
 
-}(window.jQuery));
+};
 
 
 

@@ -176,10 +176,39 @@ class InteractionManager {
 
 		document.querySelectorAll("waxml-midi-controller").forEach( el => {
 			el.addEventListener("keydown", e => {
-				this.midiManager.noteOn(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+				let status = 9;
+				let ch = e.detail.channel;
+				let key = e.detail.keyNum;
+				let vel = e.detail.velocity;
+
+				this.waxml.dispatchEvent(new CustomEvent("midiIn", {detail:{
+					message: [128 + status * 16 + ch, key, vel],
+					channel: ch,
+					status: status,
+					data1: key,
+					data2: vel
+				}}));
+
+				// better to send a 'clean' midi message to midiManager so
+				// we don't have to do all the MIDI work here.
+				this.midiManager.noteOn(ch, key, vel);
 			});
 			el.addEventListener("keyup", e => {
-				this.midiManager.noteOff(e.detail.channel, e.detail.keyNum, e.detail.velocity);
+				let status = 8;
+				let ch = e.detail.channel;
+				let key = e.detail.keyNum;
+				let vel = e.detail.velocity;
+
+				this.waxml.dispatchEvent(new CustomEvent("midiIn", {detail:{
+					message: [128 + status * 16 + ch, key, vel],
+					channel: ch,
+					status: status,
+					data1: key,
+					data2: vel
+				}}));
+				// better to send a 'clean' midi message to midiManager so
+				// we don't have to do all the MIDI work here.
+				this.midiManager.noteOff(ch, key, vel);
 			});
 			if(el.midiIn){
 				this.midiManager.addEventListener("MIDI:NoteOn", e => el.indicateKey(e.detail.keyNum, true));

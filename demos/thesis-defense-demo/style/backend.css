@@ -1,0 +1,42 @@
+
+html, body {
+  font-family: sans-serif;
+}
+
+main {
+  width: 72vw;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.giant {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 5em;
+  text-align: center;
+  margin: 0 auto;
+  width: 100vw;
+}
+
+#video-container {
+  position: relative;
+  display: inline-block;
+  width: 72vw;
+  height: 36vw;
+  margin: 0 auto;
+  background-color: green;
+}
+
+video, canvas {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+
+waxml-midi-controller {
+  width: 72vw !important;
+  margin: 0 auto;
+}
+
+button {
+  visibility: hidden;
+}

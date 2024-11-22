@@ -213,7 +213,9 @@ class Variable {
 		// 	this._value = this.default;
 		// }
 		// return this._mapper.getValue(this._value);
-		return this.mappedValue;
+		let val = this.mappedValue;
+		// console.log(this.name, val);
+		return val;
 
 	}
 

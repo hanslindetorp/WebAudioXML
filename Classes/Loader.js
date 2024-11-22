@@ -1,9 +1,14 @@
 const InteractionManager = require("./InteractionManager");
 
 var audioBufferList = {};
-
+var waxml;
 	
-class Loader {
+class Loader extends EventTarget{
+
+	constructor(){
+		super();
+	}
+
 	init(src){
 		// console.log(src);
 		return new Promise((resolve, reject) => {
@@ -100,7 +105,7 @@ Loader.loadXML = (url) => {
 				resolve(xmlDoc.firstElementChild);
 			},
 			e => {
-					let errMess = "WebAudioXML error. File not found: " + src;
+					let errMess = "WebAudioXML error. File not found: " + url;
 					console.error(errMess);
 					reject(errMess);
 				}
@@ -124,18 +129,18 @@ Loader.loadComplete = loader => {
 	if(loader){
 		loader.complete = true;
 	}
-	Loader.checkLoadComplete();
+	if(Loader.checkLoadComplete()){
+		document.body.classList.remove("waxml-loading");
+	}
 }
 
 
 Loader.checkLoadComplete = () => {
 	let stillLoading = Loader.filesLoading.filter(file => file.complete == false);
-		
-	if(!stillLoading.length){
-		document.body.classList.remove("waxml-loading");
-		return true;
-	}
+	return !stillLoading.length;
 }
+
+
 
 Loader.addLoader = obj => {
 	document.body.classList.add("waxml-loading");
@@ -143,6 +148,5 @@ Loader.addLoader = obj => {
 }
 
 Loader.filesLoading = [];
-
 
 module.exports = Loader;

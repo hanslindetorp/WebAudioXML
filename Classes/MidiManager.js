@@ -1,29 +1,32 @@
 const fnNames = ["start", "stop", "trig"];
 
-class MidiManager {
+class MidiManager extends EventTarget{
 
 	constructor(waxml){
+		super();
 		this.waxml = waxml;
 		this.keysPressed = Array(16).fill(Array(127).fill(false));
 		this.listeners = [];
-		this.eventListeners = [];
+		// this.eventListeners = [];
+		let useMIDI = waxml._xml.getAttribute("midi") == "true";
 
-		if (navigator.requestMIDIAccess) {
-			console.log('This browser supports WebMIDI!');
-			navigator.requestMIDIAccess()
-			.then(midiAccess => {
-				// If the user accepts MIDI input
-				// connect incoming MIDI messages from all potential MIDI inputs to getMIDIMessage()
-				for (var input of midiAccess.inputs.values()) {
-					input.onmidimessage = e => this.getMIDIMessage(e);
-				}
-			}, () => {
-				console.warn('Could not access your MIDI devices.');
-			});
-		} else {
-			console.warn('WebMIDI is not supported in this browser.');
+		if(useMIDI){
+			if (navigator.requestMIDIAccess) {
+				console.log('This browser supports WebMIDI!');
+				navigator.requestMIDIAccess()
+				.then(midiAccess => {
+					// If the user accepts MIDI input
+					// connect incoming MIDI messages from all potential MIDI inputs to getMIDIMessage()
+					for (var input of midiAccess.inputs.values()) {
+						input.onmidimessage = e => this.getMIDIMessage(e);
+					}
+				}, () => {
+					console.warn('Could not access your MIDI devices.');
+				});
+			} else {
+				console.warn('WebMIDI is not supported in this browser.');
+			}
 		}
-
 	}
 
 	getMIDIMessage(event) {
@@ -47,6 +50,15 @@ class MidiManager {
 		let channel = status % 0x10 + 1;
 		status = status >> 4;
 		
+
+		this.waxml.dispatchEvent(new CustomEvent("midiIn", {detail:{
+			message: event.data,
+			channel: channel,
+			status: status,
+			data1: data1,
+			data2: data2
+		}}));
+
 		let val;
 		switch (status) {
 			case 9: // NoteOn
@@ -70,6 +82,17 @@ class MidiManager {
 
 
 			case 11: // control change (volyme, pan, etc)
+			// if(data1 == 64){
+				// store sustain state
+				// this.sustain[channel] = data2;
+				// if(!data2){
+				// 	// release unreleased notes
+
+				// 	this.keysSustained[ch].forEach(key => {
+				// 		this.noteOff(ch, key, 0);
+				// 	});
+				// }
+			// }
 			val = data2/127;
 			this.waxml.setVariable(`MIDI:CC:${data1}`, val);
 			this.waxml.setVariable(`MIDI:ControlChange:${data1}`, val);
@@ -91,7 +114,7 @@ class MidiManager {
 			return;
 			break;
 		}
-		console.log({status: status, channel: channel, data1: data1, data2: data2});
+		// console.log({status: status, channel: channel, data1: data1, data2: data2});
 	}
 
 	addListener(obj){
@@ -124,13 +147,13 @@ class MidiManager {
 
 	noteOn(ch, key, vel){
 		//console.log(ch, key, vel);)
-		vel = vel / 127; // MIDI 1.0
+		// vel = vel / 127; // MIDI 1.0
 
 		if(!this.keysPressed[ch][key]){
 
 			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 			this.keysPressed[ch][key] = true;
-			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let data = {channel: ch, keyNum: key, velocity: vel / 127, legato: legato};
 			let ev = `MIDI:NoteOn`;
 
 			fnNames.forEach(fn => {
@@ -145,14 +168,14 @@ class MidiManager {
 	}
 
 	noteOff(ch, key, vel = 0){
-		vel = vel / 127; // MIDI 1.0
+		// vel = vel / 127; // MIDI 1.0
 
 		if(this.keysPressed[ch][key]){
 
 			this.keysPressed[ch][key] = false;
 			let legato = this.keysPressed[ch].find(state => state); // ? false : true;
 	
-			let data = {channel: ch, keyNum: key, velocity: vel, legato: legato};
+			let data = {channel: ch, keyNum: key, velocity: vel / 127, legato: legato};
 			let NOff = `MIDI:NoteOff`;
 			let NoteOffEvents = [NOff, `${NOff}:${ch}`, `${NOff}:${ch}:${key}`, `${NOff}:${ch}:${key}:${vel}`];
 			
@@ -172,21 +195,21 @@ class MidiManager {
 				});
 			});
 
-			this.dispatchEvent(new CustomEvent(ev, {detail:data}));
+			this.dispatchEvent(new CustomEvent(NOff, {detail:data}));
 
 		}
 	}
-	addEventListener(name, fn){
-		if(typeof name !== "string"){return}
-		if(typeof fn !== "function"){return}
-		this.eventListeners[name] = this.eventListeners[name] || [];
-		this.eventListeners[name].push(fn);
-	}
+	// addEventListener(name, fn){
+	// 	if(typeof name !== "string"){return}
+	// 	if(typeof fn !== "function"){return}
+	// 	this.eventListeners[name] = this.eventListeners[name] || [];
+	// 	this.eventListeners[name].push(fn);
+	// }
 
-	dispatchEvent(e){
-		this.eventListeners[e.type] = this.eventListeners[e.type] || [];
-		this.eventListeners[e.type].forEach(fn => fn(e));
-	}
+	// dispatchEvent(e){
+	// 	this.eventListeners[e.type] = this.eventListeners[e.type] || [];
+	// 	this.eventListeners[e.type].forEach(fn => fn(e));
+	// }
 
 }
 
