@@ -2,9 +2,10 @@ var Loader = require('./Loader.js');
 var WebAudioUtils = require('./WebAudioUtils.js');
 
 
-class BufferSourceObject {
+class BufferSourceObject extends EventTarget{
 
 	constructor(obj, params){
+		super();
 		this._ctx = obj._ctx;
 		this._node = new AudioBufferSourceNode(this._ctx);
 		this._params = {...params};
@@ -27,6 +28,7 @@ class BufferSourceObject {
 		// 	clearTimeout(this.autoStopTimer);
 		// 	this.autoStopTimer = 0;
 		// }
+		let delay = time - this._ctx.currentTime;
 		let params = {}
 		if(typeof this._params.offset != "undefined"){params.offset = this._params.offset}
 		if(typeof this._params.loop != "undefined"){params.loop = this._params.loop}
@@ -45,6 +47,9 @@ class BufferSourceObject {
 		}
 		
 		let node = new AudioBufferSourceNode(this._ctx, params);
+		node.addEventListener("ended", e => {
+			this.dispatchEvent(new CustomEvent("ended"));
+		});
 		this.currentNode = node;
 		this.playingNodes.push(node);
 
@@ -62,9 +67,18 @@ class BufferSourceObject {
 
 		node.connect(this.destination);
 		this.lastStarted = time;
-		this.offset = offset;
+
+		if(offset){
+			// Note: Don't set offset if not needed. It might resume playback
+			this.offset = offset;
+		}
+		
 		// important to set this._playing to true AFTER setting this.offset (otherwise it will make an endless call stack via resume)
 		this._playing = true;
+
+		// if(time == this._ctx.currentTime){
+		// 	console.log(`bufferSource.start(${time.toFixed(2)}, ${this._ctx.currentTime.toFixed(2)})`);
+		// }
 
 		if(params.loop){
 			node.start(time, offset * factor);
@@ -84,7 +98,7 @@ class BufferSourceObject {
 					this._playing = false;
 				}
 				
-			}, (duration - offset) / Math.abs(factor) * 1000);
+			}, (delay + duration - offset) / Math.abs(factor) * 1000);
 		}
 		this._node = node;
 		
@@ -223,6 +237,9 @@ class BufferSourceObject {
 		Loader.loadAudio(localPath + src, this._ctx).then(audioBuffer => {
 			this._buffer = audioBuffer;
 			this.doCallBacks();
+			this.dispatchEvent(new CustomEvent("loadComplete", {
+				detail: {buffer: audioBuffer}
+			}));
 		});
 	}
 
