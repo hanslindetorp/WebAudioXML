@@ -1,0 +1,127 @@
+
+
+
+
+html, body {
+  font-family: sans-serif;
+}
+
+/* body {
+  touch-action: none;
+} */
+
+h1 {
+  position: relative !important;
+  font-size: 5em;
+  color: white;
+  text-align: center;
+  margin: 2em auto;
+  width: 100%;
+}
+h2 {
+  position: relative !important;
+  font-size: 2em;
+  color: white;
+  text-align: center;
+  margin: 2em auto;
+  width: 100%;
+}
+
+main {
+  width: 600px;
+  height: 1000px;
+  /* position: fixed; */
+  /* overflow: hidden; */
+}
+
+a.button {
+  margin-top: 1em;
+  font-size: 2em;
+  width: 200px;
+  left: 150px;
+  position: relative;
+}
+
+section {
+  background-color: rgb(255 70 70);
+}
+section#form {
+  background-color: rgb(255, 191, 43);
+}
+
+#solo {
+  background-color: white;
+}
+#solo .buttonContainer {
+  position: absolute;
+  top: 40%;
+  left: 37%;
+}
+#solo .button {
+  border-radius: 75px;
+  padding: 0;
+  position: absolute;
+  background-color: #e0ffb8;
+  border: 5px solid rgb(99, 169, 23);
+
+  cursor: pointer;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+#solo .button:active {
+  background-color: rgb(99, 169, 23);
+}
+
+.giant, .note-name {
+  position: absolute;
+  left: 30px;
+  top: 426px;
+  font-family: sans-serif;
+  font-size: 110px;
+  color: white;
+}
+
+waxml-xy-area {
+  position: absolute !important;
+  background-color: rgba(0,0,0,0) !important;
+  /* bottom: 30px; */
+}
+
+waxml-xy-handle {
+  touch-action: pan-x;
+  font-size: 58px !important;
+  background-color: rgb(192, 66, 66) !important;
+  visibility: hidden;
+  /* background-color: rgb(103, 220, 99) !important; */
+}
+
+waxml-xy-handle.dragged {
+  visibility: visible;
+}
+
+#pad img {
+  position: absolute !important;
+  /* right: 1em;
+  top: 1em;
+  width: 15vw;
+  height: 15vw; */
+}
+
+section#pad {
+  background-color: rgb(55, 101, 0);
+}
+
+
+section#pad .arrow {
+  height: 100px;
+}
+section#pad .arrow.up {
+  rotate: 90deg;
+  top: 100px;
+}
+section#pad .arrow.down {
+  rotate: -90deg;
+  bottom: 100px;
+}

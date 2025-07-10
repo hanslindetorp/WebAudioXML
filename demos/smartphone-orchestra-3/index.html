@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    
+  </head>
+
+  <body>
+
+		<main class="max-size">
+			<section id="start" class="dark">
+        <h1>Turn on the sound</h1>
+        <h2>(Turn off silent mode)</h2>
+        <a class="button" href="#volumePage">OK</a>
+			</section>
+			<section id="volumePage" class="dark">
+        <h1>Turn the volume to max</h1>
+        <a id="initBtn" class="button" href="#pad">OK</a>
+			</section>
+
+			<section id="pad">
+        <!-- <img src="img/qr.png" /> -->
+        <div class="giant output"></div>
+        <div class="note-name"></div>
+        <img class="arrow up" src="img/curvy-arrow-png.png" />
+        <img class="arrow down" src="img/curvy-arrow-png.png" />
+        <waxml-xy-area width="600" height="1000">
+          <waxml-xy-handle size="150px" catch="true" direction="xy" x="0.5" y="0.5" sources="x,y,dragged" targets="x,y,dragged" initOnRelease="true"></waxml-xy-handle>
+        </waxml-xy-area>
+        <!-- <waxml-meter type="FFT" width="500"></waxml-meter> -->
+
+		<!-- <waxml-inspector width="610"></waxml-inspector> -->
+        <!-- <input type="range" /> -->
+			</section>
+
+			<section id="solo">
+        <div class="buttonContainer"></div>
+			</section>
+
+      <section id="form">
+        <a class="button" href="https://forms.gle/KwVHRHX7yDXJvdKm8">Till formuläret</a>
+      </section>
+
+    </main>
+
+    <script src="script/max.size.js"></script>
+    <script src="script/NoSleep.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script/WebAudioXML.js" data-source="audio.xml"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+  </body>
+</html>
