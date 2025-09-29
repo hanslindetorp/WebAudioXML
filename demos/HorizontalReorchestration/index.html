@@ -10,6 +10,7 @@
   <body>
     <button data-waxml-click-start="#music">Play</button>
     <button data-waxml-click-stop="#music">Stop</button>
+    <p><input id="individualTimesBtn" type="checkbox" checked />Individual sync points</p>
 
     <div id="positionPointers" class="sliderContainer">
       <div>
@@ -44,7 +45,7 @@
     <div class="sliderContainer">
       <div>
         <h3><input type="checkbox" checked data-waxml-change-set="$vocalGain=this.checked" />Vocal</h3>
-        <label>Fade Time: <span class="value"></span>
+        <!-- <label>Fade Time: <span class="value"></span> -->
           <!-- <input type="range" min="0" max="0.5" step="0.001" value="0" data-waxml-input-set="$vocalFadeTime=this.value" /> -->
         </label>
       </div>

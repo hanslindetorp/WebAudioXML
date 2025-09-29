@@ -6,13 +6,18 @@
 	gain="-3dB"
 	controls="false">
 
+	<var name="vocalFadeTime" value="0.001" />
 
-	<Mixer gain="0dB">
-		<ObjectBasedAudio id="vocal" gain="$vocalGain" />
-	</Mixer>
-	<Mixer gain="-3dB">
-		<ObjectBasedAudio positionX="-0.5" positionZ="-0.5" id="fiddle" gain="$fiddleGain" />
-	</Mixer>
+	<Chain gain="0dB">
+		<!-- <ObjectBasedAudio id="vocal" /> -->
+		<StereoPannerNode id="vocal" />
+		<GainNode gain="$vocalGain" />
+	</Chain>
+	<Chain gain="0dB">
+		<!-- <ObjectBasedAudio positionX="-0.5" positionZ="-0.5" id="fiddle" /> -->
+		<StereoPannerNode pan="-0.5" id="fiddle" />
+		<GainNode gain="$fiddleGain" />
+	</Chain>
 	
 	<Mixer gain="-3dB">
 		<GainNode id="accordion" gain="$accordionGain" />

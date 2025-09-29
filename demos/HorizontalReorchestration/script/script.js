@@ -1,3 +1,4 @@
+var individualTimes = true;
 
 waxml.addEventListener("inited", () => {
 
@@ -72,7 +73,14 @@ waxml.addEventListener("inited", () => {
             waxml.stop();
         }
         
-    })
+    });
+
+
+    document.querySelector("#individualTimesBtn").addEventListener("change", e => {
+        individualTimes = e.target.checked;
+        let strategy = e.target.checked ? "sync-points" : "single-sync-point";
+        waxml.querySelector("select").setParameter("strategy", strategy);
+    });
 
 });
 
