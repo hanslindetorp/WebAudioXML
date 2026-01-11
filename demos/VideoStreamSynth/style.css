@@ -1,0 +1,141 @@
+
+html, body {
+  font-family: sans-serif;
+  background-color: white;
+  width: 100%;
+  height: 100%;
+}
+
+
+section {
+  padding-top: 40px;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  color: white;
+}
+
+h1 {
+  text-align: center;
+}
+
+a {
+  color: white;
+}
+main {
+}
+
+.input_video {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: auto;
+  top: 32px;
+  left: 0;
+
+}
+
+
+.output_canvas{
+
+  display: block;
+  width: 100vw;
+  height: 56.75vw;
+  transform: scaleX(-1);
+}
+
+navigation {
+  position: absolute;
+  width: 100%;
+  height: 31px;
+  background-color: #999;
+  padding: 5px;
+}
+
+navigation > h1 {
+  display: inline-block;
+  margin: 0px 10px;
+  font-size: 15px;
+}
+navigation > a,
+navigation > select {
+  position: relative;
+  display: inline-block;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  margin: 0px;
+  padding: 5px;
+  border-radius: 3px;
+  border: 1px solid #333;
+  text-decoration: none;
+}
+
+navigation > button, navigation > label {
+  border-radius: 5px;
+  border: 1px solid black;
+  padding: 0.3em;
+  background-color: white;
+  font-size: 1em;
+}
+navigation > button:active, navigation > label:active {
+  background-color: cyan;
+}
+
+
+navigation > .overlay {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  background-color: rgba(0,0,0,0.3);
+  opacity: 0.8;
+  right: 10px;
+  top: 40px;
+  width: 100vw;
+  height: 0;
+  transition:all 0.4s linear;
+}
+
+input#toggle-inspectors:checked ~ #inspectors{
+  height:50vh;
+}
+input#toggle-keyboard:checked ~ #keyboard{
+  height:50vh;
+}
+
+#key-indicator {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  border: 2px solid black;
+  background-color: white;
+}
+
+
+
+waxml-meter {
+    display: inline-block !important;
+    background-color: black;
+    border-radius: 5px;
+    margin: 1em 0;
+    padding: 0.2em;
+}
+waxml-inspector {
+    display: inline-block !important;
+    margin: 1em 0;
+}
+waxml-inspector > div,  waxml-inspector > canvas {
+    border: 1px solid grey;
+    width: 50%;
+    height: 50%;
+    background-color: black;
+    border-radius: 5px;
+    overflow: hidden;
+    padding: 0.2em;
+}
+
+waxml-midi-controller {
+  width: 100%;
+}

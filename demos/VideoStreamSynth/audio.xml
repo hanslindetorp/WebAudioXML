@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Audio 
+	xmlns="https://www.w3schools.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://www.w3schools.com https://momdev.se/lindetorp/waxml/scheme_1.23.xsd"
+
+	version="1.0" 
+	timeUnit="ms" 
+	gain="-3dB"
+	controls="false"
+    transitionTime="10">
+
+
+    <var class="input-selector" name="lhx" default="1" />
+    <var class="input-selector" name="lhy" default="0" />
+    <var class="input-selector" name="lh2" default="0" />
+    <var class="input-selector" name="lwx" default="0" />
+    <var class="input-selector" name="lwy" default="0" />
+    <var class="input-selector" name="lw2" default="0" />
+
+    <var class="input-selector" name="rhx" default="0" />
+    <var class="input-selector" name="rhy" default="0" />
+    <var class="input-selector" name="rh2" default="0" />
+    <var class="input-selector" name="rwx" default="0" />
+    <var class="input-selector" name="rwy" default="0" />
+    <var class="input-selector" name="rw2" default="0" />
+
+    <var class="input-selector" name="nsx" default="0" />
+    <var class="input-selector" name="nsy" default="0" />
+    <var class="input-selector" name="ns2" default="0" />
+
+
+    <var name="leftHand8x" mapin="auto" mapout="1,0" />
+    <var name="leftHand8y" mapin="auto" mapout="1,0" />
+    <var name="rightHand8x" mapin="auto" mapout="1,0" />
+    <var name="rightHand8y" mapin="auto" mapout="1,0" />
+    <var name="pose15x" mapin="auto" mapout="1,0" />
+    <var name="pose15y" mapin="auto" mapout="1,0" />
+    <var name="pose16x" mapin="auto" mapout="1,0" />
+    <var name="pose16y" mapin="auto" mapout="1,0" />
+    <var name="pose0x" mapin="auto" mapout="1,0" />
+    <var name="pose0y" mapin="auto" mapout="1,0" />
+
+    <var name="leftHand" value="$leftHand8y*$lhy + $leftHand8x*($lhx+$lh2)" /> 
+    <var name="rightHand" value="$rightHand8y*$rhy + $rightHand8x*($rhx+$rh2)" /> 
+    <var name="leftWrist" value="$pose15y*$lwy + $pose15x*($lwx+$lw2)" /> 
+    <var name="rightWrist" value="$pose16y*$rwy + $pose16x*($rwx+$rw2)" /> 
+    <var name="nose" value="$pose0y*$nsy + $pose0x*($nsx+$ns2)" /> 
+
+    <var name="controller" value="$leftHand + $rightHand + $leftWrist + $rightWrist + $nose" />
+    <var name="frequency" value="$controller" curve="steps" mapin="0,1" mapout="60,62,64,67,69,72"  convert="MIDI->frequency" />
+
+    <var name="leftHandPresent" default="0" />
+    <var name="rightHandPresent" default="0" />
+    <var name="posePresent" default="0" />
+    <var name="volume" mapin="0,1" value="$leftHandPresent*($lhx+$lhy+$lwx+$lwy) + $rightHandPresent*($rhx+$rhy+$rwx+$rwy) + (1-$leftHand8y)*$lh2*$leftHandPresent + (1-$rightHand8y)*$rh2*$rightHandPresent + (1-$pose15y)*$lw2*$leftHandPresent + (1-$pose16y)*$rw2*$rightHandPresent + (1-$pose0y)*$ns2*$posePresent + $posePresent*($nsy+$nsx)" default="0" />
+
+    <Envelope name="env1" start="frequency.change" ADSR="20,300,0,100" />
+    <Envelope name="env2" start="frequency.change" ADSR="0,200,0,100" />
+    <Envelope name="env3" start="frequency.change" ADSR="0,50,0,50" />
+
+    <var name="sound" default="0" />
+
+
+
+    <Noise output=".noise" />
+
+    <!-- Synth Mixer -->
+    <Mixer selectindex="$sound" output="#dry, #delay, #reverb">
+        <Chain>
+            <!-- Synth Lead -->
+            <OscillatorNode type="sawtooth" frequency="$frequency*2" />
+            <GainNode gain="-3dB" />
+            <BiquadFilterNode type="lowpass" frequency="600" />
+            <BiquadFilterNode type="lowpass" frequency="600" />
+            <GainNode gain="$volume"/>
+        </Chain>
+        
+        <Chain>
+            <!-- Wood Wind -->
+            <OscillatorNode type="square" frequency="$frequency" transitionTime="10" />
+            <BiquadFilterNode frequency="300" />
+            <GainNode gain="$volume"/>
+        </Chain>
+        <Chain transitionTime="100">
+            <!-- Whistle -->
+            <OscillatorNode type="sine" frequency="$frequency*4" />
+            <GainNode gain="-6dB"/>
+            <GainNode gain="$volume"/>
+        </Chain>
+        <Chain transitionTime="300" gain="+12dB">
+            <!-- Wind -->
+            <GainNode class="noise" />
+            <BiquadFilterNode type="bandpass" Q="70" frequency="$frequency" transitionTime="300" />
+            <GainNode gain="+6dB"/>
+            <GainNode gain="$volume"/>
+        </Chain>
+        <Chain>
+            <!-- Synth Piano -->
+            <OscillatorNode type="sawtooth" frequency="$frequency" />
+            <BiquadFilterNode type="lowpass" frequency="1000" />
+            <GainNode gain="€env1"/>
+        </Chain>
+        <Chain>
+            <!-- Synth Bass -->
+            <OscillatorNode type="sawtooth" frequency="$frequency/4" />
+            <BiquadFilterNode type="lowpass" frequency="€env2*1800" />
+            <GainNode gain="€env2"/>
+        </Chain>
+        <Chain transitionTime="1" gain="+12dB">
+            <!-- Drip -->
+            <GainNode class="noise" />
+            <BiquadFilterNode type="bandpass" Q="30" frequency="$frequency*4" />
+            <BiquadFilterNode type="highpass" frequency="4000" />
+            <BiquadFilterNode type="lowpass" frequency="3000" />
+            <GainNode gain="+6dB"/>
+            <GainNode gain="€env3"/>
+        </Chain>
+    </Mixer>
+
+
+    <Chain id="delay" output=".delay">
+        <DelayNode delayTime="500" />
+        <BiquadFilterNode type="lowpass" frequency="200" />
+        <GainNode gain="-9dB" output="#delay"/>
+    </Chain>
+
+    <GainNode id="dry" output=".dry" />
+    <ConvolverNode id="reverb" src="audio/convolution-kungasalen.wav" output=".reverb"/>
+
+    <!-- Effect Mixer -->
+    <Mixer selectindex="$sound" transitionTime="300">
+        <GainNode class="dry reverb delay" />
+        <GainNode class="dry reverb delay" />
+        <GainNode class="delay reverb" />
+        <GainNode class="delay reverb" />
+        <GainNode class="dry delay reverb" />
+        <GainNode class="dry" />
+        <GainNode class="reverb" />
+    </Mixer>
+
+</Audio>

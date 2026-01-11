@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Kulturskolans resurscenter - Synth</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+    <script>const setup = ()=>{}; const draw = ()=>{};</script>
+
+    
+  </head>
+
+  <body>
+    <main>
+
+      
+      <section id="play">
+        <video class="input_video" width="1000" height="567.5"></video>
+        <canvas class="output_canvas" width="1000" height="567.5"></canvas>
+        
+
+      <p>This DEMO is part of a reasearch project at the 
+        <a href="http://www.kmh.se">Royal College of Music</a> and 
+        <a href="http://www.kth.se/">Royal Institute of Technology</a> 
+        in Stockholm by Hans Lindetorp
+      </p>
+      </section>
+
+      <navigation>
+        <input id="playMusicBtn" type="checkbox" data-waxml-change-set="master=this.checked">Play</a>
+        <button id="calibrateBtn">Kalibrera</button>
+      
+        <h1>Kulturskolans resurscenter - Synth</h1>
+
+      <input id="toggle-inspectors" type="checkbox" style="visibility:hidden">
+      <label for="toggle-inspectors">Mätare</label>
+      <div class="overlay" id="inspectors">
+        <waxml-meter fftSize="8192" width="305" height="200" type="oscilloscope"></waxml-meter>
+        <waxml-meter width="305" height="200" type="FFT" maxFrequency="10000" colors="#00f, #44f, #99f" ></waxml-meter>
+        <waxml-meter width="620" height="20" type="loudness" timeframe="2s" maxDecibels="0" minDecibels="-40" colors="green, yellow, red" segments="60,20,20"></waxml-meter>
+      </div>
+
+
+      <input id="toggle-keyboard" type="checkbox" style="visibility:hidden">
+      <label for="toggle-keyboard">Keyboard</label>
+      <div class="overlay" id="keyboard">
+        <waxml-midi-controller id="key-selector" type="keyboard" keymode="toggle" width="1000" height="100" min="24" max="84" selectedColor="#0d6efd" activeColor="#0d6efd" ></waxml-midi-controller>
+        <div id="key-indicator"></div>
+      </div>
+
+      <select id="input-selector">
+      </select>
+      <select id="sound-selector">
+        <option>Syntlead 1</option>
+        <option>Syntlead 2</option>
+        <option>Vissling</option>
+        <option>Vind</option>
+        <option>Syntpiano</option>
+        <option>Syntbas</option>
+        <option>Droppar</option>
+      </select>
+
+      </navigation>
+      
+    </main>
+
+    <script src="script/WebAudioXML.js" data-source="audio.xml"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+    <script type="text/javascript" src="script/HolisticController.js"></script>
+    <script type="text/javascript" src="script/holistic.js"></script>
+  </body>
+</html>
