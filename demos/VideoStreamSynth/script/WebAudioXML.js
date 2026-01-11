@@ -7280,7 +7280,7 @@ class MIDIController extends HTMLElement {
 		});
 	}
 
-	keyToClientRect(){
+	keyNumToClientRect(keyNum){
 		let el = this.elements.find(el => el.keyNum == keyNum);
 		return el.getBoundingClientRect();
 	}
@@ -10701,6 +10701,9 @@ class Variable extends EventTarget {
 	}
 
 	set mapin(values){
+		if(!this._params.mapin){
+			this._params.mapin = [];
+		}
 		while(this._params.mapin.length){
 			this._params.mapin.pop();
 		}
@@ -10710,6 +10713,9 @@ class Variable extends EventTarget {
 
 	set mapout(values){
 
+		if(!this._params.mapout){
+			this._params.mapout = [];
+		}
 		while(this._params.mapout.length){
 			this._params.mapout.pop();
 		}
@@ -10813,7 +10819,7 @@ class Variable extends EventTarget {
 				xmlNode.obj?.start();
 			});
 		}
-		this.dispatchEvent(new CustomEvent("eventName"));
+		this.dispatchEvent(new CustomEvent(eventName));
 		
 	}
 

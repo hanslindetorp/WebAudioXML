@@ -48,14 +48,15 @@
     <var name="nose" value="$pose0y*$nsy + $pose0x*($nsx+$ns2)" /> 
 
     <var name="controller" value="$leftHand + $rightHand + $leftWrist + $rightWrist + $nose" />
-    <var name="frequency" value="$controller" curve="steps" mapin="0,1" mapout="60,62,64,67,69,72"  convert="MIDI->frequency" />
+    <var name="keyNum" value="$controller" curve="steps" mapin="0,1" mapout="60,62,64,67,69,72" />
+    <var name="frequency" value="$keyNum" mapin="0,127" convert="MIDI->frequency" />
 
     <var name="leftHandPresent" default="0" />
     <var name="rightHandPresent" default="0" />
     <var name="posePresent" default="0" />
     <var name="volume" mapin="0,1" value="$leftHandPresent*($lhx+$lhy+$lwx+$lwy) + $rightHandPresent*($rhx+$rhy+$rwx+$rwy) + (1-$leftHand8y)*$lh2*$leftHandPresent + (1-$rightHand8y)*$rh2*$rightHandPresent + (1-$pose15y)*$lw2*$leftHandPresent + (1-$pose16y)*$rw2*$rightHandPresent + (1-$pose0y)*$ns2*$posePresent + $posePresent*($nsy+$nsx)" default="0" />
 
-    <Envelope name="env1" start="frequency.change" ADSR="20,300,0,100" />
+    <Envelope name="env1" start="frequency.change" ADSR="0,300,0,100" />
     <Envelope name="env2" start="frequency.change" ADSR="0,200,0,100" />
     <Envelope name="env3" start="frequency.change" ADSR="0,50,0,50" />
 

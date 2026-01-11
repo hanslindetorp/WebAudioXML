@@ -20,7 +20,7 @@ waxml.addEventListener("inited", () => {
     }
   });
   waxml.mute();
-  noteListVariable = waxml.querySelector("var[name='frequency']");
+  noteListVariable = waxml.querySelector("var[name='keyNum']");
 
 
   calibrateBtn.addEventListener("pointerdown", e => {
@@ -46,12 +46,12 @@ waxml.addEventListener("inited", () => {
 
   // move keyIndicator to correct position to 
   // indicate the current position on the keyboard
-  waxml.querySelector("var[name='frequency']").addEventListener("change", e => {
-    let rect = keyboard.keyToClientRect(e.target.value);
-		let x = rect.x + rect.width / 2; 
-		let y = rect.y + rect.height / 2;
-    keyIndicator.style.left = x;
-    keyIndicator.style.top = y;
+  waxml.querySelector("var[name='keyNum']").addEventListener("change", e => {
+    let rect = keyboard.keyNumToClientRect(e.target.value);
+		let x = rect.x + rect.width/2; 
+		let y = rect.bottom - 60;
+    keyIndicator.style.left = `${x}px`;
+    keyIndicator.style.top = `${y}px`;
   });
 
   waxml.querySelectorAll(".input-selector").forEach(el => {
